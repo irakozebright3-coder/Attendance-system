@@ -448,6 +448,7 @@ input{outline:none}
   .dashboard-main-cta{justify-content:center}
   .dashboard-stats .af-span-3{grid-column:span 4}
   .stat-card{min-height:138px;padding:18px}
+}
 /* ---------------- dashboard modals ---------------- */
 .modal-card{width:min(680px,100%);max-height:min(88vh,860px);overflow:auto;padding:2px;animation:panelIn .3s ease}
 .modal-card>:first-child{border-radius:29px}
