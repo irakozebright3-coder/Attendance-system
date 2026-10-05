@@ -169,30 +169,54 @@ async function toggle(pid, date) {
 // ---------------- auth / workspace flows ----------------
 
 async function doAuth(newUser) {
-  if (!hasBackend) { setMessage("Supabase environment variables are missing."); return; }
+  if (!hasBackend) {
+    setMessage("Supabase environment variables are missing.");
+    return;
+  }
+
   const email = document.getElementById("authEmail").value.trim();
   const password = document.getElementById("authPassword").value;
   const team = document.getElementById("team").value.trim() || "My Team";
   const loginBtn = document.getElementById("login");
   const signupBtn = document.getElementById("signup");
-  loginBtn.disabled = signupBtn.disabled = true;
+
+  loginBtn.disabled = true;
+  signupBtn.disabled = true;
   setMessage("Working…");
+
   try {
+    let data;
     if (newUser) {
-      const data = await api.signUp(email, password, team);
+      data = await api.signUp(email, password, team);
+
       if (!data.session) {
         setMessage("Account created. Confirm your email if required, then sign in.", true);
         return;
       }
-      setMessage("Account created. Opening workspace…", true);
     } else {
-      await api.signIn(email, password);
-      setMessage("Signed in. Opening workspace…", true);
+      data = await api.signIn(email, password);
     }
+
+    // Explicitly continue into the authenticated app. Do not depend solely
+    // on onAuthStateChange firing for navigation after a successful login.
+    const session = data?.session || await api.getSession();
+    if (!session) {
+      setMessage("Authentication succeeded, but no active session is available. Please sign in again.");
+      return;
+    }
+
+    S.session = session;
+    S.currentUserId = session.user.id;
+    resetState();
+    setMessage(newUser ? "Account created. Opening workspace…" : "Signed in. Opening workspace…", true);
+
+    await loadApp();
   } catch (err) {
-    setMessage(err.message || "Authentication failed.");
+    console.error("AttendanceFlow authentication/workspace error:", err);
+    setMessage(err.message || "Authentication succeeded, but the workspace could not be opened.");
   } finally {
-    loginBtn.disabled = signupBtn.disabled = false;
+    loginBtn.disabled = false;
+    signupBtn.disabled = false;
   }
 }
 
