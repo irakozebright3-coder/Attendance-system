@@ -1,111 +1,112 @@
 # AttendanceFlow — Team Attendance Management
 
-AttendanceFlow is a serious, shared attendance system for large teams. Core attendance records live in Supabase PostgreSQL rather than browser-only storage.
+AttendanceFlow is a serious, shared attendance system for large teams. All data — accounts, teams, people, dates, attendance, photos and audit history — lives in Supabase PostgreSQL. Nothing is stored in browser localStorage.
 
-## Frontend
+## Features
 
-- Vite + JavaScript
-- HTML5 Canvas ambient motion
-- CSS3 glassmorphism and liquid buttons
-- Responsive dashboard
-- Premium 3D-style landing page
-- Animated capability ticker
-- Branded AttendanceFlow logo + favicon
-- Custom circular cursor on pointer devices
+- Email/password authentication (Supabase Auth), session persistence, protected dashboard
+- Team workspaces with roles: `owner`, `admin`, `member`
+- Invite codes so teammates can securely join the same workspace
+- People: add / edit / deactivate / restore, optional photos (device upload or live camera capture)
+- Attendance register with `empty → present → absent → empty` cell cycle, persisted per (team, person, date)
+- Attendance dates with automatic cleanup of marks when a date is removed
+- Real-time sync: other signed-in team members' screens update automatically
+- Search, filters (active/inactive, present/absent/unmarked on the latest date) and sorting
+- Reports: per-person and per-date summaries over any date range, CSV export, printable report
+- Audit log (owner/admin): database-level audit trail of people, dates, attendance and membership changes
+- Dashboard stats computed from real attendance data
+- Responsive layout, keyboard-accessible controls, `prefers-reduced-motion` support
 
-## Real backend
+## Roles
 
-AttendanceFlow uses:
-
-- Supabase Auth for email/password accounts
-- PostgreSQL for teams, people, dates and attendance
-- Row Level Security (RLS) for team isolation
-- Supabase Storage for optional profile photos
-- Private photo bucket with signed URLs
-- Supabase Realtime for people, dates and attendance changes
-- Database-side validation for team ownership of attendance records
-- Audit events for people, dates and attendance changes
-- Automatic cleanup of attendance marks when an attendance date is deleted
-
-Database tables:
-
-- \`teams\`
-- \`team_members\`
-- \`people\`
-- \`attendance_dates\`
-- \`attendance\`
-- \`audit_events\`
-
-## Photo + camera
-
-A person can be created with no photo, with a photo uploaded from the device, or with a photo captured through the browser camera.
-
-Production camera access requires HTTPS. The Vercel deployment provides a secure context.
+| Ability | Owner/Admin | Member |
+| --- | --- | --- |
+| View register, people, history | ✅ | ✅ |
+| Mark / change / clear attendance | ✅ | ✅ |
+| Add/edit/deactivate/restore people | ✅ | ❌ (enforced by RLS) |
+| Add/remove attendance dates | ✅ | ❌ (enforced by RLS) |
+| Invite new members (share invite code) | ✅ | ❌ |
+| Read the audit log | ✅ | ❌ (enforced by RLS) |
 
 ## Supabase setup
 
 1. Create a Supabase project.
 2. Open **SQL Editor**.
-3. Copy the complete contents of \`supabase/schema.sql\` from this repository.
-4. Run the updated schema once. It is written to be safe to re-run because it replaces policies/functions/triggers where necessary.
-5. In **Project Settings → API**, copy the Project URL and the publishable/anon key.
+3. Run the complete contents of `supabase/schema.sql`. It is idempotent — safe to re-run; it upgrades an existing deployment (it also drops the legacy `people.photo_url` column, which was never the source of truth).
+4. In **Project Settings → API**, copy the **Project URL** and the **anon / publishable key**.
 
-Frontend environment variables:
+Set them as frontend environment variables (locally in `.env`, and in Vercel project settings):
 
-\`\`\`
+```
 VITE_SUPABASE_URL=your_project_url
-VITE_SUPABASE_ANON_KEY=your_publishable_or_anon_key
-\`\`\`
+VITE_SUPABASE_ANON_KEY=your_anon_or_publishable_key
+```
 
-Never put a Supabase service-role/secret key in frontend code or Vercel client-side variables.
+Never put a Supabase service-role or secret key in frontend code or client-side Vercel variables.
 
-## Vercel deployment
+The schema creates:
 
-Recommended setup:
-
-- Framework Preset: **Vite**
-- Build Command: \`npm run build\`
-- Output Directory: \`dist\`
-- Install Command: \`npm install\`
-
-Set the two \`VITE_\` environment variables in the Vercel project and redeploy after changing them.
+- Tables: `teams`, `team_members`, `people`, `attendance_dates`, `attendance`, `audit_events`
+- RLS on every table with `is_team_member()` / `is_team_admin()` helpers
+- Secure RPCs `create_team()` (owner bootstrap) and `join_team()` (invite code)
+- Server-side triggers: attendance↔person team validation, `team_id` immutability, marked-at/updated-at timestamps, attendance cleanup on date delete, and audit events (including membership and team creation)
+- Unique constraint `(team_id, person_id, date)` so a cell can never hold two statuses
+- A private `avatars` storage bucket (signed URLs only) with per-team folder policies
+- The `supabase_realtime` publication for people, dates and attendance
 
 ## Local development
 
-\`\`\`
+```
 npm install
 npm run dev
-\`\`\`
+```
+
+Camera capture requires a secure context: use `https://...` or `localhost`.
+
+## Vercel deployment
+
+The repo's `vercel.json` pins the settings:
+
+- Framework: **Vite**
+- Build Command: `npm run build`
+- Output Directory: `dist`
+- Install Command: `npm install`
+
+Set the two `VITE_` environment variables in the Vercel project and redeploy.
+
+## Architecture
+
+```
+src/
+├── main.js                # bootstrap, state, auth flow, realtime, handlers
+├── lib/
+│   ├── supabase.js        # client init (public URL + anon key only)
+│   ├── util.js            # escaping, dates, errors, CSV, photo validation
+│   └── api.js             # every database/storage operation in one place
+├── views/
+│   ├── landing.js         # premium landing page, auth modal, workspace setup
+│   ├── dashboard.js       # header, stats, toolbar, register table
+│   └── modals.js          # person/date/invite/reports/audit/confirm dialogs
+└── style.css
+supabase/
+└── schema.sql             # tables, RLS, RPCs, triggers, storage, realtime
+test/
+├── supabase-double.js     # TEST-ONLY Supabase client double for DOM smoke tests
+├── smoke.mjs              # landing/auth smoke test (jsdom)
+├── dashboard-smoke.mjs    # dashboard register/modal/filter smoke test (jsdom)
+└── pg/                    # TEST-ONLY local PostgreSQL harness (mock Supabase env)
+    ├── mock_supabase.sql  # auth/storage schemas + Supabase roles
+    ├── setup_test_users.sql # test users + assertion helpers
+    └── behavior_tests.sql   # 29 RLS/RPC/trigger/storage behavior checks
+```
+
+The DOM smoke tests run the real app bundle in jsdom against `test/supabase-double.js` — a test-only in-memory double. The shipped app always uses the real `@supabase/supabase-js` client.
+
+`test/pg/` contains a test-only harness that recreates a minimal Supabase-shaped environment (auth/storage schemas, Supabase roles) in a local PostgreSQL instance so the schema's RLS policies, RPCs, triggers and storage rules can be verified with 29 automated behavior checks before deployment. The test harness is not part of the shipped app.
 
 ## Attendance behavior
 
-Each cell follows:
-
-\`empty → present → absent → empty\`
-
-A removed person is soft-deactivated so historical attendance is preserved.
-
-Only owners/admins can remove people or dates in the interface. Team members can work with attendance according to the database policies.
-
-## Project structure
-
-\`\`\`
-Attendance-system/
-├── index.html
-├── public/
-│   └── attendanceflow-logo.svg
-├── src/
-│   ├── main.js
-│   └── style.css
-├── supabase/
-│   └── schema.sql
-├── .env.example
-├── .gitignore
-├── package.json
-├── vercel.json
-└── README.md
-\`\`\`
-
+Each cell follows: `empty → present → absent → empty`. Present/absent are stored as upserted rows; "empty" deletes the row. Removing a date deletes its marks automatically (database trigger). Deactivating a person keeps their history and they can be restored from the "Inactive only" filter.
 
 ## Premium UI/UX design system
 

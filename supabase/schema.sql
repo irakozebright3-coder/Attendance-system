@@ -1,12 +1,31 @@
+-- ============================================================
+-- AttendanceFlow — Supabase schema (idempotent: safe to re-run)
+-- Tables: teams, team_members, people, attendance_dates,
+--         attendance, audit_events
+-- Security: RLS on every table, admin-only management,
+--           member-only attendance marking, storage rules,
+--           server-side validation triggers, audit trail.
+-- ============================================================
 
 create extension if not exists pgcrypto;
+
+-- ------------------------------------------------------------
+-- TABLES
+-- ------------------------------------------------------------
 
 create table if not exists public.teams(
   id uuid primary key default gen_random_uuid(),
   name text not null check(length(btrim(name)) between 1 and 120),
   created_by uuid not null references auth.users(id) on delete restrict,
+  invite_code text not null default encode(gen_random_bytes(16),'hex'),
   created_at timestamptz not null default now()
 );
+
+-- Existing deployments get an invite code too.
+alter table public.teams
+  add column if not exists invite_code text not null default encode(gen_random_bytes(16),'hex');
+
+create unique index if not exists teams_invite_code_idx on public.teams(invite_code);
 
 create table if not exists public.team_members(
   team_id uuid not null references public.teams(id) on delete cascade,
@@ -20,12 +39,16 @@ create table if not exists public.people(
   id uuid primary key default gen_random_uuid(),
   team_id uuid not null references public.teams(id) on delete cascade,
   name text not null check(length(btrim(name)) between 1 and 160),
-  identifier text,
-  photo_url text,
+  identifier text check(identifier is null or length(btrim(identifier)) between 1 and 80),
   photo_path text,
   active boolean not null default true,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
+
+-- Legacy column kept out on purpose: photos are served through signed
+-- URLs generated at runtime from photo_path; photo_url is not needed.
+alter table public.people drop column if exists photo_url;
 
 create table if not exists public.attendance_dates(
   id uuid primary key default gen_random_uuid(),
@@ -57,6 +80,10 @@ create table if not exists public.audit_events(
   created_at timestamptz not null default now()
 );
 
+-- ------------------------------------------------------------
+-- INDEXES
+-- ------------------------------------------------------------
+
 create index if not exists people_team_idx on public.people(team_id);
 create index if not exists people_team_active_idx on public.people(team_id,active,name);
 create unique index if not exists people_team_identifier_unique
@@ -67,12 +94,20 @@ create index if not exists attendance_team_date_idx on public.attendance(team_id
 create index if not exists attendance_person_idx on public.attendance(person_id,date);
 create index if not exists audit_team_created_idx on public.audit_events(team_id,created_at desc);
 
+-- ------------------------------------------------------------
+-- RLS ENABLE
+-- ------------------------------------------------------------
+
 alter table public.teams enable row level security;
 alter table public.team_members enable row level security;
 alter table public.people enable row level security;
 alter table public.attendance_dates enable row level security;
 alter table public.attendance enable row level security;
 alter table public.audit_events enable row level security;
+
+-- ------------------------------------------------------------
+-- HELPER FUNCTIONS (security definer so policies never recurse)
+-- ------------------------------------------------------------
 
 create or replace function public.is_team_member(tid uuid)
 returns boolean
@@ -95,6 +130,13 @@ as $$
     where team_id=tid and user_id=auth.uid() and role in ('owner','admin')
   );
 $$;
+
+grant execute on function public.is_team_member(uuid) to authenticated, anon;
+grant execute on function public.is_team_admin(uuid) to authenticated, anon;
+
+-- ------------------------------------------------------------
+-- TEAM CREATION RPC (only secure path to create a team)
+-- ------------------------------------------------------------
 
 create or replace function public.create_team(p_name text)
 returns public.teams
@@ -128,7 +170,55 @@ end;
 $$;
 
 grant execute on function public.create_team(text) to authenticated;
+revoke execute on function public.create_team(text) from public, anon;
 
+-- ------------------------------------------------------------
+-- TEAM JOIN RPC (invite code path for additional team members)
+-- ------------------------------------------------------------
+
+create or replace function public.join_team(p_code text)
+returns public.teams
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  t public.teams;
+  uid uuid := auth.uid();
+  code text := nullif(btrim(p_code),'');
+begin
+  if uid is null then
+    raise exception 'Authentication required';
+  end if;
+  if code is null then
+    raise exception 'Invite code is required';
+  end if;
+
+  select * into t from public.teams where invite_code=code;
+  if t.id is null then
+    raise exception 'Invite code not recognized';
+  end if;
+
+  -- Idempotent: an existing member simply gets the team back.
+  if not exists(
+    select 1 from public.team_members where team_id=t.id and user_id=uid
+  ) then
+    insert into public.team_members(team_id,user_id,role)
+    values(t.id,uid,'member');
+  end if;
+
+  return t;
+end;
+$$;
+
+grant execute on function public.join_team(text) to authenticated;
+revoke execute on function public.join_team(text) from public, anon;
+
+-- ------------------------------------------------------------
+-- TRIGGER FUNCTIONS
+-- ------------------------------------------------------------
+
+-- Block changing team_id on existing rows.
 create or replace function public.protect_team_scope()
 returns trigger
 language plpgsql
@@ -143,6 +233,7 @@ begin
 end;
 $$;
 
+-- Attendance must reference a person of the same team.
 create or replace function public.validate_attendance_team()
 returns trigger
 language plpgsql
@@ -172,6 +263,19 @@ begin
 end;
 $$;
 
+create or replace function public.touch_person()
+returns trigger
+language plpgsql
+security definer
+set search_path=public
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+-- Deleting a date atomically removes its attendance marks.
 create or replace function public.delete_attendance_for_date()
 returns trigger
 language plpgsql
@@ -185,6 +289,9 @@ begin
 end;
 $$;
 
+-- Generic audit writer. Pulls team_id and entity_id from the row's
+-- jsonb so it also works on tables without an `id`/`team_id` column
+-- (teams, team_members).
 create or replace function public.audit_row_change()
 returns trigger
 language plpgsql
@@ -197,20 +304,30 @@ declare
   payload jsonb;
 begin
   if tg_op='DELETE' then
-    tid := old.team_id;
-    eid := old.id;
     payload := to_jsonb(old);
   else
-    tid := new.team_id;
-    eid := new.id;
     payload := to_jsonb(new);
+  end if;
+
+  tid := coalesce(
+    (payload->>'team_id')::uuid,
+    (payload->>'id')::uuid
+  );
+
+  if tid is null then
+    return coalesce(old,new);
   end if;
 
   insert into public.audit_events(
     team_id,actor_user_id,action,entity,entity_id,details
   )
   values(
-    tid,auth.uid(),tg_op,tg_table_name,eid,payload
+    tid,
+    auth.uid(),
+    tg_op,
+    tg_table_name,
+    nullif(payload->>'id','')::uuid,
+    payload
   );
 
   if tg_op='DELETE' then
@@ -219,6 +336,10 @@ begin
   return new;
 end;
 $$;
+
+-- ------------------------------------------------------------
+-- TRIGGERS
+-- ------------------------------------------------------------
 
 drop trigger if exists people_protect_team on public.people;
 create trigger people_protect_team
@@ -245,10 +366,25 @@ create trigger attendance_touch_marked_at
 before insert or update on public.attendance
 for each row execute function public.touch_attendance();
 
+drop trigger if exists people_touch_updated_at on public.people;
+create trigger people_touch_updated_at
+before update on public.people
+for each row execute function public.touch_person();
+
 drop trigger if exists attendance_dates_cleanup on public.attendance_dates;
 create trigger attendance_dates_cleanup
 after delete on public.attendance_dates
 for each row execute function public.delete_attendance_for_date();
+
+drop trigger if exists audit_teams on public.teams;
+create trigger audit_teams
+after insert on public.teams
+for each row execute function public.audit_row_change();
+
+drop trigger if exists audit_team_members on public.team_members;
+create trigger audit_team_members
+after insert or update or delete on public.team_members
+for each row execute function public.audit_row_change();
 
 drop trigger if exists audit_people on public.people;
 create trigger audit_people
@@ -265,73 +401,98 @@ create trigger audit_attendance
 after insert or update or delete on public.attendance
 for each row execute function public.audit_row_change();
 
+-- ------------------------------------------------------------
+-- POLICIES
+-- ------------------------------------------------------------
+
+-- TEAMS: read only for members; creation only through create_team().
 drop policy if exists "members read teams" on public.teams;
 drop policy if exists "users create teams" on public.teams;
 drop policy if exists "admins update teams" on public.teams;
 create policy "members read teams" on public.teams
-  for select using(public.is_team_member(id) or created_by=auth.uid());
-create policy "users create teams" on public.teams
-  for insert with check(created_by=auth.uid());
+  for select to authenticated
+  using(public.is_team_member(id));
 create policy "admins update teams" on public.teams
-  for update using(public.is_team_admin(id)) with check(public.is_team_admin(id));
+  for update to authenticated
+  using(public.is_team_admin(id)) with check(public.is_team_admin(id));
 
+-- TEAM MEMBERSHIP
 drop policy if exists "members read team membership" on public.team_members;
 drop policy if exists "users join created team" on public.team_members;
 drop policy if exists "admins manage membership" on public.team_members;
 drop policy if exists "admins remove membership" on public.team_members;
 create policy "members read team membership" on public.team_members
-  for select using(user_id=auth.uid() or public.is_team_admin(team_id));
-create policy "users join created team" on public.team_members
-  for insert with check(user_id=auth.uid() and exists(
-    select 1 from public.teams where id=team_id and created_by=auth.uid()
-  ));
+  for select to authenticated
+  using(user_id=auth.uid() or public.is_team_admin(team_id));
 create policy "admins manage membership" on public.team_members
-  for update using(public.is_team_admin(team_id))
-  with check(public.is_team_admin(team_id));
+  for update to authenticated
+  using(public.is_team_admin(team_id)) with check(public.is_team_admin(team_id));
 create policy "admins remove membership" on public.team_members
-  for delete using(public.is_team_admin(team_id) or user_id=auth.uid());
+  for delete to authenticated
+  using(public.is_team_admin(team_id));
 
+-- PEOPLE: everyone in the team can read; only owner/admin can modify.
 drop policy if exists "members read people" on public.people;
 drop policy if exists "members add people" on public.people;
 drop policy if exists "members update people" on public.people;
 drop policy if exists "admins delete people" on public.people;
+drop policy if exists "admins add people" on public.people;
+drop policy if exists "admins update people" on public.people;
 create policy "members read people" on public.people
-  for select using(public.is_team_member(team_id));
-create policy "members add people" on public.people
-  for insert with check(public.is_team_member(team_id));
-create policy "members update people" on public.people
-  for update using(public.is_team_member(team_id))
-  with check(public.is_team_member(team_id));
+  for select to authenticated
+  using(public.is_team_member(team_id));
+create policy "admins add people" on public.people
+  for insert to authenticated
+  with check(public.is_team_admin(team_id));
+create policy "admins update people" on public.people
+  for update to authenticated
+  using(public.is_team_admin(team_id)) with check(public.is_team_admin(team_id));
 create policy "admins delete people" on public.people
-  for delete using(public.is_team_admin(team_id));
+  for delete to authenticated
+  using(public.is_team_admin(team_id));
 
+-- ATTENDANCE DATES: members read; owner/admin manage.
 drop policy if exists "members read dates" on public.attendance_dates;
 drop policy if exists "members add dates" on public.attendance_dates;
 drop policy if exists "admins delete dates" on public.attendance_dates;
+drop policy if exists "admins add dates" on public.attendance_dates;
 create policy "members read dates" on public.attendance_dates
-  for select using(public.is_team_member(team_id));
-create policy "members add dates" on public.attendance_dates
-  for insert with check(public.is_team_member(team_id));
+  for select to authenticated
+  using(public.is_team_member(team_id));
+create policy "admins add dates" on public.attendance_dates
+  for insert to authenticated
+  with check(public.is_team_admin(team_id));
 create policy "admins delete dates" on public.attendance_dates
-  for delete using(public.is_team_admin(team_id));
+  for delete to authenticated
+  using(public.is_team_admin(team_id));
 
+-- ATTENDANCE: every team member may mark; history is team-scoped.
 drop policy if exists "members read attendance" on public.attendance;
 drop policy if exists "members insert attendance" on public.attendance;
 drop policy if exists "members update attendance" on public.attendance;
 drop policy if exists "members delete attendance" on public.attendance;
 create policy "members read attendance" on public.attendance
-  for select using(public.is_team_member(team_id));
+  for select to authenticated
+  using(public.is_team_member(team_id));
 create policy "members insert attendance" on public.attendance
-  for insert with check(public.is_team_member(team_id) and marked_by=auth.uid());
-create policy "members update attendance" on public.attendance
-  for update using(public.is_team_member(team_id))
+  for insert to authenticated
   with check(public.is_team_member(team_id) and marked_by=auth.uid());
+create policy "members update attendance" on public.attendance
+  for update to authenticated
+  using(public.is_team_member(team_id)) with check(public.is_team_member(team_id));
 create policy "members delete attendance" on public.attendance
-  for delete using(public.is_team_member(team_id));
+  for delete to authenticated
+  using(public.is_team_member(team_id));
 
+-- AUDIT: owner/admin only.
 drop policy if exists "admins read audit" on public.audit_events;
 create policy "admins read audit" on public.audit_events
-  for select using(public.is_team_admin(team_id));
+  for select to authenticated
+  using(public.is_team_admin(team_id));
+
+-- ------------------------------------------------------------
+-- STORAGE (private bucket "avatars", folder per team: <team_id>/<file>)
+-- ------------------------------------------------------------
 
 insert into storage.buckets(id,name,public)
 values('avatars','avatars',false)
@@ -339,10 +500,10 @@ on conflict(id) do nothing;
 
 update storage.buckets set public=false where id='avatars';
 
+drop policy if exists "members read avatar" on storage.objects;
 drop policy if exists "members upload avatar" on storage.objects;
 drop policy if exists "members update avatar" on storage.objects;
 drop policy if exists "members delete avatar" on storage.objects;
-drop policy if exists "members read avatar" on storage.objects;
 
 create policy "members read avatar" on storage.objects
   for select to authenticated
@@ -375,6 +536,17 @@ create policy "members delete avatar" on storage.objects
     bucket_id='avatars'
     and public.is_team_member((storage.foldername(name))[1]::uuid)
   );
+
+-- ------------------------------------------------------------
+-- REALTIME PUBLICATION (idempotent; matches Supabase conventions)
+-- ------------------------------------------------------------
+
+do $$
+begin
+  if not exists(select 1 from pg_publication where pubname='supabase_realtime') then
+    execute 'create publication supabase_realtime';
+  end if;
+end $$;
 
 do $$
 begin
