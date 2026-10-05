@@ -122,3 +122,24 @@ The reusable production design layer is in `src/design-system.css` and includes:
 - cursor interaction states
 - WebGL/Three.js layer placeholders
 - reduced-motion and responsive rules
+
+## One-time Supabase initialization
+
+For a new or existing Supabase project, run the complete `supabase/FINAL_SETUP.sql` once in **Supabase → SQL Editor**.
+
+Then optionally run `supabase/HEALTH_CHECK.sql`. All checks should report `PASS`.
+
+The final setup includes:
+- all application tables
+- `create_team(p_name text)`
+- `join_team(p_code text)`
+- team settings with automatic defaults and backfill
+- RLS policies
+- storage policies for private avatars
+- realtime publication
+- attendance validation
+- audit trail
+- date/attendance cleanup
+- PostgREST schema-cache reload
+
+Do not create database objects separately for each team. Teams are created by the secure `create_team` RPC, and a `team_settings` row is automatically created for each team.
