@@ -1,5 +1,6 @@
 
 import "./style.css";
+import "./design-system.css";
 import { createClient } from "@supabase/supabase-js";
 
 const url = import.meta.env.VITE_SUPABASE_URL;
@@ -122,6 +123,7 @@ function authScreen(message = "") {
   document.getElementById("heroStart").onclick = () => openAuth(true);
   document.getElementById("heroDemo").onclick = () => document.getElementById("workflow").scrollIntoView({ behavior: "smooth" });
   document.getElementById("finalStart").onclick = () => openAuth(true);
+  bindParallax();
   document.getElementById("closeAuth").onclick = closeAuth;
   document.getElementById("authModal").addEventListener("click", (e) => {
     if (e.target.id === "authModal") closeAuth();
@@ -242,6 +244,7 @@ function dashboard() {
   document.getElementById("newDate").onclick = addDate;
   document.getElementById("newPerson").onclick = personModal;
   document.querySelector(".dashboard-brand-link").onclick = (e) => e.preventDefault();
+  bindParallax();
 
   if (!managementControls) {
     document.getElementById("newDate").classList.remove("hidden");
@@ -714,9 +717,42 @@ function cursor() {
   });
 }
 
+
+function bindParallax() {
+  if (matchMedia("(pointer:coarse)").matches || matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  const targets = document.querySelectorAll(".feature-card,.step,.final-cta,.float-card");
+  targets.forEach((el) => {
+    if (el.dataset.parallaxBound === "1") return;
+    el.dataset.parallaxBound = "1";
+    el.classList.add("af-tilt");
+
+    const reset = () => {
+      el.style.setProperty("--tilt-x", "0deg");
+      el.style.setProperty("--tilt-y", "0deg");
+      el.style.setProperty("--mx", "50%");
+      el.style.setProperty("--my", "50%");
+    };
+
+    el.addEventListener("pointermove", (e) => {
+      const r = el.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width;
+      const py = (e.clientY - r.top) / r.height;
+      const rotateY = (px - 0.5) * 7;
+      const rotateX = (0.5 - py) * 7;
+      el.style.setProperty("--tilt-x", rotateX.toFixed(2) + "deg");
+      el.style.setProperty("--tilt-y", rotateY.toFixed(2) + "deg");
+      el.style.setProperty("--mx", Math.round(px * 100) + "%");
+      el.style.setProperty("--my", Math.round(py * 100) + "%");
+    });
+    el.addEventListener("pointerleave", reset);
+    reset();
+  });
+}
+
 async function start() {
   visual();
   cursor();
+  bindParallax();
 
   if (!db) {
     authScreen("Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel.");
