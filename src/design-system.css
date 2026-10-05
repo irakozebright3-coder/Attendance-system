@@ -1,0 +1,520 @@
+
+/*
+  AttendanceFlow — Premium Desktop Design System
+  =================================================
+  Design tokens, 12-column layout, 3D depth physics,
+  glassmorphism, neon micro-glows, parallax helpers and
+  desktop power-user interaction states.
+
+  Layer model:
+  0  background canvas
+  1  ambient glow / mesh layer
+  2  translucent glass surfaces
+  3  content / typography
+  4  interactive controls / active states
+  5  menus / modals / system feedback
+*/
+
+:root{
+  color-scheme:dark;
+
+  /* Brand palette */
+  --af-void:#0B0F19;
+  --af-card:#161F30;
+  --af-purple:#8B5CF6;
+  --af-blue:#3B82F6;
+  --af-mint:#10B981;
+  --af-white:#FFFFFF;
+  --af-text:#FFFFFF;
+  --af-muted:#9CA3AF;
+
+  /* Supporting neutrals */
+  --af-surface:rgba(22,31,48,.72);
+  --af-surface-strong:rgba(22,31,48,.88);
+  --af-line:rgba(255,255,255,.12);
+  --af-line-soft:rgba(255,255,255,.07);
+  --af-line-light:rgba(255,255,255,.26);
+  --af-shadow:0 28px 90px rgba(0,0,0,.44);
+  --af-shadow-deep:0 42px 120px rgba(0,0,0,.58);
+  --af-inner:inset 1px 1px 0 rgba(255,255,255,.12), inset -18px -18px 50px rgba(0,0,0,.18);
+  --af-glow-purple:0 0 45px rgba(139,92,246,.32);
+  --af-glow-blue:0 0 45px rgba(59,130,246,.30);
+  --af-glow-mint:0 0 36px rgba(16,185,129,.24);
+
+  /* Layout */
+  --af-max:1440px;
+  --af-gutter:clamp(20px,3vw,48px);
+  --af-gap:clamp(14px,1.3vw,22px);
+  --af-radius:24px;
+  --af-radius-sm:16px;
+
+  /* Motion */
+  --af-ease:cubic-bezier(.22,1,.36,1);
+  --af-fast:180ms var(--af-ease);
+  --af-med:420ms var(--af-ease);
+  --af-slow:800ms var(--af-ease);
+
+  /* Shared pointer tilt values set by JS */
+  --tilt-x:0deg;
+  --tilt-y:0deg;
+  --lift:0px;
+}
+
+/* Global canvas and simulated light field */
+html,body{
+  background:
+    radial-gradient(circle at 14% 0%,rgba(139,92,246,.13),transparent 26%),
+    radial-gradient(circle at 88% 6%,rgba(59,130,246,.11),transparent 23%),
+    var(--af-void);
+  color:var(--af-text);
+}
+
+body{
+  position:relative;
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:-18%;
+  z-index:-4;
+  pointer-events:none;
+  background:
+    radial-gradient(700px 480px at 0% 0%,rgba(255,255,255,.05),transparent 60%),
+    radial-gradient(620px 520px at 82% 14%,rgba(59,130,246,.05),transparent 62%);
+  filter:blur(32px);
+  transform:translate3d(0,0,0);
+}
+
+#ambientCanvas{
+  z-index:-5!important;
+  opacity:.76;
+}
+
+.noise{
+  z-index:-3!important;
+  opacity:.03!important;
+}
+
+/* 12-column desktop layout */
+.af-container{
+  width:min(var(--af-max),calc(100% - (var(--af-gutter) * 2)));
+  margin-inline:auto;
+}
+
+.af-grid-12{
+  display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:var(--af-gap);
+}
+
+.af-span-1{grid-column:span 1}
+.af-span-2{grid-column:span 2}
+.af-span-3{grid-column:span 3}
+.af-span-4{grid-column:span 4}
+.af-span-5{grid-column:span 5}
+.af-span-6{grid-column:span 6}
+.af-span-7{grid-column:span 7}
+.af-span-8{grid-column:span 8}
+.af-span-9{grid-column:span 9}
+.af-span-10{grid-column:span 10}
+.af-span-11{grid-column:span 11}
+.af-span-12{grid-column:span 12}
+
+.af-layer-bg{position:relative;z-index:0}
+.af-layer-glow{position:relative;z-index:1}
+.af-layer-glass{position:relative;z-index:2}
+.af-layer-content{position:relative;z-index:3}
+.af-layer-active{position:relative;z-index:4}
+.af-layer-overlay{position:relative;z-index:5}
+
+/* Simulated top-left light source */
+.af-light-source{
+  position:absolute;
+  width:500px;
+  height:500px;
+  top:-260px;
+  left:-220px;
+  border-radius:50%;
+  pointer-events:none;
+  background:radial-gradient(circle at 55% 55%,rgba(255,255,255,.13),rgba(139,92,246,.08) 22%,transparent 64%);
+  filter:blur(14px);
+  opacity:.9;
+}
+
+.af-light-edge{
+  border-top:1px solid rgba(255,255,255,.23)!important;
+  border-left:1px solid rgba(255,255,255,.16)!important;
+  border-right:1px solid rgba(255,255,255,.07);
+  border-bottom:1px solid rgba(0,0,0,.28);
+}
+
+/* Exact glassmorphism recipe */
+.glass,.af-glass{
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+  background:linear-gradient(
+    135deg,
+    rgba(22,31,48,.82),
+    rgba(22,31,48,.54)
+  )!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  border-top-color:rgba(255,255,255,.25)!important;
+  border-left-color:rgba(255,255,255,.16)!important;
+  box-shadow:
+    var(--af-shadow),
+    inset 1px 1px 0 rgba(255,255,255,.10),
+    inset -20px -24px 60px rgba(0,0,0,.18)!important;
+  backdrop-filter:blur(30px) saturate(132%);
+  -webkit-backdrop-filter:blur(30px) saturate(132%);
+}
+
+.glass::before,.af-glass::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.07),transparent 34%);
+  opacity:.7;
+}
+
+/* 3D card / data-module physics */
+.af-tilt{
+  transform:
+    perspective(1100px)
+    rotateX(var(--tilt-x))
+    rotateY(var(--tilt-y))
+    translateY(var(--lift));
+  transform-style:preserve-3d;
+  transition:
+    transform var(--af-med),
+    box-shadow var(--af-med),
+    border-color var(--af-med);
+  will-change:transform;
+}
+
+.af-tilt::after{
+  content:"";
+  position:absolute;
+  inset:-30%;
+  z-index:-1;
+  pointer-events:none;
+  opacity:0;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(139,92,246,.26),transparent 64%);
+  filter:blur(24px);
+  transition:opacity var(--af-med),transform var(--af-med);
+  transform:scale(.72);
+}
+
+.af-tilt:hover{
+  --lift:-5px;
+  border-top-color:rgba(255,255,255,.34)!important;
+  border-left-color:rgba(255,255,255,.22)!important;
+  box-shadow:
+    0 34px 100px rgba(0,0,0,.48),
+    0 0 45px rgba(139,92,246,.12),
+    inset 1px 1px 0 rgba(255,255,255,.12),
+    inset -22px -24px 60px rgba(0,0,0,.18)!important;
+}
+
+.af-tilt:hover::after{
+  opacity:1;
+  transform:scale(1);
+}
+
+/* Existing application modules inherit the 3D physics */
+.feature-card,.step,.final-cta,.float-card{
+  transform-style:preserve-3d;
+}
+
+.feature-card,.step,.final-cta{
+  background:linear-gradient(145deg,rgba(22,31,48,.78),rgba(11,15,25,.66))!important;
+  border-top-color:rgba(255,255,255,.19)!important;
+  border-left-color:rgba(255,255,255,.13)!important;
+}
+
+/* Active control micro-glow */
+.liquid,.af-glow{
+  --glow-alpha:0;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+
+.liquid::after,.af-glow::after{
+  content:"";
+  position:absolute;
+  width:170px;
+  height:170px;
+  left:50%;
+  top:50%;
+  translate:-50% -50%;
+  z-index:-1;
+  pointer-events:none;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(139,92,246,.56),rgba(59,130,246,.20) 35%,transparent 72%);
+  filter:blur(24px);
+  opacity:var(--glow-alpha);
+  transform:scale(.42);
+  transition:opacity var(--af-med),transform var(--af-med);
+}
+
+.liquid:hover,.af-glow:hover{
+  --glow-alpha:.62;
+  box-shadow:
+    0 16px 50px rgba(139,92,246,.25),
+    0 0 30px rgba(59,130,246,.10);
+}
+
+.liquid:active,.af-glow:active{
+  transform:translateY(1px) scale(.985);
+}
+
+.liquid:focus-visible,.af-glow:focus-visible{
+  outline:2px solid rgba(59,130,246,.85);
+  outline-offset:3px;
+}
+
+/* Brand buttons: purple-blue focal gradients */
+.primary-cta{
+  background:
+    linear-gradient(120deg,var(--af-purple),#7650e8 42%,var(--af-blue))!important;
+  box-shadow:
+    0 14px 45px rgba(139,92,246,.24),
+    inset 1px 1px 0 rgba(255,255,255,.18);
+}
+
+.secondary-cta,.nav-cta{
+  background:rgba(22,31,48,.64)!important;
+  border-top-color:rgba(255,255,255,.20)!important;
+}
+
+/* Semantic status */
+.status-live,.pulse-dot,.backend-status i{
+  background:var(--af-mint)!important;
+}
+
+.backend-status{
+  border-color:rgba(16,185,129,.25)!important;
+  background:rgba(16,185,129,.07)!important;
+}
+
+.present{
+  background:rgba(16,185,129,.14)!important;
+  color:#6ee7b7!important;
+  border-color:rgba(16,185,129,.28)!important;
+}
+
+.absent{
+  background:rgba(239,68,68,.12)!important;
+}
+
+.rate,.hero-copy h1,.feature-card h3,.workflow-copy h2,.final-cta h2{
+  color:var(--af-white);
+}
+
+.hero-lead,.feature-card p,.workflow-copy p,.trust-row,.nav-links{
+  color:var(--af-muted);
+}
+
+/* Typography polish */
+body,button,input,textarea,select{
+  font-feature-settings:"cv02","cv03","cv04","cv11";
+}
+
+h1,h2,h3,strong,b{
+  text-wrap:balance;
+}
+
+.eyebrow{
+  color:#c0c9d8!important;
+}
+
+/* Sliding/kinetic word strip */
+.ticker{
+  position:relative;
+  background:rgba(22,31,48,.30)!important;
+  border-top:1px solid rgba(255,255,255,.10)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:0 12px 45px rgba(0,0,0,.18);
+}
+
+.ticker-track{
+  animation-duration:32s!important;
+}
+
+.ticker span{
+  color:#d2d8e4!important;
+}
+
+.ticker i{
+  color:var(--af-purple)!important;
+  text-shadow:0 0 16px rgba(139,92,246,.55);
+}
+
+/* High-depth hero orb */
+.hero-orb{
+  filter:drop-shadow(-24px 24px 70px rgba(0,0,0,.48));
+}
+
+.orb-face{
+  box-shadow:
+    inset 16px 14px 48px rgba(255,255,255,.08),
+    inset -34px -34px 80px rgba(0,0,0,.44),
+    0 36px 100px rgba(0,0,0,.42),
+    0 0 46px rgba(139,92,246,.12);
+  border-top-color:rgba(255,255,255,.32)!important;
+  border-left-color:rgba(255,255,255,.18)!important;
+}
+
+.orbital-ring{
+  border-color:rgba(139,92,246,.26)!important;
+  box-shadow:0 0 28px rgba(59,130,246,.10);
+}
+
+/* Desktop pointer language */
+#cursorOuter{
+  border-color:rgba(255,255,255,.58)!important;
+}
+
+#cursorDot{
+  background:var(--af-white)!important;
+  box-shadow:
+    0 0 18px rgba(255,255,255,.80),
+    0 0 30px rgba(59,130,246,.25);
+}
+
+.cursor-hover{
+  border-color:rgba(139,92,246,.9)!important;
+  box-shadow:
+    0 0 0 1px rgba(139,92,246,.12),
+    0 0 34px rgba(139,92,246,.28);
+}
+
+/* Better dashboard shell */
+.app-shell{
+  position:relative;
+  isolation:isolate;
+}
+
+.dashboard-topbar{
+  background:linear-gradient(135deg,rgba(22,31,48,.87),rgba(11,15,25,.71))!important;
+  box-shadow:
+    var(--af-shadow),
+    inset 1px 1px 0 rgba(255,255,255,.11),
+    inset -24px -28px 65px rgba(0,0,0,.19);
+}
+
+.dashboard-brand-link small{
+  color:#a0a9b8!important;
+}
+
+.role-badge{
+  color:#ddd6fe!important;
+  border-color:rgba(139,92,246,.28)!important;
+  background:rgba(139,92,246,.10)!important;
+}
+
+/* Inputs: physical inset treatment */
+input,textarea,select,.dialog-input{
+  background:rgba(11,15,25,.74)!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  border-top-color:rgba(255,255,255,.17)!important;
+  border-left-color:rgba(255,255,255,.13)!important;
+  box-shadow:inset 0 8px 22px rgba(0,0,0,.17);
+  backdrop-filter:blur(18px);
+}
+
+input:focus,textarea:focus,select:focus,.dialog-input:focus{
+  border-color:rgba(139,92,246,.72)!important;
+  box-shadow:
+    0 0 0 3px rgba(139,92,246,.11),
+    0 0 26px rgba(59,130,246,.08),
+    inset 0 8px 22px rgba(0,0,0,.17)!important;
+}
+
+/* Attendance cells: tactile state transitions */
+.att{
+  position:relative;
+  overflow:hidden;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.08),
+    0 8px 22px rgba(0,0,0,.16);
+}
+
+.att:hover{
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.27),
+    0 0 22px rgba(59,130,246,.11),
+    inset 1px 1px 0 rgba(255,255,255,.10);
+}
+
+/* Modals and feedback */
+.auth-panel,.modal>.glass{
+  box-shadow:
+    var(--af-shadow-deep),
+    inset 1px 1px 0 rgba(255,255,255,.11),
+    inset -26px -30px 72px rgba(0,0,0,.20)!important;
+}
+
+/* Utility for future WebGL layers */
+.af-webgl-stage{
+  position:relative;
+  min-height:420px;
+  perspective:1400px;
+  transform-style:preserve-3d;
+}
+
+.af-webgl-stage > .af-bg-mesh,
+.af-webgl-stage > .af-glow-mesh{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+
+.af-bg-mesh{
+  z-index:0;
+  opacity:.55;
+  filter:blur(.2px);
+  transform:translateZ(-180px);
+}
+
+.af-glow-mesh{
+  z-index:1;
+  transform:translateZ(-70px);
+  filter:blur(20px);
+  opacity:.75;
+}
+
+.af-webgl-ui{
+  position:relative;
+  z-index:3;
+  transform:translateZ(30px);
+}
+
+/* Reduced motion remains a first-class UX state */
+@media(prefers-reduced-motion:reduce){
+  .af-tilt,
+  .feature-card,.step,.float-card{
+    transform:none!important;
+  }
+  .ticker-track{
+    animation:none!important;
+  }
+}
+
+/* Desktop-first 12-column breakpoints */
+@media(max-width:1100px){
+  .af-grid-12{grid-template-columns:repeat(8,minmax(0,1fr))}
+  .af-span-9,.af-span-10,.af-span-11,.af-span-12{grid-column:span 8}
+}
+
+@media(max-width:760px){
+  .af-container{width:min(100% - 32px,var(--af-max))}
+  .af-grid-12{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .af-span-5,.af-span-6,.af-span-7,.af-span-8{grid-column:span 4}
+  .af-span-9,.af-span-10,.af-span-11,.af-span-12{grid-column:span 4}
+}
