@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Large-team daily attendance management dashboard.">
+  <title>AttendanceFlow — Team Attendance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: { glow: "0 0 40px rgba(99,102,241,.18)" }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root{--bg:#070b17;--line:rgba(148,163,184,.16);--text:#e5e7eb}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 10%,rgba(99,102,241,.14),transparent 30%),radial-gradient(circle at 85% 20%,rgba(20,184,166,.10),transparent 28%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
+    #ambientCanvas{position:fixed;inset:0;z-index:-3;width:100%;height:100%;pointer-events:none}
+    .noise{position:fixed;inset:0;z-index:-2;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E")}
+    .glass{background:linear-gradient(145deg,rgba(15,23,42,.82),rgba(15,23,42,.52));border:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 24px 70px rgba(0,0,0,.20)}
+    .liquid{position:relative;isolation:isolate;overflow:hidden;border:0;transition:transform .2s ease,box-shadow .2s ease}
+    .liquid::before{content:"";position:absolute;width:180%;height:180%;left:-40%;top:100%;border-radius:45%;background:linear-gradient(135deg,rgba(255,255,255,.22),rgba(255,255,255,.03));transform:rotate(-8deg);transition:top .65s cubic-bezier(.22,1,.36,1);z-index:-1}
+    .liquid:hover::before{top:-35%}.liquid:hover{transform:translateY(-2px);box-shadow:0 14px 35px rgba(99,102,241,.20)}.liquid:active{transform:translateY(0) scale(.98)}
+    #cursorOuter,#cursorDot{position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);border-radius:999px}
+    #cursorOuter{width:34px;height:34px;border:1px solid rgba(129,140,248,.65);box-shadow:0 0 20px rgba(129,140,248,.16);transition:width .2s ease,height .2s ease,border-color .2s ease}
+    #cursorDot{width:6px;height:6px;background:#a5b4fc;box-shadow:0 0 15px #818cf8}
+    body.cursor-hover #cursorOuter{width:48px;height:48px;border-color:rgba(45,212,191,.8)}
+    .table-scroll::-webkit-scrollbar{height:9px}.table-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.04)}.table-scroll::-webkit-scrollbar-thumb{background:linear-gradient(90deg,#6366f1,#14b8a6);border-radius:99px}
+    .attendance-btn{min-width:76px;height:56px;transition:all .2s ease}.attendance-btn:hover{transform:scale(1.06)}
+    .status-present{color:#34d399;background:rgba(16,185,129,.10);box-shadow:inset 0 0 0 1px rgba(52,211,153,.15)}
+    .status-absent{color:#fb7185;background:rgba(244,63,94,.10);box-shadow:inset 0 0 0 1px rgba(251,113,133,.15)}
+    .status-empty{color:#64748b;background:rgba(255,255,255,.025)}
+    .avatar-ring{padding:2px;border-radius:999px;background:conic-gradient(from 180deg,#818cf8,#2dd4bf,#818cf8)}
+    .avatar-fallback{display:grid;place-items:center;width:44px;height:44px;border-radius:999px;background:linear-gradient(135deg,rgba(99,102,241,.28),rgba(20,184,166,.22));color:#c7d2fe;font-weight:900}
+    @media(pointer:coarse){#cursorOuter,#cursorDot{display:none}}
+  </style>
+</head>
+<body>
+<canvas id="ambientCanvas"></canvas><div class="noise"></div><div id="cursorOuter"></div><div id="cursorDot"></div>
+
+<header class="sticky top-0 z-40 border-b border-white/10 bg-slate-950/65 backdrop-blur-xl">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+    <div class="flex items-center gap-3">
+      <div class="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 to-teal-400 shadow-glow"><span class="text-lg font-black">✓</span></div>
+      <div><h1 class="font-black tracking-tight">Attendance<span class="text-indigo-400">Flow</span></h1><p class="text-xs text-slate-400">Large-team daily attendance</p></div>
+    </div>
+    <div class="hidden items-center gap-2 sm:flex"><span class="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span><span class="text-xs text-slate-400">Saved locally</span></div>
+  </div>
+</header>
+
+<main class="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
+<section class="glass relative overflow-hidden rounded-3xl p-6 sm:p-8">
+  <div class="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl"></div>
+  <div class="relative">
+    <div class="mb-5 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+      <div>
+        <div class="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-400/20 bg-indigo-400/10 px-3 py-1 text-xs text-indigo-300"><span>●</span> Daily Register</div>
+        <h2 class="text-3xl font-black tracking-tight sm:text-4xl">Attendance Dashboard</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Save your team once, add attendance dates, and mark each person present or absent directly in the register.</p>
+      </div>
+      <button onclick="openPersonModal()" class="liquid rounded-2xl bg-indigo-500 px-5 py-3 text-sm font-bold text-white">+ Add Person</button>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-4">
+      <div class="glass rounded-2xl p-4"><p class="text-xs uppercase tracking-widest text-slate-500">People</p><p id="peopleCount" class="mt-1 text-3xl font-black">0</p></div>
+      <div class="glass rounded-2xl p-4"><p class="text-xs uppercase tracking-widest text-slate-500">Present today</p><p id="presentCount" class="mt-1 text-3xl font-black text-emerald-400">0</p></div>
+      <div class="glass rounded-2xl p-4"><p class="text-xs uppercase tracking-widest text-slate-500">Absent today</p><p id="absentCount" class="mt-1 text-3xl font-black text-rose-400">0</p></div>
+      <div class="glass rounded-2xl p-4"><p class="text-xs uppercase tracking-widest text-slate-500">Marked today</p><p id="markedCount" class="mt-1 text-3xl font-black text-indigo-300">0</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="glass rounded-3xl p-4 sm:p-6">
+  <div class="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div><h3 class="text-xl font-bold">Attendance Register</h3><p class="mt-1 text-sm text-slate-400">Click a cell to cycle: not marked → ✓ present → ✕ absent → not marked.</p></div>
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-end">
+      <label class="text-xs font-semibold text-slate-400">SEARCH TEAM<input id="searchInput" type="search" placeholder="Find a person..." oninput="render()" class="mt-1 block w-full rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-400 sm:w-52"></label>
+      <label class="text-xs font-semibold text-slate-400">NEW DATE<input id="dateInput" type="date" class="mt-1 block rounded-xl border border-white/10 bg-slate-900/80 px-3 py-2.5 text-sm text-white outline-none focus:border-indigo-400"></label>
+      <button onclick="addDate()" class="liquid rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold text-white">+ Date</button>
+      <button onclick="clearAllData()" class="rounded-xl border border-rose-400/20 px-4 py-2.5 text-sm font-semibold text-rose-300 hover:bg-rose-500/10">Clear</button>
+    </div>
+  </div>
+  <div class="table-scroll overflow-x-auto rounded-2xl border border-white/10">
+    <table class="w-full border-collapse"><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
+  </div>
+  <div id="emptyState" class="hidden py-14 text-center">
+    <div class="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-indigo-500/10 text-2xl">👥</div>
+    <h4 class="mt-4 font-bold">Your register is empty</h4>
+    <p class="mt-1 text-sm text-slate-500">Add people. A profile photo is optional.</p>
+    <button onclick="openPersonModal()" class="liquid mt-4 rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-bold">Add first person</button>
+  </div>
+  <div id="noSearchResults" class="hidden py-10 text-center text-sm text-slate-500">No team member matches your search.</div>
+</section>
+<p class="pb-6 text-center text-xs text-slate-600">AttendanceFlow • HTML5 Canvas • CSS3 • Tailwind CDN • Vanilla JavaScript</p>
+</main>
+
+<div id="personModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-md">
+  <div class="glass w-full max-w-md rounded-3xl p-6">
+    <div class="mb-6 flex items-start justify-between"><div><h3 class="text-xl font-black">Add Person</h3><p class="mt-1 text-sm text-slate-400">Photo is optional; the name is required.</p></div><button onclick="closePersonModal()" class="text-2xl text-slate-500 hover:text-white">×</button></div>
+    <form onsubmit="savePerson(event)" class="space-y-4">
+      <div><label class="text-xs font-bold uppercase tracking-wider text-slate-400">Full name</label><input id="personName" required placeholder="e.g. Jean Claude" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none focus:border-indigo-400"></div>
+      <div><label class="text-xs font-bold uppercase tracking-wider text-slate-400">Profile photo <span class="normal-case text-slate-600">(optional)</span></label><input id="personPhoto" type="file" accept="image/*" class="mt-1 w-full rounded-xl border border-white/10 bg-slate-950/70 p-2 text-sm text-slate-300"></div>
+      <div class="flex gap-3 pt-2"><button type="button" onclick="closePersonModal()" class="flex-1 rounded-xl border border-white/10 px-4 py-3 font-semibold hover:bg-white/5">Cancel</button><button type="submit" class="liquid flex-1 rounded-xl bg-indigo-500 px-4 py-3 font-bold">Save Person</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+const KEY="attendance_flow_canvas_v3";
+let state=JSON.parse(localStorage.getItem(KEY)||"null")||{people:[],dates:[],attendance:{}};
+const today=new Date().toISOString().slice(0,10);
+document.getElementById("dateInput").value=today;
+
+function persist(){localStorage.setItem(KEY,JSON.stringify(state))}
+function escapeHTML(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function dateLabel(value){return new Date(value+"T00:00:00").toLocaleDateString(undefined,{weekday:"short",day:"2-digit",month:"short"})}
+function initials(name){return name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase()||"?"}
+function openPersonModal(){const m=document.getElementById("personModal");m.classList.remove("hidden");m.classList.add("flex");setTimeout(()=>document.getElementById("personName").focus(),50)}
+function closePersonModal(){const m=document.getElementById("personModal");m.classList.add("hidden");m.classList.remove("flex");document.getElementById("personName").value="";document.getElementById("personPhoto").value=""}
+
+function savePerson(e){
+  e.preventDefault();
+  const name=document.getElementById("personName").value.trim();
+  const file=document.getElementById("personPhoto").files[0];
+  if(!name)return;
+  const finish=photo=>{state.people.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())),name,photo:photo||""});persist();closePersonModal();render()};
+  if(!file){finish("");return}
+  const reader=new FileReader();
+  reader.onload=()=>finish(reader.result);
+  reader.readAsDataURL(file);
+}
+
+function addDate(){
+  const date=document.getElementById("dateInput").value;
+  if(!date)return alert("Choose a date first.");
+  if(state.dates.includes(date))return alert("That date is already added.");
+  state.dates.push(date);state.dates.sort();persist();render();
+}
+function toggleAttendance(personId,date){
+  const key=personId+"_"+date;
+  if(!state.attendance[key])state.attendance[key]="present";
+  else if(state.attendance[key]==="present")state.attendance[key]="absent";
+  else delete state.attendance[key];
+  persist();render();
+}
+function removePerson(id){
+  if(!confirm("Remove this person and all their attendance?"))return;
+  state.people=state.people.filter(p=>p.id!==id);
+  Object.keys(state.attendance).forEach(k=>{if(k.startsWith(id+"_"))delete state.attendance[k]});
+  persist();render();
+}
+function removeDate(date){
+  if(!confirm("Remove "+dateLabel(date)+" and its attendance?"))return;
+  state.dates=state.dates.filter(d=>d!==date);
+  Object.keys(state.attendance).forEach(k=>{if(k.endsWith("_"+date))delete state.attendance[k]});
+  persist();render();
+}
+function clearAllData(){
+  if(!confirm("Delete all people, photos, dates and attendance?"))return;
+  state={people:[],dates:[],attendance:{}};persist();render();
+}
+
+function render(){
+  document.getElementById("peopleCount").textContent=state.people.length;
+  const present=state.people.filter(p=>state.attendance[p.id+"_"+today]==="present").length;
+  const absent=state.people.filter(p=>state.attendance[p.id+"_"+today]==="absent").length;
+  document.getElementById("presentCount").textContent=present;
+  document.getElementById("absentCount").textContent=absent;
+  document.getElementById("markedCount").textContent=present+absent;
+
+  const search=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
+  const people=state.people.filter(p=>p.name.toLowerCase().includes(search));
+
+  document.getElementById("tableHead").innerHTML=`
+  <tr class="bg-white/[.035]">
+    <th class="sticky left-0 z-20 min-w-[280px] border-b border-r border-white/10 bg-slate-950/95 px-4 py-4 text-left text-xs uppercase tracking-widest text-slate-400">Person</th>
+    ${state.dates.map(d=>`
+      <th class="min-w-[100px] border-b border-r border-white/10 px-3 py-4 text-center">
+        <div class="text-xs font-bold text-slate-200">${dateLabel(d)}</div>
+        <button onclick="removeDate('${d}')" class="mt-1 text-[10px] text-rose-400 hover:underline">remove</button>
+      </th>`).join("")}
+  </tr>`;
+
+  document.getElementById("tableBody").innerHTML=people.map(p=>{
+    const avatar=p.photo
+      ? `<img src="${p.photo}" alt="${escapeHTML(p.name)}" class="h-11 w-11 rounded-full object-cover">`
+      : `<div class="avatar-fallback">${escapeHTML(initials(p.name))}</div>`;
+    return `
+    <tr class="group border-b border-white/5 hover:bg-white/[.025]">
+      <td class="sticky left-0 z-10 min-w-[280px] border-r border-white/10 bg-slate-950/90 px-4 py-3 backdrop-blur-xl">
+        <div class="flex items-center gap-3"><div class="avatar-ring">${avatar}</div><div class="min-w-0"><div class="truncate text-sm font-bold">${escapeHTML(p.name)}</div><button onclick="removePerson('${p.id}')" class="text-[11px] text-slate-500 hover:text-rose-400">Remove</button></div></div>
+      </td>
+      ${state.dates.map(d=>{
+        const s=state.attendance[p.id+"_"+d];
+        const cls=s==="present"?"status-present":s==="absent"?"status-absent":"status-empty";
+        const icon=s==="present"?"✓":s==="absent"?"✕":"•";
+        const label=s==="present"?"Present":s==="absent"?"Absent":"Not marked";
+        return `<td class="border-r border-white/5 p-1.5 text-center"><button onclick="toggleAttendance('${p.id}','${d}')" class="attendance-btn w-full rounded-xl ${cls}" title="${label}" aria-label="${escapeHTML(p.name)} — ${label}"><span class="text-2xl font-black">${icon}</span></button></td>`;
+      }).join("")}
+    </tr>`;
+  }).join("");
+
+  document.getElementById("emptyState").classList.toggle("hidden",state.people.length>0);
+  document.getElementById("noSearchResults").classList.toggle("hidden",state.people.length===0||people.length>0);
+}
+
+const outer=document.getElementById("cursorOuter"),dot=document.getElementById("cursorDot");
+let mx=innerWidth/2,my=innerHeight/2,ox=mx,oy=my;
+window.addEventListener("mousemove",e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx+"px";dot.style.top=my+"px";document.body.classList.toggle("cursor-hover",!!e.target.closest("button,input,label"))});
+function cursorLoop(){ox+=(mx-ox)*.14;oy+=(my-oy)*.14;outer.style.left=ox+"px";outer.style.top=oy+"px";requestAnimationFrame(cursorLoop)}cursorLoop();
+
+const canvas=document.getElementById("ambientCanvas"),ctx=canvas.getContext("2d");let W,H,particles=[];
+function resizeCanvas(){W=canvas.width=innerWidth*devicePixelRatio;H=canvas.height=innerHeight*devicePixelRatio;canvas.style.width=innerWidth+"px";canvas.style.height=innerHeight+"px";ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+function makeParticles(){particles=Array.from({length:22},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:25+Math.random()*75,vx:(Math.random()-.5)*.12,vy:(Math.random()-.5)*.12,a:.025+Math.random()*.035}))}
+function drawCanvas(){ctx.clearRect(0,0,innerWidth,innerHeight);for(const p of particles){p.x+=p.vx;p.y+=p.vy;if(p.x<-p.r)p.x=innerWidth+p.r;if(p.x>innerWidth+p.r)p.x=-p.r;if(p.y<-p.r)p.y=innerHeight+p.r;if(p.y>innerHeight+p.r)p.y=-p.r;const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);g.addColorStop(0,`rgba(99,102,241,${p.a})`);g.addColorStop(.55,`rgba(20,184,166,${p.a*.45})`);g.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}requestAnimationFrame(drawCanvas)}
+addEventListener("resize",()=>{resizeCanvas();makeParticles()});resizeCanvas();makeParticles();drawCanvas();render();
+</script>
+</body>
+</html>
