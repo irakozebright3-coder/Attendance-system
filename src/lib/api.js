@@ -46,7 +46,7 @@ export async function signOut() {
 export async function findMembership(userId) {
   const { data, error } = await db
     .from("team_members")
-    .select("team_id,role,teams(id,name,invite_code)")
+    .select("team_id,role,teams(id,name)")
     .eq("user_id", userId)
     .limit(1)
     .maybeSingle();
