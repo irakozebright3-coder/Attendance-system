@@ -105,3 +105,19 @@ Attendance-system/
 ├── vercel.json
 └── README.md
 \`\`\`
+
+
+## Premium UI/UX design system
+
+The visual blueprint is documented in `DESIGN_SYSTEM.md`.
+
+The reusable production design layer is in `src/design-system.css` and includes:
+- exact AttendanceFlow brand tokens
+- 12-column desktop grid utilities
+- global top-left simulated lighting
+- glassmorphism depth recipe
+- 3D tilt/parallax physics
+- purple/blue micro-glows
+- cursor interaction states
+- WebGL/Three.js layer placeholders
+- reduced-motion and responsive rules
