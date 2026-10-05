@@ -1,7 +1,7 @@
 -- ============================================================
 -- AttendanceFlow — Supabase schema (idempotent: safe to re-run)
 -- Tables: teams, team_members, people, attendance_dates,
---         attendance, audit_events
+--         attendance, audit_events, team_settings
 -- Security: RLS on every table, admin-only management,
 --           member-only attendance marking, storage rules,
 --           server-side validation triggers, audit trail.
@@ -26,6 +26,17 @@ alter table public.teams
   add column if not exists invite_code text not null default encode(gen_random_bytes(16),'hex');
 
 create unique index if not exists teams_invite_code_idx on public.teams(invite_code);
+
+create table if not exists public.team_settings(
+  team_id uuid primary key references public.teams(id) on delete cascade,
+  timezone text not null default 'Africa/Kigali',
+  date_format text not null default 'YYYY-MM-DD',
+  week_starts_on smallint not null default 1 check(week_starts_on between 0 and 6),
+  allow_member_attendance boolean not null default true,
+  require_photo boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 
 create table if not exists public.team_members(
   team_id uuid not null references public.teams(id) on delete cascade,
@@ -104,6 +115,7 @@ alter table public.people enable row level security;
 alter table public.attendance_dates enable row level security;
 alter table public.attendance enable row level security;
 alter table public.audit_events enable row level security;
+alter table public.team_settings enable row level security;
 
 -- ------------------------------------------------------------
 -- HELPER FUNCTIONS (security definer so policies never recurse)
@@ -135,6 +147,44 @@ grant execute on function public.is_team_member(uuid) to authenticated, anon;
 grant execute on function public.is_team_admin(uuid) to authenticated, anon;
 
 -- ------------------------------------------------------------
+-- TEAM SETTINGS
+-- Every team gets exactly one settings row.
+-- ------------------------------------------------------------
+
+create or replace function public.ensure_team_settings(p_team_id uuid)
+returns public.team_settings
+language plpgsql
+security definer
+set search_path=public
+as $
+declare
+  settings public.team_settings;
+begin
+  if not public.is_team_member(p_team_id) then
+    raise exception 'Not authorized for this team';
+  end if;
+
+  insert into public.team_settings(team_id)
+  values(p_team_id)
+  on conflict(team_id) do nothing;
+
+  select * into settings
+  from public.team_settings
+  where team_id=p_team_id;
+
+  return settings;
+end;
+$;
+
+grant execute on function public.ensure_team_settings(uuid) to authenticated;
+revoke execute on function public.ensure_team_settings(uuid) from public, anon;
+
+-- Backfill settings for all existing teams.
+insert into public.team_settings(team_id)
+select id from public.teams
+on conflict(team_id) do nothing;
+
+-- ------------------------------------------------------------
 -- TEAM CREATION RPC (only secure path to create a team)
 -- ------------------------------------------------------------
 
@@ -158,6 +208,26 @@ begin
     raise exception 'Team name is too long';
   end if;
 
+  -- Repair-safe: if this user already owns a team from a partially
+  -- completed first-run flow, return it instead of creating duplicates.
+  select * into t
+  from public.teams
+  where created_by=auth.uid()
+  order by created_at asc
+  limit 1;
+
+  if t.id is not null then
+    insert into public.team_members(team_id,user_id,role)
+    values(t.id,auth.uid(),'owner')
+    on conflict(team_id,user_id) do update set role='owner';
+
+    insert into public.team_settings(team_id)
+    values(t.id)
+    on conflict(team_id) do nothing;
+
+    return t;
+  end if;
+
   insert into public.teams(name,created_by)
   values(clean_name,auth.uid())
   returning * into t;
@@ -165,9 +235,13 @@ begin
   insert into public.team_members(team_id,user_id,role)
   values(t.id,auth.uid(),'owner');
 
+  insert into public.team_settings(team_id)
+  values(t.id)
+  on conflict(team_id) do nothing;
+
   return t;
 end;
-$$;
+$;
 
 grant execute on function public.create_team(text) to authenticated;
 revoke execute on function public.create_team(text) from public, anon;
@@ -376,6 +450,11 @@ create trigger attendance_dates_cleanup
 after delete on public.attendance_dates
 for each row execute function public.delete_attendance_for_date();
 
+drop trigger if exists team_settings_touch_updated_at on public.team_settings;
+create trigger team_settings_touch_updated_at
+before update on public.team_settings
+for each row execute function public.touch_person();
+
 drop trigger if exists audit_teams on public.teams;
 create trigger audit_teams
 after insert on public.teams
@@ -490,6 +569,17 @@ create policy "admins read audit" on public.audit_events
   for select to authenticated
   using(public.is_team_admin(team_id));
 
+-- TEAM SETTINGS: every member can read, owner/admin can update.
+drop policy if exists "members read team settings" on public.team_settings;
+drop policy if exists "admins update team settings" on public.team_settings;
+create policy "members read team settings" on public.team_settings
+  for select to authenticated
+  using(public.is_team_member(team_id));
+create policy "admins update team settings" on public.team_settings
+  for update to authenticated
+  using(public.is_team_admin(team_id))
+  with check(public.is_team_admin(team_id));
+
 -- ------------------------------------------------------------
 -- STORAGE (private bucket "avatars", folder per team: <team_id>/<file>)
 -- ------------------------------------------------------------
@@ -571,3 +661,11 @@ begin
     execute 'alter publication supabase_realtime add table public.attendance';
   end if;
 end $$;
+
+
+-- ------------------------------------------------------------
+-- POSTGREST SCHEMA CACHE
+-- ------------------------------------------------------------
+-- Refresh the API schema cache so newly created RPC functions and
+-- columns are available immediately after this script completes.
+notify pgrst, 'reload schema';
