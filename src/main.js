@@ -227,8 +227,27 @@ async function teamSetup() {
     S.role = membership.role;
     return true;
   }
-  // signed in but no team: create or join
-  const defaultName = S.session.user.user_metadata?.team_name || "";
+
+  // First-run recovery: if the account already carries the team name entered
+  // during sign-up, create its owner workspace automatically. This covers
+  // accounts that were created successfully but never completed the first
+  // workspace transaction because email confirmation interrupted the flow.
+  const defaultName = String(S.session.user.user_metadata?.team_name || "").trim();
+  if (defaultName) {
+    try {
+      const created = await api.createTeam(defaultName);
+      if (created) {
+        S.team = created;
+        S.role = "owner";
+        return true;
+      }
+    } catch (err) {
+      console.warn("Automatic workspace creation failed; showing setup screen.", err);
+      toast("Your account is valid, but the workspace could not be created automatically. Please create it below.", "error");
+    }
+  }
+
+  // Signed in but no team: let the user create a workspace or join an existing one.
   workspaceSetupScreen({
     defaultName,
     onSignOut: () => {
