@@ -179,7 +179,7 @@ begin
 
   return settings;
 end;
-$$;
+$attendanceflow$;
 
 grant execute on function public.ensure_team_settings(uuid) to authenticated;
 revoke execute on function public.ensure_team_settings(uuid) from public, anon;
