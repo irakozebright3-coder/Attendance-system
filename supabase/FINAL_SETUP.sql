@@ -179,7 +179,7 @@ begin
 
   return settings;
 end;
-$;
+$$;
 
 grant execute on function public.ensure_team_settings(uuid) to authenticated;
 revoke execute on function public.ensure_team_settings(uuid) from public, anon;
@@ -256,7 +256,7 @@ begin
 
   return t;
 end;
-$;
+$$;
 
 grant execute on function public.create_team(text) to authenticated;
 revoke execute on function public.create_team(text) from public, anon;
