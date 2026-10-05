@@ -200,56 +200,78 @@ async function doAuth(newUser) {
 function dashboard() {
   const managementControls = canManage();
   app.innerHTML =
-    '<main class="app-shell max-w-[1500px] mx-auto px-4 md:px-8 py-6">' +
-      '<header class="dashboard-topbar glass rounded-3xl px-5 py-4">' +
-        '<div class="dashboard-brand">' +
-          '<a class="brand dashboard-brand-link" href="#" aria-label="AttendanceFlow">' +
-            logoMarkup("dashboard-logo") +
-            '<span><strong>Attendance<span class="brand-accent">Flow</span></strong><small>Team attendance workspace</small></span>' +
-          '</a>' +
-          '<div class="backend-status"><i></i><span id="backendStatus">Connecting backend…</span></div>' +
-        '</div>' +
-        '<div class="dashboard-user">' +
-          '<span id="emailLabel" class="text-xs text-slate-400"></span>' +
-          '<span id="roleLabel" class="role-badge"></span>' +
-          '<button id="reload" class="liquid rounded-xl bg-white/5 px-4 py-2 font-bold">Refresh</button>' +
-          '<button id="logout" class="liquid rounded-xl bg-slate-800 px-4 py-2 font-bold">Sign out</button>' +
-        '</div>' +
-      '</header>' +
-      '<section class="py-10 flex flex-col lg:flex-row lg:items-end justify-between gap-5">' +
-        '<div><div class="text-violet-300 text-sm font-semibold">TEAM ATTENDANCE</div><h1 class="text-4xl md:text-6xl font-black mt-2">Know who is <span class="text-transparent bg-clip-text bg-gradient-to-r from-violet-300 to-cyan-300">here.</span></h1><p class="text-slate-400 mt-3">Your team data is stored in Supabase. Photos are optional; upload or capture one with the camera.</p></div>' +
-        '<div class="flex gap-2 flex-wrap"><button id="newDate" class="liquid rounded-2xl bg-violet-600 px-5 py-3 font-bold">+ Add date</button><button id="newPerson" class="liquid rounded-2xl bg-white/5 px-5 py-3 font-bold">+ Add person</button></div>' +
-      '</section>' +
-      '<section class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">' +
-        '<div class="glass rounded-2xl p-4"><div class="text-xs text-slate-400">People</div><div id="peopleCount" class="text-2xl font-black">0</div></div>' +
-        '<div class="glass rounded-2xl p-4"><div class="text-xs text-slate-400">Present today</div><div id="presentCount" class="text-2xl font-black text-green-300">0</div></div>' +
-        '<div class="glass rounded-2xl p-4"><div class="text-xs text-slate-400">Absent today</div><div id="absentCount" class="text-2xl font-black text-red-300">0</div></div>' +
-        '<div class="glass rounded-2xl p-4"><div class="text-xs text-slate-400">Rate</div><div id="rate" class="text-2xl font-black text-cyan-300">0%</div></div>' +
-      '</section>' +
-      '<section class="glass rounded-3xl overflow-hidden">' +
-        '<div class="px-5 py-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-3"><div><b>Attendance register</b><div class="text-xs text-slate-500 mt-1">Click a cell: empty → present → absent → empty</div></div><span class="text-[10px] uppercase tracking-[.18em] text-slate-500">Stored in PostgreSQL</span></div>' +
-        '<div class="overflow-x-auto"><table class="w-full text-sm"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>' +
-        '<div id="empty" class="hidden text-center py-16 text-slate-500">No people yet. Add your first person.</div>' +
-      '</section>' +
+    '<main class="app-shell dashboard-page">' +
+      '<div class="dashboard-ambient dashboard-ambient-a"></div><div class="dashboard-ambient dashboard-ambient-b"></div>' +
+      '<div class="af-container">' +
+        '<header class="dashboard-topbar af-glass af-tilt">' +
+          '<div class="dashboard-brand">' +
+            '<a class="brand dashboard-brand-link" href="#" aria-label="AttendanceFlow">' +
+              logoMarkup("dashboard-logo") +
+              '<span><strong>Attendance<span class="brand-accent">Flow</span></strong><small id="teamLabel">Team attendance workspace</small></span>' +
+            '</a>' +
+            '<div class="backend-status"><i></i><span id="backendStatus">Connecting backend…</span></div>' +
+          '</div>' +
+          '<div class="dashboard-user">' +
+            '<span id="emailLabel" class="desktop-email"></span>' +
+            '<span id="roleLabel" class="role-badge"></span>' +
+            '<button id="reload" class="liquid dashboard-action">↻ Refresh</button>' +
+            '<button id="logout" class="liquid dashboard-action logout-action">Sign out</button>' +
+          '</div>' +
+        '</header>' +
+
+        '<section class="dashboard-hero">' +
+          '<div class="dashboard-hero-copy">' +
+            '<div class="eyebrow"><span class="pulse-dot"></span> LIVE WORKSPACE</div>' +
+            '<h1>Know who is <span class="gradient-text">here.</span></h1>' +
+            '<p>Your attendance register is connected to the real AttendanceFlow backend. Every person, date, photo and attendance change is stored for your team.</p>' +
+            '<div class="dashboard-hero-meta"><span>POSTGRESQL</span><span>REALTIME</span><span>SECURE STORAGE</span></div>' +
+          '</div>' +
+          '<div class="dashboard-actions">' +
+            '<button id="newDate" class="liquid primary-cta dashboard-main-cta"><span class="cta-plus">+</span> Add attendance date <span>↗</span></button>' +
+            '<button id="newPerson" class="liquid secondary-cta dashboard-main-cta"><span class="cta-plus">+</span> Add person</button>' +
+          '</div>' +
+        '</section>' +
+
+        '<section class="dashboard-stats af-grid-12">' +
+          '<article class="stat-card af-glass af-tilt af-span-3"><span class="stat-orb stat-orb-purple"></span><div class="stat-label">ACTIVE PEOPLE</div><div id="peopleCount" class="stat-value">0</div><div class="stat-caption">Saved in this workspace</div></article>' +
+          '<article class="stat-card af-glass af-tilt af-span-3"><span class="stat-orb stat-orb-mint"></span><div class="stat-label">PRESENT TODAY</div><div id="presentCount" class="stat-value stat-mint">0</div><div class="stat-caption">Marked present today</div></article>' +
+          '<article class="stat-card af-glass af-tilt af-span-3"><span class="stat-orb stat-orb-red"></span><div class="stat-label">ABSENT TODAY</div><div id="absentCount" class="stat-value stat-red">0</div><div class="stat-caption">Marked absent today</div></article>' +
+          '<article class="stat-card af-glass af-tilt af-span-3"><span class="stat-orb stat-orb-blue"></span><div class="stat-label">ATTENDANCE RATE</div><div id="rate" class="stat-value stat-blue">0%</div><div class="stat-caption">Based on marked records</div></article>' +
+        '</section>' +
+
+        '<section class="register-shell af-glass">' +
+          '<div class="register-toolbar">' +
+            '<div><div class="register-kicker">SHARED REGISTER</div><h2>Attendance register</h2><p>Click a cell: <b>empty</b> → <b class="present-text">present</b> → <b class="absent-text">absent</b> → empty</p></div>' +
+            '<div class="register-live"><i></i><span>Live database</span></div>' +
+          '</div>' +
+          '<div class="register-stage"><div class="register-glow"></div><div class="overflow-x-auto register-scroll"><table class="w-full text-sm"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div><div id="empty" class="hidden empty-register"><div class="empty-icon">＋</div><h3>No people yet</h3><p>Add your first person to start the shared register.</p><button id="emptyAddPerson" class="liquid primary-cta">Add first person ↗</button></div></div>' +
+        '</section>' +
+      '</div>' +
     '</main>' +
     '<div id="modal" class="modal hidden"></div>' +
     '<div id="dateModal" class="modal hidden"></div>';
 
   document.getElementById("emailLabel").textContent = S.session?.user?.email || "";
   document.getElementById("roleLabel").textContent = S.role.toUpperCase();
+  document.getElementById("teamLabel").textContent = S.team?.name || "Team attendance workspace";
+
   document.getElementById("logout").onclick = async () => {
     await db.auth.signOut();
   };
   document.getElementById("reload").onclick = () => load(true);
   document.getElementById("newDate").onclick = addDate;
   document.getElementById("newPerson").onclick = personModal;
+  document.getElementById("emptyAddPerson").onclick = personModal;
   document.querySelector(".dashboard-brand-link").onclick = (e) => e.preventDefault();
+
   bindParallax();
 
   if (!managementControls) {
-    document.getElementById("newDate").classList.remove("hidden");
+    const dateButton = document.getElementById("newDate");
+    dateButton.classList.add("member-date-action");
   }
 }
+
 
 async function teamSetup() {
   const q = await db
