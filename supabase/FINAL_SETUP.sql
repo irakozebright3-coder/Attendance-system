@@ -189,6 +189,16 @@ insert into public.team_settings(team_id)
 select id from public.teams
 on conflict(team_id) do nothing;
 
+-- Repair existing teams whose creator lost/missed the owner membership.
+insert into public.team_members(team_id,user_id,role)
+select t.id,t.created_by,'owner'
+from public.teams t
+where not exists(
+  select 1 from public.team_members tm
+  where tm.team_id=t.id and tm.user_id=t.created_by
+)
+on conflict(team_id,user_id) do update set role='owner';
+
 -- ------------------------------------------------------------
 -- TEAM CREATION RPC (only secure path to create a team)
 -- ------------------------------------------------------------
