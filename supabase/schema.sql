@@ -156,7 +156,7 @@ returns public.team_settings
 language plpgsql
 security definer
 set search_path=public
-as $
+as $attendanceflow$
 declare
   settings public.team_settings;
 begin
