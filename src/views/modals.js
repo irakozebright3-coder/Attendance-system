@@ -115,7 +115,7 @@ export async function personModal(ctx, person = null) {
               : '<span class="text-xs text-slate-500">Photo</span>') +
           "</div>" +
           '<input id="file" type="file" accept="image/jpeg,image/png,image/webp" class="hidden">' +
-          '<div id="cameraBox" class="hidden mt-3"><video id="video" autoplay playsinline class="w-full rounded-xl bg-black"></video>' +
+          '<div id="cameraBox" class="hidden mt-3"><video id="video" autoplay playsinline muted class="camera-video w-full rounded-xl bg-black" aria-label="Live camera preview"></video>' +
           '<button type="button" id="capture" class="w-full mt-2 rounded-xl bg-cyan-600 py-2 font-bold">Capture photo</button></div>' +
         "</div>" +
         '<label class="dialog-label">Full name<input id="personName" required maxlength="160" ' + (manager ? "" : "disabled") + ' value="' + esc(current.name) + '" placeholder="Full name" class="dialog-input"></label>' +
@@ -573,5 +573,75 @@ export async function auditModal(ctx) {
       : "<p class='text-slate-500'>No audit events yet.</p>";
   } catch (err) {
     body.innerHTML = "<p class='text-red-300'>Could not load the audit log: " + esc(err.message) + "</p>";
+  }
+}
+
+
+export async function teamSettingsModal(ctx) {
+  const { S, canManage, toast } = ctx;
+  const manager = canManage();
+  let settings;
+  try {
+    settings = await api.getTeamSettings(S.team.id);
+  } catch (err) {
+    toast(err.message || "Could not load team settings.", "error");
+    return;
+  }
+
+  openModal(
+    '<div class="p-6" role="dialog" aria-modal="true" aria-labelledby="teamSettingsTitle">' +
+      '<div class="flex justify-between items-start"><div><div class="register-kicker">WORKSPACE CONTROL</div><h2 id="teamSettingsTitle" class="text-xl font-black mt-1">Team settings</h2><p class="text-xs text-slate-500 mt-1">These settings belong only to <b>' + esc(S.team.name) + '</b>.</p></div><button id="closeTeamSettings" class="text-2xl" aria-label="Close">×</button></div>' +
+      '<form id="teamSettingsForm" class="settings-form mt-5">' +
+        '<div class="settings-grid">' +
+          '<label>Timezone<select name="timezone" class="dialog-input"><option value="Africa/Kigali">Africa/Kigali</option><option value="UTC">UTC</option><option value="Africa/Nairobi">Africa/Nairobi</option><option value="Africa/Kampala">Africa/Kampala</option><option value="Europe/London">Europe/London</option><option value="America/New_York">America/New_York</option></select></label>' +
+          '<label>Date format<select name="date_format" class="dialog-input"><option value="YYYY-MM-DD">YYYY-MM-DD</option><option value="DD/MM/YYYY">DD/MM/YYYY</option><option value="MM/DD/YYYY">MM/DD/YYYY</option></select></label>' +
+          '<label>Week starts on<select name="week_starts_on" class="dialog-input"><option value="1">Monday</option><option value="0">Sunday</option></select></label>' +
+          '<label>Access policy<div class="setting-toggle-row"><input id="allowMemberAttendance" name="allow_member_attendance" type="checkbox"><span>Members can mark attendance</span></div></label>' +
+          '<label>Photo policy<div class="setting-toggle-row"><input id="requirePhoto" name="require_photo" type="checkbox"><span>Require a photo for new people</span></div></label>' +
+          '<label>Identity policy<div class="setting-toggle-row"><input id="requireIdentifier" name="require_identifier" type="checkbox"><span>Require an ID / employee number</span></div></label>' +
+        '</div>' +
+        '<div class="admin-safety-note mt-4">These settings apply to this team only. They never change another team's register.</div>' +
+        (manager ? '<button id="saveTeamSettings" class="liquid primary-cta mt-4" type="submit">Save team settings</button>' : '<p class="text-xs text-slate-500 mt-4">You can view these settings, but only an owner or admin can change them.</p>') +
+        '<span id="teamSettingsMsg" class="settings-message"></span>' +
+      '</form>' +
+    '</div>'
+  );
+
+  const form = document.getElementById("teamSettingsForm");
+  form.elements.namedItem("timezone").value = settings.timezone || "Africa/Kigali";
+  form.elements.namedItem("date_format").value = settings.date_format || "YYYY-MM-DD";
+  form.elements.namedItem("week_starts_on").value = String(settings.week_starts_on ?? 1);
+  document.getElementById("allowMemberAttendance").checked = settings.allow_member_attendance !== false;
+  document.getElementById("requirePhoto").checked = Boolean(settings.require_photo);
+  document.getElementById("requireIdentifier").checked = Boolean(settings.require_identifier);
+
+  document.getElementById("closeTeamSettings").onclick = closeModal;
+  if (manager) {
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("saveTeamSettings");
+      const msg = document.getElementById("teamSettingsMsg");
+      btn.disabled = true;
+      msg.textContent = "Saving…";
+      try {
+        const saved = await api.saveTeamSettings(S.team.id, {
+          timezone: form.elements.namedItem("timezone").value,
+          date_format: form.elements.namedItem("date_format").value,
+          week_starts_on: Number(form.elements.namedItem("week_starts_on").value),
+          allow_member_attendance: document.getElementById("allowMemberAttendance").checked,
+          require_photo: document.getElementById("requirePhoto").checked,
+          require_identifier: document.getElementById("requireIdentifier").checked
+        });
+        S.teamSettings = saved;
+        msg.textContent = "Saved.";
+        toast("Team settings saved.", "success");
+        setTimeout(closeModal, 450);
+      } catch (err) {
+        msg.textContent = err.message || "Could not save settings.";
+        toast(err.message || "Could not save settings.", "error");
+      } finally {
+        btn.disabled = false;
+      }
+    };
   }
 }
