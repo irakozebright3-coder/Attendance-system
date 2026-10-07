@@ -57,6 +57,13 @@ export function friendlyError(err) {
   if (/Team ownership cannot be changed/.test(msg)) return "Team ownership cannot be changed.";
   if (/Invite code not recognized/i.test(msg)) return "That invite code is not valid.";
   if (/Invite code is required/i.test(msg)) return "Enter the invite code from your team admin.";
+  if (/Could not find the function public\.create_team|function public\.create_team.*schema cache/i.test(msg)) return "The AttendanceFlow database setup is incomplete. Run the current supabase/FINAL_SETUP.sql once in Supabase, then retry.";
+  if (/Could not find the function public\./i.test(msg)) return "A required AttendanceFlow database function is missing. Run the current supabase/FINAL_SETUP.sql once in Supabase.";
+  if (/Could not find the relation .*team_settings|relation .*team_settings does not exist/i.test(msg)) return "Team settings are not initialized yet. Run the current supabase/FINAL_SETUP.sql.";
+  if (/A photo is required by this team/i.test(msg)) return "This team requires a photo for every person.";
+  if (/An identifier is required by this team/i.test(msg)) return "This team requires an ID / employee number.";
+  if (/Team administrator access required/i.test(msg)) return "Only a team owner or admin can change team settings.";
+  if (/Platform administrator access required/i.test(msg)) return "This area is restricted to the AttendanceFlow platform administrator.";
   if (/JWT|token.*expired|session.*expired/i.test(msg)) return "Your session expired. Please sign in again.";
   if (/Failed to fetch|NetworkError|fetch failed/i.test(msg)) return "Network problem. Check your connection and try again.";
   if (/Signup requires a valid password/i.test(msg)) return "Password must be at least 8 characters.";
