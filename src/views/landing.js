@@ -227,6 +227,7 @@ export function workspaceSetupScreen({ onCreate, onJoin, onSignOut, defaultName 
     }
   };
 
+  bindFooter(settings, faqList);
   document.getElementById("setupSignOut").onclick = () => {
     if (onSignOut) onSignOut();
   };
