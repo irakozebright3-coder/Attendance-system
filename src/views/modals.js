@@ -612,6 +612,7 @@ export async function teamSettingsModal(ctx) {
       '<div class="flex justify-between items-start"><div><div class="register-kicker">WORKSPACE CONTROL</div><h2 id="teamSettingsTitle" class="text-xl font-black mt-1">Team settings</h2><p class="text-xs text-slate-500 mt-1">These settings belong only to <b>' + esc(S.team.name) + '</b>.</p></div><button id="closeTeamSettings" class="text-2xl" aria-label="Close">×</button></div>' +
       '<form id="teamSettingsForm" class="settings-form mt-5">' +
         '<div class="settings-grid">' +
+          '<label class="full">Team name<input name="team_name" maxlength="120" value="' + esc(S.team.name || "") + '" class="dialog-input"></label>' +
           '<label>Timezone<select name="timezone" class="dialog-input"><option value="Africa/Kigali">Africa/Kigali</option><option value="UTC">UTC</option><option value="Africa/Nairobi">Africa/Nairobi</option><option value="Africa/Kampala">Africa/Kampala</option><option value="Europe/London">Europe/London</option><option value="America/New_York">America/New_York</option></select></label>' +
           '<label>Date format<select name="date_format" class="dialog-input"><option value="YYYY-MM-DD">YYYY-MM-DD</option><option value="DD/MM/YYYY">DD/MM/YYYY</option><option value="MM/DD/YYYY">MM/DD/YYYY</option></select></label>' +
           '<label>Week starts on<select name="week_starts_on" class="dialog-input"><option value="1">Monday</option><option value="0">Sunday</option></select></label>' +
@@ -627,6 +628,7 @@ export async function teamSettingsModal(ctx) {
   );
 
   const form = document.getElementById("teamSettingsForm");
+  form.elements.namedItem("team_name").value = S.team?.name || "";
   form.elements.namedItem("timezone").value = settings.timezone || "Africa/Kigali";
   form.elements.namedItem("date_format").value = settings.date_format || "YYYY-MM-DD";
   form.elements.namedItem("week_starts_on").value = String(settings.week_starts_on ?? 1);
@@ -644,6 +646,7 @@ export async function teamSettingsModal(ctx) {
       msg.textContent = "Saving…";
       try {
         const saved = await api.saveTeamSettings(S.team.id, {
+          team_name: form.elements.namedItem("team_name").value.trim(),
           timezone: form.elements.namedItem("timezone").value,
           date_format: form.elements.namedItem("date_format").value,
           week_starts_on: Number(form.elements.namedItem("week_starts_on").value),
@@ -652,6 +655,9 @@ export async function teamSettingsModal(ctx) {
           require_identifier: document.getElementById("requireIdentifier").checked
         });
         S.teamSettings = saved;
+        if (form.elements.namedItem("team_name").value.trim()) {
+          S.team.name = form.elements.namedItem("team_name").value.trim();
+        }
         msg.textContent = "Saved.";
         toast("Team settings saved.", "success");
         setTimeout(closeModal, 450);
