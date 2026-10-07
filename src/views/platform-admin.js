@@ -47,6 +47,7 @@ export async function platformAdminPanel(ctx) {
                 '<label>Owner public email<input name="owner_email" type="email" maxlength="240"></label>' +
                 '<label>Owner public phone<input name="owner_phone" maxlength="60"></label>' +
                 '<label class="full">Footer note<textarea name="footer_note" rows="2" maxlength="300"></textarea></label>' +
+                '<label class="full"><div class="setting-toggle-row"><input id="registrationEnabled" name="registration_enabled" type="checkbox"><span>Allow new public account registration</span></div></label>' +
               '</div>' +
               '<div class="admin-safety-note">These fields are for public owner/support information only. Never enter a password, Supabase service key, API secret, or other private credential here. User login credentials remain in Supabase Auth.</div>' +
               '<button class="liquid primary-cta" type="submit">Save website settings</button>' +
@@ -95,6 +96,7 @@ export async function platformAdminPanel(ctx) {
       const fd = new FormData(form);
       const payload = Object.fromEntries(fd.entries());
       payload.copyright_start_year = Number(payload.copyright_start_year);
+      payload.registration_enabled = document.getElementById("registrationEnabled").checked;
       const saved = await api.savePlatformSettings(payload);
       S.platformSettings = saved;
       msg.textContent = "Saved globally.";
@@ -164,7 +166,9 @@ export async function platformAdminPanel(ctx) {
     const form = document.getElementById("platformSettingsForm");
     for (const [name, value] of Object.entries(s || {})) {
       const field = form.elements.namedItem(name);
-      if (field) field.value = value ?? "";
+      if (!field) continue;
+      if (field.type === "checkbox") field.checked = Boolean(value);
+      else field.value = value ?? "";
     }
   }
 
