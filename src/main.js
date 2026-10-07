@@ -57,6 +57,7 @@ const toast = (message, type = "info") => {
 const ctx = {
   S,
   canManage,
+  canMarkAttendance,
   toast,
   refresh: () => load(false),
   backToWorkspace: async () => { await loadApp(); },
@@ -225,6 +226,11 @@ async function doAuth(newUser) {
 
     S.session = session;
     S.currentUserId = session.user.id;
+    try {
+      S.isPlatformAdmin = await api.isPlatformAdmin();
+    } catch {
+      S.isPlatformAdmin = false;
+    }
     resetState();
     setMessage(newUser ? "Account created. Opening workspace…" : "Signed in. Opening workspace…", true);
 
@@ -471,6 +477,7 @@ async function boot() {
         S.session = session;
         if (!alreadyHere) {
           S.currentUserId = uid;
+          api.isPlatformAdmin().then((ok) => { S.isPlatformAdmin = ok; }).catch(() => { S.isPlatformAdmin = false; });
           resetState();
           loadApp().catch((e) => {
             console.error(e);
@@ -481,6 +488,7 @@ async function boot() {
       } else {
         S.currentUserId = null;
         S.session = null;
+        S.isPlatformAdmin = false;
         resetState();
         closeModal();
         stopRealtime();
