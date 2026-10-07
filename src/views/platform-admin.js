@@ -5,7 +5,7 @@
 
 import { esc, timeLabel } from "../lib/util.js";
 import * as api from "../lib/api.js";
-import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS } from "./public-info.js";
+import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, footerMarkup, bindFooter } from "./public-info.js";
 
 export async function platformAdminPanel(ctx) {
   const { S, toast } = ctx;
@@ -72,8 +72,10 @@ export async function platformAdminPanel(ctx) {
 
         '<section class="platform-stack-panel"><div><div class="eyebrow">PLATFORM STACK</div><h2>AttendanceFlow infrastructure</h2></div><div class="footer-stack large"><span>GitHub</span><span>Vercel</span><span>Supabase</span><span>PostgreSQL</span><span>Vite</span><span>JavaScript</span><span>Tailwind CSS</span><span>HTML5 Canvas</span><span>CSS3</span><span>WebGL-ready</span></div></section>' +
       '</div>' +
+      footerMarkup(S.platformSettings, S.faqs) +
     '</main>';
 
+  bindFooter(S.platformSettings, S.faqs);
   document.getElementById("backWorkspace").onclick = async () => {
     await ctx.backToWorkspace();
   };
