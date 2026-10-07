@@ -619,7 +619,7 @@ export async function teamSettingsModal(ctx) {
           '<label>Photo policy<div class="setting-toggle-row"><input id="requirePhoto" name="require_photo" type="checkbox"><span>Require a photo for new people</span></div></label>' +
           '<label>Identity policy<div class="setting-toggle-row"><input id="requireIdentifier" name="require_identifier" type="checkbox"><span>Require an ID / employee number</span></div></label>' +
         '</div>' +
-        '<div class="admin-safety-note mt-4">These settings apply to this team only. They never change another team's register.</div>' +
+        '<div class="admin-safety-note mt-4">These settings apply to this team only. They never change another team&#39;s register.</div>' +
         (manager ? '<button id="saveTeamSettings" class="liquid primary-cta mt-4" type="submit">Save team settings</button>' : '<p class="text-xs text-slate-500 mt-4">You can view these settings, but only an owner or admin can change them.</p>') +
         '<span id="teamSettingsMsg" class="settings-message"></span>' +
       '</form>' +
