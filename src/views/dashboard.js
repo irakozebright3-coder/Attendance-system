@@ -3,6 +3,7 @@
 // AttendanceFlow design system; all data logic is database-backed.
 import { esc, dateLabel, today, pct } from "../lib/util.js";
 import { logoMarkup, bindParallax } from "./landing.js";
+import { footerMarkup, bindFooter } from "./public-info.js";
 
 // Keep very large teams usable without virtualization complexity.
 const ROW_LIMIT = 150;
@@ -28,10 +29,14 @@ export function dashboard(ctx) {
           '<div class="dashboard-user">' +
             '<span id="emailLabel" class="desktop-email"></span>' +
             '<span id="roleLabel" class="role-badge"></span>' +
+            '<button id="settingsBtn" class="liquid dashboard-action">Settings</button>' +
             '<button id="reportsBtn" class="liquid dashboard-action">Reports</button>' +
             (manager
               ? '<button id="inviteBtn" class="liquid dashboard-action">Invite</button>' +
                 '<button id="auditBtn" class="liquid dashboard-action">Audit log</button>'
+              : '') +
+            (S.isPlatformAdmin
+              ? '<button id="platformAdminBtn" class="liquid dashboard-action platform-admin-action">Super Admin</button>'
               : '') +
             '<button id="reload" class="liquid dashboard-action">↻ Refresh</button>' +
             '<button id="logout" class="liquid dashboard-action logout-action">Sign out</button>' +
@@ -88,6 +93,7 @@ export function dashboard(ctx) {
           '</div>' +
         '</section>' +
       '</div>' +
+      footerMarkup(S.platformSettings, S.faqs) +
     '</main>' +
     '<div id="modal" class="modal hidden" role="dialog" aria-modal="true"></div>';
 
@@ -96,7 +102,12 @@ export function dashboard(ctx) {
   document.getElementById("roleLabel").textContent = (S.role || "member").toUpperCase();
   document.getElementById("logout").onclick = () => ctx.handlers.signOut();
   document.getElementById("reload").onclick = () => ctx.handlers.refresh();
+  document.getElementById("settingsBtn").onclick = () => ctx.handlers.openSettings();
   document.getElementById("reportsBtn").onclick = () => ctx.handlers.openReports();
+  if (S.isPlatformAdmin) {
+    document.getElementById("platformAdminBtn").onclick = () => ctx.handlers.openPlatformAdmin();
+  }
+  bindFooter(S.platformSettings, S.faqs);
   if (manager) {
     document.getElementById("inviteBtn").onclick = () => ctx.handlers.showInvite();
     document.getElementById("auditBtn").onclick = () => ctx.handlers.openAudit();
