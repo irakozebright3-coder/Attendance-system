@@ -192,7 +192,7 @@ export function renderRegister(ctx) {
   thead.innerHTML =
     "<tr><th scope='col' class='sticky left-0 bg-slate-950/95 text-left px-5 py-4 min-w-[260px] sticky-head'>Person</th>" +
     dates.map((d) =>
-      "<th scope='col' class='px-3 py-4 min-w-[110px] align-top'>" + esc(dateLabel(d.date)) +
+      "<th scope='col' class='px-3 py-4 min-w-[110px] align-top'>" + esc(dateLabel(d.date, S.teamSettings)) +
       (manager ? "<br><button data-date-remove='" + esc(d.date) + "' class='text-[10px] text-slate-500 hover:text-red-300 mt-1'>remove</button>" : "") +
       "</th>"
     ).join("") + "</tr>";
@@ -274,12 +274,12 @@ function personRow(ctx, p, dates, manager) {
 
   const cells = dates.map((d) => {
     if (!p.active) {
-      return "<td class='px-3 py-3'><span class='att empty att-locked' aria-label='" + esc(p.name + " on " + dateLabel(d.date) + " — person is inactive") + "'>·</span></td>";
+      return "<td class='px-3 py-3'><span class='att empty att-locked' aria-label='" + esc(p.name + " on " + dateLabel(d.date, S.teamSettings) + " — person is inactive") + "'>·</span></td>";
     }
     const s = statusOf(ctx, p.id, d.date);
     const label = !canMark
-      ? esc(p.name + " on " + dateLabel(d.date) + ": attendance marking is disabled by the team.")
-      : esc(p.name + " on " + dateLabel(d.date) + ": " + (s === "present" ? "present" : s === "absent" ? "absent" : "not marked") + ". Activate to " + (s === "empty" ? "mark present" : s === "present" ? "mark absent" : "clear") + ".");
+      ? esc(p.name + " on " + dateLabel(d.date, S.teamSettings) + ": attendance marking is disabled by the team.")
+      : esc(p.name + " on " + dateLabel(d.date, S.teamSettings) + ": " + (s === "present" ? "present" : s === "absent" ? "absent" : "not marked") + ". Activate to " + (s === "empty" ? "mark present" : s === "present" ? "mark absent" : "clear") + ".");
     return "<td class='px-3 py-3'><button aria-label='" + label + "' " + (!canMark ? "disabled" : "data-person-cell='" + esc(p.id) + "'") + " data-date='" + esc(d.date) + "' class='att " + s + (!canMark ? " att-locked" : "") + "'>" +
       (s === "present" ? "✓" : s === "absent" ? "✕" : "•") +
     "</button></td>";
@@ -304,7 +304,7 @@ export function updateCell(ctx, personId, date) {
   const p = ctx.S.people.find((x) => x.id === personId);
   btn.className = "att " + s;
   btn.textContent = s === "present" ? "✓" : s === "absent" ? "✕" : "•";
-  btn.setAttribute("aria-label", (p?.name || "Person") + " on " + dateLabel(date) + ": " +
+  btn.setAttribute("aria-label", (p?.name || "Person") + " on " + dateLabel(date, S.teamSettings) + ": " +
     (s === "present" ? "present" : s === "absent" ? "absent" : "not marked") + ".");
   updateStats(ctx);
 }
@@ -319,7 +319,7 @@ export function cellPending(ctx, personId, date, pending) {
 export function updateStats(ctx) {
   const { S } = ctx;
   const activePeople = S.people.filter((p) => p.active);
-  const t = today();
+  const t = today(S.teamSettings?.timezone);
   const present = activePeople.filter((p) => S.marks.get(p.id + "|" + t) === "present").length;
   const absent = activePeople.filter((p) => S.marks.get(p.id + "|" + t) === "absent").length;
   const total = present + absent;
