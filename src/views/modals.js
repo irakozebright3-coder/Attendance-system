@@ -286,7 +286,7 @@ async function loadHistory(ctx, person) {
     set("pRate", pct(present, marked));
     box.innerHTML = marked
       ? '<ul class="history-list">' + history.slice(0, 12).map((h) =>
-          "<li><span class='hist-date'>" + esc(dateLabel(h.date)) + "</span>" +
+          "<li><span class='hist-date'>" + esc(dateLabel(h.date, ctx.S.teamSettings)) + "</span>" +
           "<span class='hist-status " + esc(h.status) + "'>" + (h.status === "present" ? "✓ Present" : "✕ Absent") + "</span>" +
           '<span class="hist-by">by ' + esc(h.marked_by ? h.marked_by.slice(0, 8) : "team") + " · " + esc(timeLabel(h.marked_at)) + "</span></li>"
         ).join("") + "</ul>"
@@ -384,7 +384,7 @@ export function dateModal(ctx) {
       '<div class="flex justify-between items-start"><div><h2 id="dateTitle" class="text-xl font-black">Add attendance date</h2>' +
       '<p class="text-xs text-slate-500 mt-1">The date is saved to your team database.</p></div>' +
       '<button id="closeDate" class="text-2xl" aria-label="Close">×</button></div>' +
-      '<label class="dialog-label mt-5">Date<input id="dateValue" type="date" value="' + today() + '" class="dialog-input"></label>' +
+      '<label class="dialog-label mt-5">Date<input id="dateValue" type="date" value="' + today(ctx.S.teamSettings?.timezone) + '" class="dialog-input"></label>' +
       '<div class="flex gap-2 mt-5"><button id="cancelDate" class="liquid rounded-xl bg-white/5 px-4 py-3 font-bold">Cancel</button>' +
       '<button id="saveDate" class="liquid rounded-xl bg-violet-600 px-4 py-3 font-bold ml-auto">Save date</button></div>' +
     "</div>"
@@ -415,8 +415,8 @@ export function dateModal(ctx) {
 export function reportsModal(ctx) {
   const { S } = ctx;
   const dates = S.dates.map((d) => d.date).sort();
-  const from = dates[0] || today();
-  const to = dates[dates.length - 1] || today();
+  const from = dates[0] || today(ctx.S.teamSettings?.timezone);
+  const to = dates[dates.length - 1] || today(ctx.S.teamSettings?.timezone);
 
   openModal(
     '<div class="p-6" role="dialog" aria-modal="true" aria-labelledby="reportsTitle">' +
@@ -541,7 +541,7 @@ function printReport(ctx, range) {
     "<tr><td>" + esc(x.person.name) + "</td><td>" + esc(x.person.identifier || "") + "</td><td>" + x.present + "</td><td>" + x.absent + "</td><td>" + x.unmarked + "</td><td>" + pct(x.present, x.marked) + "</td></tr>"
   ).join("");
   const dateRows = r.perDate.map((x) =>
-    "<tr><td>" + esc(dateLabel(x.date)) + "</td><td>" + x.present + "</td><td>" + x.absent + "</td><td>" + x.unmarked + "</td></tr>"
+    "<tr><td>" + esc(dateLabel(x.date, ctx.S.teamSettings)) + "</td><td>" + x.present + "</td><td>" + x.absent + "</td><td>" + x.unmarked + "</td></tr>"
   ).join("");
   w.document.write(
     "<!doctype html><html><head><title>AttendanceFlow report — " + esc(S.team.name) + "</title>" +
