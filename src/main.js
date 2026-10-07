@@ -466,26 +466,11 @@ async function boot() {
   }
 
   db.auth.onAuthStateChange((_event, session) => {
-    // Run outside the auth callback to avoid supabase-js lock warnings.
+    // Keep the callback lightweight: wait for the auth lock cycle to finish,
+    // then resolve platform access and open the correct application surface.
     setTimeout(() => {
       const uid = session?.user?.id || null;
-      if (session) {
-        // Ignore token refresh / duplicate events when the same user is
-        // already rendered — prevents re-render loops and duplicate
-        // realtime subscriptions.
-        const alreadyHere = uid === S.currentUserId && document.querySelector(".app-shell, .setup-shell");
-        S.session = session;
-        if (!alreadyHere) {
-          S.currentUserId = uid;
-          api.isPlatformAdmin().then((ok) => { S.isPlatformAdmin = ok; }).catch(() => { S.isPlatformAdmin = false; });
-          resetState();
-          loadApp().catch((e) => {
-            console.error(e);
-            const view = authScreen(friendlyError(e) || "Unable to open your workspace. Check the Supabase database setup.", S.platformSettings, S.faqs);
-            view.doAuth(doAuth);
-          });
-        }
-      } else {
+      if (!session) {
         S.currentUserId = null;
         S.session = null;
         S.isPlatformAdmin = false;
@@ -494,7 +479,35 @@ async function boot() {
         stopRealtime();
         const view = authScreen("", S.platformSettings, S.faqs);
         view.doAuth(doAuth);
+        return;
       }
+
+      const alreadyHere = uid === S.currentUserId && document.querySelector(".app-shell, .setup-shell, .platform-admin-page");
+      S.session = session;
+
+      if (alreadyHere) return;
+
+      S.currentUserId = uid;
+      resetState();
+
+      api.isPlatformAdmin()
+        .then((ok) => {
+          S.isPlatformAdmin = Boolean(ok);
+        })
+        .catch(() => {
+          S.isPlatformAdmin = false;
+        })
+        .finally(() => {
+          loadApp().catch((e) => {
+            console.error(e);
+            const view = authScreen(
+              friendlyError(e) || "Unable to open your workspace. Check the Supabase database setup.",
+              S.platformSettings,
+              S.faqs
+            );
+            view.doAuth(doAuth);
+          });
+        });
     }, 0);
   });
 
@@ -503,7 +516,7 @@ async function boot() {
     try {
       await loadApp();
     } catch (e) {
-      const view = authScreen(friendlyError(e) || "Unable to open your workspace. Check the Supabase database setup.");
+      const view = authScreen(friendlyError(e) || "Unable to open your workspace. Check the Supabase database setup.", S.platformSettings, S.faqs);
       view.doAuth(doAuth);
     }
   } else {
