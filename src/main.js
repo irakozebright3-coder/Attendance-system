@@ -4,11 +4,13 @@ import { db, hasBackend } from "./lib/supabase.js";
 import * as api from "./lib/api.js";
 import { friendlyError, debounce } from "./lib/util.js";
 import { authScreen, setMessage, workspaceSetupScreen, bindParallax } from "./views/landing.js";
+import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, normalizePlatformSettings } from "./views/public-info.js";
+import { platformAdminPanel } from "./views/platform-admin.js";
 import {
   dashboard, renderRegister, updateCell, cellPending, setBackendStatus
 } from "./views/dashboard.js";
 import {
-  personModal, dateModal, confirmDialog, showInviteDialog, reportsModal, auditModal, closeModal
+  personModal, dateModal, confirmDialog, showInviteDialog, reportsModal, auditModal, teamSettingsModal, closeModal
 } from "./views/modals.js";
 
 const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -26,10 +28,15 @@ const S = {
   loading: false,
   filters: { search: "", active: "active", status: "any", sort: "name-asc" },
   showAllRows: false,
-  showAllDates: false
+  showAllDates: false,
+  teamSettings: null,
+  platformSettings: normalizePlatformSettings(DEFAULT_PLATFORM_SETTINGS),
+  faqs: [...DEFAULT_FAQS],
+  isPlatformAdmin: false
 };
 
 const canManage = () => ["owner", "admin"].includes(S.role);
+const canMarkAttendance = () => canManage() || S.teamSettings?.allow_member_attendance !== false;
 
 const toast = (message, type = "info") => {
   let host = document.getElementById("toastHost");
@@ -52,6 +59,7 @@ const ctx = {
   canManage,
   toast,
   refresh: () => load(false),
+  backToWorkspace: async () => { await loadApp(); },
   debouncedSearch: (input) => debounce(() => {
     S.filters.search = input.value;
     S.showAllRows = false;
@@ -73,6 +81,11 @@ const ctx = {
     showInvite: () => showInviteDialog(S.team),
     openReports: () => reportsModal(ctx),
     openAudit: () => auditModal(ctx),
+    openSettings: () => teamSettingsModal(ctx),
+    openPlatformAdmin: () => {
+      if (!S.isPlatformAdmin) { toast("Platform administrator access required.", "error"); return; }
+      platformAdminPanel(ctx).catch((err) => toast(err.message || "Could not open super admin panel.", "error"));
+    },
     toggle: (pid, date) => toggle(pid, date),
     removeDate: async (date) => {
       if (!canManage()) { toast("Only owners and admins can remove dates.", "error"); return; }
@@ -127,6 +140,7 @@ async function load(showToast = false) {
   try {
     const data = await api.loadTeamData(S.team.id);
     S.people = await api.attachPhotoUrls(data.people);
+    S.teamSettings = await api.getTeamSettings(S.team.id);
     S.dates = data.dates;
     S.marks = new Map(data.attendance.map((x) => [x.person_id + "|" + x.date, x.status]));
     renderRegister(ctx);
@@ -146,6 +160,10 @@ async function toggle(pid, date) {
   const next = current === "empty" ? "present" : current === "present" ? "absent" : "empty";
   const person = S.people.find((p) => p.id === pid);
   if (!person || !person.active) return;
+  if (!canMarkAttendance()) {
+    toast("Your team administrator has disabled member attendance marking.", "error");
+    return;
+  }
 
   cellPending(ctx, pid, date, true);
   try {
@@ -399,6 +417,7 @@ function resetState() {
   S.showAllRows = false;
   S.showAllDates = false;
   S.filters = { search: "", active: "active", status: "any", sort: "name-asc" };
+  S.teamSettings = null;
 }
 
 async function boot() {
@@ -407,13 +426,38 @@ async function boot() {
   bindParallax();
 
   if (!hasBackend) {
-    const view = authScreen("Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel.");
+    const view = authScreen("Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel.", S.platformSettings, S.faqs);
     view.doAuth(doAuth);
     return;
   }
 
+  // Public site content is intentionally fail-soft: if platform content has
+  // not been configured yet, the app uses safe local defaults instead of
+  // blocking authentication.
+  try {
+    const [platformSettings, faqs] = await Promise.all([
+      api.loadPublicPlatformSettings(),
+      api.loadPublicFaqs()
+    ]);
+    S.platformSettings = normalizePlatformSettings(platformSettings);
+    S.faqs = faqs.length ? faqs : [...DEFAULT_FAQS];
+  } catch (err) {
+    console.warn("Public platform content is not configured yet:", err);
+    S.platformSettings = normalizePlatformSettings(DEFAULT_PLATFORM_SETTINGS);
+    S.faqs = [...DEFAULT_FAQS];
+  }
+
   const session = await api.getSession();
   S.session = session;
+
+  if (session) {
+    try {
+      S.isPlatformAdmin = await api.isPlatformAdmin();
+    } catch (err) {
+      console.warn("Platform admin check unavailable:", err);
+      S.isPlatformAdmin = false;
+    }
+  }
 
   db.auth.onAuthStateChange((_event, session) => {
     // Run outside the auth callback to avoid supabase-js lock warnings.
@@ -430,7 +474,7 @@ async function boot() {
           resetState();
           loadApp().catch((e) => {
             console.error(e);
-            const view = authScreen(friendlyError(e) || "Unable to open your workspace. Check the Supabase database setup.");
+            const view = authScreen(friendlyError(e) || "Unable to open your workspace. Check the Supabase database setup.", S.platformSettings, S.faqs);
             view.doAuth(doAuth);
           });
         }
@@ -440,7 +484,7 @@ async function boot() {
         resetState();
         closeModal();
         stopRealtime();
-        const view = authScreen();
+        const view = authScreen("", S.platformSettings, S.faqs);
         view.doAuth(doAuth);
       }
     }, 0);
@@ -455,13 +499,13 @@ async function boot() {
       view.doAuth(doAuth);
     }
   } else {
-    const view = authScreen();
+    const view = authScreen("", S.platformSettings, S.faqs);
     view.doAuth(doAuth);
   }
 }
 
 boot().catch((e) => {
   console.error(e);
-  const view = authScreen(friendlyError(e) || "Something went wrong.");
+  const view = authScreen(friendlyError(e) || "Something went wrong.", S.platformSettings, S.faqs);
   view.doAuth(doAuth);
 });
