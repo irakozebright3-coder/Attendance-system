@@ -34,6 +34,7 @@ create table if not exists public.team_settings(
   week_starts_on smallint not null default 1 check(week_starts_on between 0 and 6),
   allow_member_attendance boolean not null default true,
   require_photo boolean not null default false,
+  require_identifier boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -368,6 +369,9 @@ grant execute on function public.ensure_team_settings(uuid) to authenticated;
 revoke execute on function public.ensure_team_settings(uuid) from public, anon;
 
 -- Backfill settings for all existing teams.
+alter table public.team_settings
+  add column if not exists require_identifier boolean not null default false;
+
 insert into public.team_settings(team_id)
 select id from public.teams
 on conflict(team_id) do nothing;
@@ -421,6 +425,7 @@ begin
       week_starts_on=coalesce((p_settings->>'week_starts_on')::smallint,week_starts_on),
       allow_member_attendance=coalesce((p_settings->>'allow_member_attendance')::boolean,allow_member_attendance),
       require_photo=coalesce((p_settings->>'require_photo')::boolean,require_photo),
+      require_identifier=coalesce((p_settings->>'require_identifier')::boolean,require_identifier),
       updated_at=now()
   where team_id=p_team_id
   returning * into s;
@@ -431,6 +436,49 @@ $;
 
 grant execute on function public.save_team_settings(uuid,jsonb) to authenticated;
 revoke execute on function public.save_team_settings(uuid,jsonb) from public, anon;
+
+create or replace function public.can_team_mark_attendance(tid uuid)
+returns boolean
+language sql stable security definer
+set search_path=public
+as $
+  select exists(
+    select 1
+    from public.team_members tm
+    where tm.team_id=tid
+      and tm.user_id=auth.uid()
+      and (
+        tm.role in ('owner','admin')
+        or coalesce((select ts.allow_member_attendance from public.team_settings ts where ts.team_id=tid),true)
+      )
+  );
+$;
+
+grant execute on function public.can_team_mark_attendance(uuid) to authenticated;
+revoke execute on function public.can_team_mark_attendance(uuid) from public, anon;
+
+create or replace function public.validate_person_team_settings()
+returns trigger
+language plpgsql
+security definer
+set search_path=public
+as $
+declare
+  ts public.team_settings;
+begin
+  select * into ts from public.team_settings where team_id=new.team_id;
+  if coalesce(ts.require_photo,false) and nullif(btrim(new.photo_path),'') is null then
+    raise exception 'A photo is required by this team.';
+  end if;
+  if coalesce(ts.require_identifier,false) and nullif(btrim(new.identifier),'') is null then
+    raise exception 'An identifier is required by this team.';
+  end if;
+  return new;
+end;
+$;
+
+grant execute on function public.validate_person_team_settings() to authenticated;
+revoke execute on function public.validate_person_team_settings() from public, anon;
 
 -- ------------------------------------------------------------
 -- TEAM CREATION RPC (only secure path to create a team)
@@ -646,6 +694,11 @@ $$;
 -- TRIGGERS
 -- ------------------------------------------------------------
 
+drop trigger if exists people_validate_team_settings on public.people;
+create trigger people_validate_team_settings
+before insert or update on public.people
+for each row execute function public.validate_person_team_settings();
+
 drop trigger if exists people_protect_team on public.people;
 create trigger people_protect_team
 before update on public.people
@@ -791,13 +844,14 @@ create policy "members read attendance" on public.attendance
   using(public.is_team_member(team_id));
 create policy "members insert attendance" on public.attendance
   for insert to authenticated
-  with check(public.is_team_member(team_id) and marked_by=auth.uid());
+  with check(public.can_team_mark_attendance(team_id) and marked_by=auth.uid());
 create policy "members update attendance" on public.attendance
   for update to authenticated
-  using(public.is_team_member(team_id)) with check(public.is_team_member(team_id));
+  using(public.can_team_mark_attendance(team_id))
+  with check(public.can_team_mark_attendance(team_id));
 create policy "members delete attendance" on public.attendance
   for delete to authenticated
-  using(public.is_team_member(team_id));
+  using(public.can_team_mark_attendance(team_id));
 
 -- AUDIT: owner/admin only.
 drop policy if exists "admins read audit" on public.audit_events;
