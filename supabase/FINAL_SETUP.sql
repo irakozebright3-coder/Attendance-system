@@ -200,12 +200,12 @@ create or replace function public.is_platform_admin()
 returns boolean
 language sql stable security definer
 set search_path=public
-as $
+as $$
   select exists(
     select 1 from public.platform_admins
     where user_id=auth.uid()
   );
-$;
+$$;
 
 grant execute on function public.is_platform_admin() to authenticated;
 revoke execute on function public.is_platform_admin() from public, anon;
@@ -215,7 +215,7 @@ returns public.platform_settings
 language plpgsql
 security definer
 set search_path=public
-as $
+as $$
 declare
   s public.platform_settings;
   yr integer;
@@ -255,7 +255,7 @@ begin
 
   return s;
 end;
-$;
+$$;
 
 grant execute on function public.platform_save_settings(jsonb) to authenticated;
 revoke execute on function public.platform_save_settings(jsonb) from public, anon;
@@ -272,7 +272,7 @@ returns table(
 )
 language sql stable security definer
 set search_path=public
-as $
+as $$
   select
     t.id,
     t.name,
@@ -287,7 +287,7 @@ as $
   left join auth.users owner_u on owner_u.id=owner_tm.user_id
   where public.is_platform_admin()
   order by t.created_at desc;
-$;
+$$;
 
 grant execute on function public.platform_list_teams() to authenticated;
 revoke execute on function public.platform_list_teams() from public, anon;
@@ -303,7 +303,7 @@ returns table(
 )
 language sql stable security definer
 set search_path=public
-as $
+as $$
   select
     u.id,
     u.email::text,
@@ -314,7 +314,7 @@ as $
   from auth.users u
   where public.is_platform_admin()
   order by u.created_at desc;
-$;
+$$;
 
 grant execute on function public.platform_list_users() to authenticated;
 revoke execute on function public.platform_list_users() from public, anon;
@@ -328,14 +328,14 @@ returns table(
 )
 language sql stable security definer
 set search_path=public
-as $
+as $$
   select u.id,u.email::text,tm.role,tm.joined_at
   from public.team_members tm
   join auth.users u on u.id=tm.user_id
   where tm.team_id=p_team_id
     and public.is_platform_admin()
   order by tm.joined_at;
-$;
+$$;
 
 grant execute on function public.platform_list_team_members(uuid) to authenticated;
 revoke execute on function public.platform_list_team_members(uuid) from public, anon;
@@ -412,7 +412,7 @@ returns public.team_settings
 language plpgsql
 security definer
 set search_path=public
-as $
+as $$
 declare
   s public.team_settings;
   new_team_name text := nullif(btrim(p_settings->>'team_name'),'');
@@ -447,7 +447,7 @@ begin
 
   return s;
 end;
-$;
+$$;
 
 grant execute on function public.save_team_settings(uuid,jsonb) to authenticated;
 revoke execute on function public.save_team_settings(uuid,jsonb) from public, anon;
@@ -456,7 +456,7 @@ create or replace function public.can_team_mark_attendance(tid uuid)
 returns boolean
 language sql stable security definer
 set search_path=public
-as $
+as $$
   select exists(
     select 1
     from public.team_members tm
@@ -467,7 +467,7 @@ as $
         or coalesce((select ts.allow_member_attendance from public.team_settings ts where ts.team_id=tid),true)
       )
   );
-$;
+$$;
 
 grant execute on function public.can_team_mark_attendance(uuid) to authenticated;
 revoke execute on function public.can_team_mark_attendance(uuid) from public, anon;
@@ -477,7 +477,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path=public
-as $
+as $$
 declare
   ts public.team_settings;
 begin
@@ -490,7 +490,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 grant execute on function public.validate_person_team_settings() to authenticated;
 revoke execute on function public.validate_person_team_settings() from public, anon;
