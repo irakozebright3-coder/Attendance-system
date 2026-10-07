@@ -284,25 +284,76 @@ async function startCamera(ctx) {
     ctx.toast("Camera access requires HTTPS or localhost.", "error");
     return;
   }
+
   stopCamera();
+
+  const cameraBox = document.getElementById("cameraBox");
+  const video = document.getElementById("video");
+  if (!cameraBox || !video) {
+    ctx.toast("Camera panel could not be opened. Please close and reopen the person dialog.", "error");
+    return;
+  }
+
+  video.pause();
+  video.srcObject = null;
+
   try {
     ctxCameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+      video: {
+        facingMode: { ideal: cameraFacingMode },
+        width: { ideal: 1280, min: 640 },
+        height: { ideal: 720, min: 480 }
+      },
       audio: false
     });
-    document.getElementById("cameraBox").classList.remove("hidden");
-    document.getElementById("video").srcObject = ctx.cameraStream;
-  } catch {
-    ctx.toast("Camera permission was denied or no camera is available.", "error");
+
+    video.srcObject = ctxCameraStream;
+    cameraBox.classList.remove("hidden");
+    video.classList.add("camera-live");
+
+    // Some browsers attach the MediaStream successfully but do not start
+    // rendering until metadata is available / play() is requested.
+    await new Promise((resolve) => {
+      if (video.readyState >= 2) {
+        resolve();
+        return;
+      }
+      const done = () => {
+        video.removeEventListener("loadedmetadata", done);
+        resolve();
+      };
+      video.addEventListener("loadedmetadata", done, { once: true });
+      setTimeout(done, 1800);
+    });
+
+    try {
+      await video.play();
+    } catch {
+      ctx.toast("Camera opened, but the browser blocked video playback. Click the preview and try again.", "error");
+    }
+  } catch (err) {
+    const reason = err?.name === "NotAllowedError"
+      ? "Camera permission was denied. Allow camera access in your browser, then try again."
+      : err?.name === "NotFoundError"
+        ? "No camera was found on this device."
+        : "The camera could not be started. Check browser permissions and HTTPS.";
+    ctx.toast(reason, "error");
   }
 }
 
-let ctxCameraStream = null; // module-level store so modal close always stops the camera
+let ctxCameraStream = null;
+let cameraFacingMode = "user";
 
 export function stopCamera() {
   if (ctxCameraStream) {
     ctxCameraStream.getTracks().forEach((t) => t.stop());
     ctxCameraStream = null;
+  }
+  const video = document.getElementById("video");
+  if (video) {
+    video.pause();
+    video.srcObject = null;
+    video.classList.remove("camera-live");
   }
 }
 
