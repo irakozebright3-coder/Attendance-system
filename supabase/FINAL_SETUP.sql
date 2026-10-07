@@ -995,6 +995,23 @@ end $$;
 
 
 -- ------------------------------------------------------------
+-- SUPER ADMIN BOOTSTRAP
+-- ------------------------------------------------------------
+-- Do NOT put passwords, service keys, API secrets, or other private
+-- credentials into platform_settings.
+--
+-- After the owner creates the intended platform-admin Auth account,
+-- run this one-time SQL command with that account's real email:
+--
+-- insert into public.platform_admins(user_id)
+-- select id from auth.users
+-- where lower(email)=lower('YOUR-PLATFORM-ADMIN-EMAIL')
+-- on conflict (user_id) do nothing;
+--
+-- This table has no client INSERT/UPDATE/DELETE policy. Only a trusted
+-- Supabase SQL/admin operation should grant platform-admin access.
+--
+-- ------------------------------------------------------------
 -- POSTGREST SCHEMA CACHE
 -- ------------------------------------------------------------
 -- Refresh the API schema cache so newly created RPC functions and
