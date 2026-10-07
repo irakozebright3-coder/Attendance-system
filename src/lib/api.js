@@ -67,6 +67,111 @@ export async function joinTeam(code) {
   return data;
 }
 
+export async function getTeamSettings(teamId) {
+  const { data, error } = await db
+    .from("team_settings")
+    .select("*")
+    .eq("team_id", teamId)
+    .maybeSingle();
+  if (error) fail(error);
+  if (data) return data;
+
+  const { data: ensured, error: ensureError } = await db.rpc("ensure_team_settings", { p_team_id: teamId });
+  if (ensureError) fail(ensureError);
+  return ensured;
+}
+
+export async function saveTeamSettings(teamId, settings) {
+  const { data, error } = await db.rpc("save_team_settings", {
+    p_team_id: teamId,
+    p_settings: settings
+  });
+  if (error) fail(error);
+  return data;
+}
+
+// ---------- public/platform administration ----------
+
+export async function loadPublicPlatformSettings() {
+  const { data, error } = await db
+    .from("platform_settings")
+    .select("site_name,tagline,hero_kicker,hero_title,hero_subtitle,about_text,contact_email,contact_phone,contact_address,owner_name,owner_title,owner_email,owner_phone,support_hours,footer_note,copyright_start_year,registration_enabled")
+    .eq("id", 1)
+    .maybeSingle();
+  if (error) fail(error);
+  return data;
+}
+
+export async function loadPublicFaqs() {
+  const { data, error } = await db
+    .from("platform_faqs")
+    .select("id,question,answer,sort_order,active")
+    .eq("active", true)
+    .order("sort_order", { ascending: true });
+  if (error) fail(error);
+  return data || [];
+}
+
+export async function isPlatformAdmin() {
+  const { data, error } = await db.rpc("is_platform_admin");
+  if (error) fail(error);
+  return Boolean(data);
+}
+
+export async function loadPlatformSettings() {
+  const { data, error } = await db
+    .from("platform_settings")
+    .select("*")
+    .eq("id", 1)
+    .single();
+  if (error) fail(error);
+  return data;
+}
+
+export async function savePlatformSettings(settings) {
+  const { data, error } = await db.rpc("platform_save_settings", { p_settings: settings });
+  if (error) fail(error);
+  return data;
+}
+
+export async function loadPlatformTeams() {
+  const { data, error } = await db.rpc("platform_list_teams");
+  if (error) fail(error);
+  return data || [];
+}
+
+export async function loadPlatformUsers() {
+  const { data, error } = await db.rpc("platform_list_users");
+  if (error) fail(error);
+  return data || [];
+}
+
+export async function loadPlatformTeamMembers(teamId) {
+  const { data, error } = await db.rpc("platform_list_team_members", { p_team_id: teamId });
+  if (error) fail(error);
+  return data || [];
+}
+
+export async function createPlatformFaq({ question, answer, sort_order = 0, active = true }) {
+  const { data, error } = await db
+    .from("platform_faqs")
+    .insert({ question, answer, sort_order, active })
+    .select("id,question,answer,sort_order,active")
+    .single();
+  if (error) fail(error);
+  return data;
+}
+
+export async function updatePlatformFaq(id, fields) {
+  const { error } = await db.from("platform_faqs").update(fields).eq("id", id);
+  if (error) fail(error);
+}
+
+export async function deletePlatformFaq(id) {
+  const { error } = await db.from("platform_faqs").delete().eq("id", id);
+  if (error) fail(error);
+}
+
 // ---------- bulk load ----------
 
 export async function loadTeamData(teamId) {
