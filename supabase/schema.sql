@@ -410,6 +410,7 @@ set search_path=public
 as $
 declare
   s public.team_settings;
+  new_team_name text := nullif(btrim(p_settings->>'team_name'),'');
 begin
   if not public.is_team_admin(p_team_id) then
     raise exception 'Team administrator access required';
@@ -418,6 +419,15 @@ begin
   insert into public.team_settings(team_id)
   values(p_team_id)
   on conflict(team_id) do nothing;
+
+  if new_team_name is not null then
+    if length(new_team_name) > 120 then
+      raise exception 'Team name is too long';
+    end if;
+    update public.teams
+    set name=new_team_name
+    where id=p_team_id;
+  end if;
 
   update public.team_settings
   set timezone=coalesce(nullif(btrim(p_settings->>'timezone'),''),timezone),
