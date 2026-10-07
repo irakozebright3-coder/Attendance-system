@@ -22,7 +22,7 @@ export function dashboard(ctx) {
           '<div class="dashboard-brand">' +
             '<a class="brand dashboard-brand-link" href="#" aria-label="AttendanceFlow">' +
               logoMarkup("dashboard-logo") +
-              '<span><strong>Attendance<span class="brand-accent">Flow</span></strong><small id="teamLabel">Team attendance workspace</small></span>' +
+              '<span><strong>' + esc(S.platformSettings?.site_name || "AttendanceFlow") + '</strong><small id="teamLabel">Team attendance workspace</small></span>' +
             '</a>' +
             '<div class="backend-status"><i></i><span id="backendStatus">Connecting backend…</span></div>' +
           '</div>' +
