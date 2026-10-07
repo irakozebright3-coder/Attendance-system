@@ -60,7 +60,19 @@ const ctx = {
   canMarkAttendance,
   toast,
   refresh: () => load(false),
-  backToWorkspace: async () => { await loadApp(); },
+  backToWorkspace: async () => {
+    try {
+      const [settings, faqs] = await Promise.all([
+        api.loadPublicPlatformSettings(),
+        api.loadPublicFaqs()
+      ]);
+      S.platformSettings = normalizePlatformSettings(settings);
+      S.faqs = faqs.length ? faqs : [...DEFAULT_FAQS];
+    } catch {
+      // Keep the current public settings if content cannot be refreshed.
+    }
+    await loadApp();
+  },
   debouncedSearch: (input) => debounce(() => {
     S.filters.search = input.value;
     S.showAllRows = false;
