@@ -6,9 +6,40 @@ export function esc(s) {
   }[m]));
 }
 
-export function today() {
+export function today(timeZone) {
   const d = new Date();
+  if (timeZone) {
+    try {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(d);
+      const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+      if (map.year && map.month && map.day) return map.year + "-" + map.month + "-" + map.day;
+    } catch {
+      // fall back to browser-local time for an invalid/unavailable timezone
+    }
+  }
   return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
+}
+
+export function dateLabel(d, settings) {
+  const date = new Date(d + "T00:00:00");
+  const format = typeof settings === "string" ? settings : settings?.date_format;
+  if (format === "YYYY-MM-DD") {
+    return d;
+  }
+  if (format === "DD/MM/YYYY") {
+    return String(date.getDate()).padStart(2, "0") + "/" +
+      String(date.getMonth() + 1).padStart(2, "0") + "/" + date.getFullYear();
+  }
+  if (format === "MM/DD/YYYY") {
+    return String(date.getMonth() + 1).padStart(2, "0") + "/" +
+      String(date.getDate()).padStart(2, "0") + "/" + date.getFullYear();
+  }
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(date);
 }
 
 export function isValidDate(s) {
