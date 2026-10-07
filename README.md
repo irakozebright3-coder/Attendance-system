@@ -143,3 +143,70 @@ The final setup includes:
 - PostgREST schema-cache reload
 
 Do not create database objects separately for each team. Teams are created by the secure `create_team` RPC, and a `team_settings` row is automatically created for each team.
+
+## Super admin bootstrap
+
+AttendanceFlow has two permission layers:
+
+- **Team owner/admin:** manages only their team's people, dates, attendance and team settings.
+- **Platform super admin:** manages the whole AttendanceFlow installation, public website content, FAQs, support/owner contact details, registered teams and user metadata.
+
+The super-admin role is intentionally not self-assignable from the browser.
+
+After creating the intended super-admin account in Supabase Auth and running `FINAL_SETUP.sql`, run this once in Supabase SQL Editor:
+
+```sql
+insert into public.platform_admins(user_id)
+select id
+from auth.users
+where lower(email)=lower('YOUR-PLATFORM-ADMIN-EMAIL')
+on conflict (user_id) do nothing;
+```
+
+Then sign out and sign back in. The **Super Admin** panel will appear in the dashboard.
+
+### Important credential rule
+
+The Platform Settings form stores only public owner/support details such as:
+- owner name
+- owner title
+- public owner email
+- public owner phone
+- support email/contact
+- address
+- support hours
+
+Never store:
+- account passwords
+- Supabase service-role keys
+- API secrets
+- private access tokens
+
+Authentication credentials remain in Supabase Auth.
+
+## Team settings
+
+Every team automatically gets exactly one `team_settings` row. Owners/admins can open **Settings** from the team dashboard to configure:
+- timezone
+- date format
+- week start
+- whether members may mark attendance
+- whether photos are required
+- whether identifiers are required
+
+These settings are enforced in the database as well as the UI.
+
+## Public website controls
+
+The super-admin can edit:
+- website name
+- tagline
+- hero text
+- About Us
+- Contact Us details
+- owner/support information
+- FAQ entries
+- copyright start year
+
+The footer automatically uses the current calendar year, so a copyright range advances without yearly code edits.
+
