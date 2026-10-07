@@ -185,6 +185,7 @@ export function workspaceSetupScreen({ onCreate, onJoin, onSignOut, defaultName 
         '<p id="setupMsg" class="setup-message" role="status"></p>' +
         '<button id="setupSignOut" class="text-xs text-slate-500 hover:text-slate-300 mt-6">Sign out</button>' +
       '</div>' +
+      footerMarkup(settings, faqList) +
     '</main>';
 
   const msg = document.getElementById("setupMsg");
