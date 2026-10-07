@@ -204,6 +204,25 @@ export async function personModal(ctx, person = null) {
 
     if (!name) { ctx.toast("Enter the person’s full name.", "error"); save.disabled = false; save.textContent = isEdit ? "Save changes" : "Save person"; return; }
 
+    const requireIdentifier = Boolean(S.teamSettings?.require_identifier);
+    const requirePhoto = Boolean(S.teamSettings?.require_photo);
+    const currentPhotoExists = Boolean(existing?.photo_path);
+    const resultingPhotoExists = Boolean(photo || (currentPhotoExists && !removedPhoto));
+
+    if (requireIdentifier && !identifier) {
+      ctx.toast("This team requires an identifier / employee number.", "error");
+      save.disabled = false;
+      save.textContent = isEdit ? "Save changes" : "Save person";
+      return;
+    }
+
+    if (requirePhoto && !resultingPhotoExists) {
+      ctx.toast("This team requires a photo for every person.", "error");
+      save.disabled = false;
+      save.textContent = isEdit ? "Save changes" : "Save person";
+      return;
+    }
+
     try {
       if (existing) {
         // upload new photo first, update DB, then delete the old file
