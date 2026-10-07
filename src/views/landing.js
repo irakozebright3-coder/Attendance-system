@@ -1,5 +1,6 @@
 // Public landing page + auth modal + first-run workspace setup screen.
 import { esc } from "../lib/util.js";
+import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, normalizePlatformSettings, footerMarkup, bindFooter, openPublicInfo } from "./public-info.js";
 
 export function logoMarkup(extraClass = "") {
   return '<img src="/attendanceflow-logo.svg" alt="AttendanceFlow" class="brand-logo ' + esc(extraClass) + '">';
@@ -37,14 +38,17 @@ export function bindParallax() {
   });
 }
 
-export function authScreen(message = "") {
+export function authScreen(message = "", platformSettings = DEFAULT_PLATFORM_SETTINGS, faqs = DEFAULT_FAQS) {
   const app = document.getElementById("app");
+  const settings = normalizePlatformSettings(platformSettings);
+  const faqList = faqs && faqs.length ? faqs : DEFAULT_FAQS;
+  const registration = settings.registration_enabled !== false;
   app.innerHTML =
     '<div class="home-shell">' +
       '<nav class="home-nav">' +
         '<a class="brand" href="#" aria-label="AttendanceFlow home">' +
           logoMarkup("") +
-          '<span>Attendance<span class="brand-accent">Flow</span></span>' +
+          '<span>' + esc(settings.site_name) + '</span>' +
         '</a>' +
         '<div class="nav-links">' +
           '<a href="#features">Features</a>' +
@@ -56,11 +60,11 @@ export function authScreen(message = "") {
       '<main>' +
         '<section class="hero-section">' +
           '<div class="hero-copy">' +
-            '<div class="eyebrow"><span class="pulse-dot"></span> LIVE TEAM ATTENDANCE PLATFORM</div>' +
-            '<h1>Attendance that <span class="gradient-text">moves with your team.</span></h1>' +
-            '<p class="hero-lead">A serious, shared attendance workspace for large teams. Track people, dates, presence, photos and real-time updates from one beautiful dashboard.</p>' +
+            '<div class="eyebrow"><span class="pulse-dot"></span> ' + esc(settings.hero_kicker) + '</div>' +
+            '<h1>' + esc(settings.hero_title) + '</h1>' +
+            '<p class="hero-lead">' + esc(settings.hero_subtitle) + '</p>' +
             '<div class="hero-actions">' +
-              '<button id="heroStart" class="liquid primary-cta">Create your workspace <span>↗</span></button>' +
+              '<button id="heroStart" class="liquid primary-cta ' + (registration ? '' : 'hidden') + '">Create your workspace <span>↗</span></button>' +
               '<button id="heroDemo" class="ghost-cta">See how it works <span>↓</span></button>' +
             '</div>' +
             '<div class="trust-row">' +
@@ -103,7 +107,7 @@ export function authScreen(message = "") {
         '</section>' +
         '<section class="final-cta"><div><span class="eyebrow">READY WHEN YOU ARE</span><h2>Make attendance feel<br><span class="gradient-text">effortless.</span></h2></div><button id="finalStart" class="liquid primary-cta">Open AttendanceFlow <span>↗</span></button></section>' +
       '</main>' +
-      '<footer><span>© 2026 AttendanceFlow</span><span>Secure team attendance · Built for the web</span></footer>' +
+      footerMarkup(settings, faqList) +
     '</div>' +
     '<div id="authModal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle"><div class="auth-panel">' +
       '<button id="closeAuth" class="close-auth" aria-label="Close">×</button>' +
@@ -131,6 +135,7 @@ export function authScreen(message = "") {
   const closeAuth = () => $("authModal").classList.add("hidden");
 
   bindParallax();
+  bindFooter(settings, faqList);
   $("navLogin").onclick = () => openAuth(false);
   $("heroStart").onclick = () => openAuth(true);
   $("heroDemo").onclick = () => $("workflow").scrollIntoView({ behavior: "smooth" });
