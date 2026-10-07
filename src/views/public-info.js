@@ -53,7 +53,7 @@ export function footerMarkup(settings, faqs = []) {
       '<div class="footer-brand-col">' +
         '<a class="brand footer-brand" href="#" data-info="about" aria-label="About ' + esc(s.site_name) + '">' +
           '<img src="/attendanceflow-logo.svg" class="brand-logo" alt="' + esc(s.site_name) + '">' +
-          '<span>' + esc(s.site_name) + '<span class="brand-accent">Flow</span></span>' +
+          '<span>' + esc(s.site_name) + '</span>' +
         '</a>' +
         '<p>' + esc(s.footer_note || s.tagline) + '</p>' +
         '<div class="footer-stack"><span>GitHub</span><span>Vercel</span><span>Supabase</span><span>Vite</span><span>JavaScript</span><span>Tailwind CSS</span><span>HTML5 Canvas</span><span>CSS3</span><span>WebGL-ready</span></div>' +
