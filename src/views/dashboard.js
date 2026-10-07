@@ -261,6 +261,7 @@ export function renderRegister(ctx) {
 
 function personRow(ctx, p, dates, manager) {
   const { S } = ctx;
+  const canMark = ctx.canMarkAttendance ? ctx.canMarkAttendance() : true;
   const photo = p.photo_url
     ? '<img class="avatar" loading="lazy" src="' + esc(p.photo_url) + '" alt="' + esc(p.name) + '">'
     : '<div class="avatar grid place-items-center text-violet-300 font-black" aria-hidden="true">' + esc((p.name || "?").charAt(0).toUpperCase()) + "</div>";
@@ -276,8 +277,10 @@ function personRow(ctx, p, dates, manager) {
       return "<td class='px-3 py-3'><span class='att empty att-locked' aria-label='" + esc(p.name + " on " + dateLabel(d.date) + " — person is inactive") + "'>·</span></td>";
     }
     const s = statusOf(ctx, p.id, d.date);
-    const label = esc(p.name + " on " + dateLabel(d.date) + ": " + (s === "present" ? "present" : s === "absent" ? "absent" : "not marked") + ". Activate to " + (s === "empty" ? "mark present" : s === "present" ? "mark absent" : "clear") + ".");
-    return "<td class='px-3 py-3'><button aria-label='" + label + "' data-person-cell='" + esc(p.id) + "' data-date='" + esc(d.date) + "' class='att " + s + "'>" +
+    const label = !canMark
+      ? esc(p.name + " on " + dateLabel(d.date) + ": attendance marking is disabled by the team.")
+      : esc(p.name + " on " + dateLabel(d.date) + ": " + (s === "present" ? "present" : s === "absent" ? "absent" : "not marked") + ". Activate to " + (s === "empty" ? "mark present" : s === "present" ? "mark absent" : "clear") + ".");
+    return "<td class='px-3 py-3'><button aria-label='" + label + "' " + (!canMark ? "disabled" : "data-person-cell='" + esc(p.id) + "'") + " data-date='" + esc(d.date) + "' class='att " + s + (!canMark ? " att-locked" : "") + "'>" +
       (s === "present" ? "✓" : s === "absent" ? "✕" : "•") +
     "</button></td>";
   }).join("");
