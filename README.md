@@ -125,7 +125,7 @@ The reusable production design layer is in `src/design-system.css` and includes:
 
 ## One-time Supabase initialization
 
-For a new or existing Supabase project, run the complete `supabase/FINAL_SETUP.sql` once in **Supabase → SQL Editor**.
+For a new or existing Supabase project, run the complete `supabase/CORE_SETUP.sql` once in **Supabase → SQL Editor**.
 
 Then optionally run `supabase/HEALTH_CHECK.sql`. All checks should report `PASS`.
 
@@ -210,3 +210,7 @@ The super-admin can edit:
 
 The footer automatically uses the current calendar year, so a copyright range advances without yearly code edits.
 
+
+
+## Current database installer
+Use **only** `supabase/CORE_SETUP.sql` for the current database installation. Older setup SQL files are obsolete. After it succeeds, run `supabase/HEALTH_CHECK.sql`.
