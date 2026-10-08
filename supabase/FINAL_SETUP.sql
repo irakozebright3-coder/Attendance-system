@@ -696,15 +696,50 @@ begin
 
   tid := case
     when payload ? 'team_id'
-      and (payload->>'team_id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}
+      and (payload->>'team_id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      then (payload->>'team_id')::uuid
+    when tg_table_name='teams'
+      and (payload->>'id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      then (payload->>'id')::uuid
+    else null
+  end;
+
+  eid := case
+    when tg_table_name='team_members'
+      and (payload->>'user_id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      then (payload->>'user_id')::uuid
+    when payload ? 'id'
+      and (payload->>'id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      then (payload->>'id')::uuid
+    else null
+  end;
+
+  if tid is not null then
+    insert into public.audit_events(
+      team_id,
+      actor_user_id,
+      action,
+      entity,
+      entity_id,
+      details
+    )
+    values(
+      tid,
+      auth.uid(),
+      tg_op,
+      tg_table_name,
+      eid,
+      payload
+    );
+  end if;
 
   if tg_op='DELETE' then
     return old;
   end if;
+
   return new;
 end;
 $$;
-
 -- ------------------------------------------------------------
 -- TRIGGERS
 -- ------------------------------------------------------------
