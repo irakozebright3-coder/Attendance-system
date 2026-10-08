@@ -742,7 +742,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 create or replace function public.audit_attendance_change()
 returns trigger
