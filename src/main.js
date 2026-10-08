@@ -71,7 +71,21 @@ const ctx = {
     } catch {
       // Keep the current public settings if content cannot be refreshed.
     }
-    await loadApp();
+
+    const membership = S.session ? await api.findMembership(S.session.user.id) : null;
+    if (membership) {
+      S.team = membership.team;
+      S.role = membership.role;
+      await loadApp();
+      return;
+    }
+
+    workspaceSetupScreen({
+      defaultName: String(S.session?.user?.user_metadata?.team_name || ""),
+      onSignOut: () => api.signOut().catch((err) => toast(err.message, "error")),
+      onCreate: async (name) => { await api.createTeam(name); await loadApp(); },
+      onJoin: async (code) => { await api.joinTeam(code); await loadApp(); }
+    });
   },
   debouncedSearch: (input) => debounce(() => {
     S.filters.search = input.value;
@@ -302,6 +316,17 @@ async function teamSetup() {
 }
 
 async function loadApp() {
+  // A platform super-admin is not required to belong to a team.
+  // If they have no workspace yet, give them the dedicated platform panel
+  // instead of forcing them through team setup.
+  if (S.isPlatformAdmin && !S.team) {
+    const membership = await api.findMembership(S.session.user.id);
+    if (!membership) {
+      await platformAdminPanel(ctx);
+      return;
+    }
+  }
+
   const found = await teamSetup();
   if (!found) return; // setup screen shown
   dashboard(ctx);
