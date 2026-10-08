@@ -736,9 +736,13 @@ begin
     coalesce(to_jsonb(new), to_jsonb(old))
   );
 
-  return coalesce(new, old);
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+
+  return new;
 end;
-$$;
+$;
 
 create or replace function public.audit_attendance_change()
 returns trigger
