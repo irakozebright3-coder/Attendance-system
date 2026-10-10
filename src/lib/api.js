@@ -193,10 +193,30 @@ export async function loadTeamData(teamId) {
 export async function attachPhotoUrls(people) {
   const paths = people.filter((p) => p.photo_path).map((p) => p.photo_path);
   if (!paths.length) return people;
+
   const { data, error } = await db.storage.from(BUCKET).createSignedUrls(paths, 3600);
-  if (error || !data) return people; // photos stay hidden, data still renders
-  const lookup = new Map(data.map((x) => [x.path, x.signedUrl || null]));
-  return people.map((p) => ({ ...p, photo_url: p.photo_path ? lookup.get(p.photo_path) || null : null }));
+  if (error) {
+    console.warn("Could not create signed photo URLs. Check the private avatars bucket and its team-folder SELECT policy.", error);
+  }
+
+  const normalizePath = (value) => String(value || "")
+    .replace(/^\\/+/, "")
+    .replace(/^avatars\\//, "");
+
+  const lookup = new Map();
+  (data || []).forEach((item, index) => {
+    const path = normalizePath(item.path || paths[index]);
+    const url = item.signedUrl || item.signedURL || null;
+    if (path && url) lookup.set(path, url);
+  });
+
+  return people.map((person) => {
+    if (!person.photo_path) return person;
+    return {
+      ...person,
+      photo_url: lookup.get(normalizePath(person.photo_path)) || person.photo_url || null
+    };
+  });
 }
 
 // ---------- people ----------
