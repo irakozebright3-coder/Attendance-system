@@ -46,11 +46,6 @@ export function isValidDate(s) {
   return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(new Date(s + "T00:00:00").getTime());
 }
 
-export function dateLabel(d) {
-  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" })
-    .format(new Date(d + "T00:00:00"));
-}
-
 export function timeLabel(iso) {
   if (!iso) return "";
   return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" })
