@@ -118,7 +118,8 @@ export async function personModal(ctx, person = null) {
           "</div>" +
           '<input id="file" type="file" accept="image/jpeg,image/png,image/webp" class="hidden">' +
           '<div id="cameraBox" class="hidden mt-3"><video id="video" autoplay playsinline muted class="camera-video w-full rounded-xl bg-black" aria-label="Live camera preview"></video>' +
-          '<button type="button" id="capture" disabled class="w-full mt-2 rounded-xl bg-cyan-600 py-2 font-bold opacity-50 cursor-not-allowed">Camera starting…</button></div>' +
+          '<button type="button" id="capture" disabled class="capture-photo-button mt-2 w-full rounded-xl bg-cyan-600 py-3 font-bold opacity-50 cursor-not-allowed">Camera starting…</button></div>' +
+          '<p id="photoSaveHint" class="photo-save-hint hidden" role="status">Photo captured. Click “Save person” below to store it on this profile.</p>' +
         "</div>" +
         '<label class="dialog-label">Full name<input id="personName" required maxlength="160" ' + (manager ? "" : "disabled") + ' value="' + esc(current.name) + '" placeholder="Full name" class="dialog-input"></label>' +
         '<label class="dialog-label">ID / employee number <span class="text-slate-500">(optional)</span><input id="personId" maxlength="80" ' + (manager ? "" : "disabled") + ' value="' + esc(current.identifier) + '" placeholder="Optional" class="dialog-input"></label>' +
@@ -156,6 +157,10 @@ export async function personModal(ctx, person = null) {
       removedPhoto = false;
       swapPreview(photo.url);
       document.getElementById("removePhoto")?.classList.remove("hidden");
+      const hint = document.getElementById("photoSaveHint");
+      if (hint) { hint.textContent = "Photo selected. Click “Save person” below to store it on this profile."; hint.classList.remove("hidden"); }
+      const saveButton = document.getElementById("savePerson");
+      if (saveButton) saveButton.textContent = isEdit ? "Save changes & photo" : "Save person & photo";
       document.getElementById("personName")?.dispatchEvent(new Event("input"));
     };
     document.getElementById("camera").onclick = async () => {
@@ -213,7 +218,11 @@ export async function personModal(ctx, person = null) {
         document.getElementById("cameraBox")?.classList.add("hidden");
         swapPreview(photo.url);
         document.getElementById("removePhoto")?.classList.remove("hidden");
-        ctx.toast("Photo captured. Click Save person to store it in the profile.", "success");
+        const hint = document.getElementById("photoSaveHint");
+        if (hint) { hint.textContent = "Photo captured successfully. Click the save button below to store it on this profile."; hint.classList.remove("hidden"); }
+        const saveButton = document.getElementById("savePerson");
+        if (saveButton) saveButton.textContent = isEdit ? "Save changes & photo" : "Save person & photo";
+        ctx.toast("Photo captured. Now click the save button to store it on this profile.", "success");
       } catch (err) {
         ctx.toast(err?.message || "Camera capture failed. Please try again.", "error");
       } finally {
@@ -253,7 +262,7 @@ export async function personModal(ctx, person = null) {
     const name = document.getElementById("personName").value.trim();
     const identifier = document.getElementById("personId").value.trim();
 
-    if (!name) { ctx.toast("Enter the person’s full name.", "error"); save.disabled = false; save.textContent = isEdit ? "Save changes" : "Save person"; return; }
+    if (!name) { ctx.toast("Enter the person’s full name.", "error"); save.disabled = false; save.textContent = photo ? (isEdit ? "Save changes & photo" : "Save person & photo") : (isEdit ? "Save changes" : "Save person"); return; }
 
     const requireIdentifier = Boolean(S.teamSettings?.require_identifier);
     const requirePhoto = Boolean(S.teamSettings?.require_photo);
@@ -263,7 +272,7 @@ export async function personModal(ctx, person = null) {
     if (requireIdentifier && !identifier) {
       ctx.toast("This team requires an identifier / employee number.", "error");
       save.disabled = false;
-      save.textContent = isEdit ? "Save changes" : "Save person";
+      save.textContent = photo ? (isEdit ? "Save changes & photo" : "Save person & photo") : (isEdit ? "Save changes" : "Save person");
       return;
     }
 
@@ -306,12 +315,14 @@ export async function personModal(ctx, person = null) {
         }
         ctx.toast("Person saved to the shared database.", "success");
       }
+      const localPhotoUrl = photo?.url;
       closeModal();
+      if (localPhotoUrl) URL.revokeObjectURL(localPhotoUrl);
       await ctx.refresh();
     } catch (err) {
       ctx.toast(err.message || "Could not save the person.", "error");
       save.disabled = false;
-      save.textContent = isEdit ? "Save changes" : "Save person";
+      save.textContent = photo ? (isEdit ? "Save changes & photo" : "Save person & photo") : (isEdit ? "Save changes" : "Save person");
     }
   }
 
