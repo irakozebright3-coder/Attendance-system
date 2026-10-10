@@ -115,6 +115,7 @@ export function authScreen(message = "", platformSettings = DEFAULT_PLATFORM_SET
       '<h2 id="authTitle">Enter your workspace</h2>' +
       '<p>Sign in or create the team account that powers your real attendance database.</p>' +
       '<form id="authForm">' +
+        '<label id="fullNameWrap" class="hidden">Full name<input id="authFullName" maxlength="120" autocomplete="name" placeholder="Your full name"></label>' +
         '<label>Email<input id="authEmail" type="email" required autocomplete="email" placeholder="you@company.com"></label>' +
         '<label>Password<input id="authPassword" type="password" minlength="8" required autocomplete="current-password" placeholder="Minimum 8 characters"></label>' +
         '<label id="teamWrap">Team name<input id="team" autocomplete="organization" placeholder="Your team or organization"></label>' +
@@ -128,9 +129,11 @@ export function authScreen(message = "", platformSettings = DEFAULT_PLATFORM_SET
   function openAuth(showCreate = true) {
     $("authModal").classList.remove("hidden");
     $("teamWrap").classList.toggle("hidden", !showCreate);
+    $("fullNameWrap").classList.toggle("hidden", !showCreate);
+    $("authFullName").required = showCreate;
     $("signup").classList.toggle("hidden", !showCreate);
     $("authPassword").autocomplete = showCreate ? "new-password" : "current-password";
-    $("authEmail").focus();
+    (showCreate ? $("authFullName") : $("authEmail")).focus();
   }
   const closeAuth = () => $("authModal").classList.add("hidden");
 
