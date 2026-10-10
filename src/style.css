@@ -1006,3 +1006,17 @@ thead .sticky{z-index:3}
   .footer-brand-col{grid-column:auto}
   .footer-bottom{flex-direction:column}
 }
+
+
+.person-save-button{
+  position:sticky;
+  bottom:8px;
+  z-index:10;
+  min-height:50px;
+  background:linear-gradient(115deg,#7c3aed,#2563eb)!important;
+  box-shadow:0 -8px 26px rgba(7,11,20,.5),0 8px 28px rgba(124,58,237,.18);
+}
+.person-save-button:disabled{
+  opacity:.65;
+  cursor:wait;
+}
