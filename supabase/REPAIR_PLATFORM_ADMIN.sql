@@ -85,6 +85,18 @@ alter table public.platform_admins enable row level security;
 alter table public.platform_settings enable row level security;
 alter table public.platform_faqs enable row level security;
 
+create or replace function public.is_platform_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $af_is_platform_admin$
+  select exists (
+    select 1 from public.platform_admins where user_id = auth.uid()
+  );
+$af_is_platform_admin$;
+
 drop policy if exists platform_admin_self_read on public.platform_admins;
 create policy platform_admin_self_read
 on public.platform_admins
@@ -129,17 +141,7 @@ on public.platform_faqs
 for delete to authenticated
 using (public.is_platform_admin());
 
-create or replace function public.is_platform_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $af_is_platform_admin$
-  select exists (
-    select 1 from public.platform_admins where user_id = auth.uid()
-  );
-$af_is_platform_admin$;
+
 
 revoke all on function public.is_platform_admin() from public;
 revoke all on function public.is_platform_admin() from anon;
