@@ -200,8 +200,8 @@ export async function attachPhotoUrls(people) {
   }
 
   const normalizePath = (value) => String(value || "")
-    .replace(/^\\/+/, "")
-    .replace(/^avatars\\//, "");
+    .replace(/^\/+/, "")
+    .replace(/^avatars\//, "");
 
   const lookup = new Map();
   (data || []).forEach((item, index) => {
