@@ -8,6 +8,8 @@ export function closeModal() {
   stopCamera();
   const m = modalHost();
   if (!m) return;
+  const preview = m.querySelector("#preview");
+  if (preview?.src?.startsWith("blob:")) URL.revokeObjectURL(preview.src);
   m.classList.add("hidden");
   m.innerHTML = "";
 }
@@ -222,6 +224,7 @@ export async function personModal(ctx, person = null) {
     };
     const rm = document.getElementById("removePhoto");
     if (rm) rm.onclick = () => {
+      if (photo?.url) URL.revokeObjectURL(photo.url);
       photo = null;
       removedPhoto = true;
       swapPreview(null);
@@ -284,12 +287,12 @@ export async function personModal(ctx, person = null) {
         try {
           await api.updatePerson(existing.id, S.team.id, fields);
         } catch (err) {
-          if (uploadedPath) await api.removePhotos([uploadedPath]); // orphan cleanup
+          if (uploadedPath) await api.removePhotos([uploadedPath]).catch(() => {}); // best-effort orphan cleanup
           throw err;
         }
         const oldPath = existing.photo_path;
-        if (photo && oldPath) await api.removePhotos([oldPath]);
-        if (removedPhoto && oldPath) await api.removePhotos([oldPath]);
+        if (photo && oldPath) await api.removePhotos([oldPath]).catch((err) => console.warn("Old photo cleanup failed:", err));
+        if (removedPhoto && oldPath) await api.removePhotos([oldPath]).catch((err) => console.warn("Old photo cleanup failed:", err));
         ctx.toast("Person updated in the database.", "success");
       } else {
         let photoPath = null;
@@ -297,7 +300,7 @@ export async function personModal(ctx, person = null) {
         try {
           await api.createPerson(S.team.id, { name, identifier, photoPath });
         } catch (err) {
-          if (photoPath) await api.removePhotos([photoPath]); // orphan cleanup
+          if (photoPath) await api.removePhotos([photoPath]).catch(() => {}); // best-effort orphan cleanup
           throw err;
         }
         ctx.toast("Person saved to the shared database.", "success");
