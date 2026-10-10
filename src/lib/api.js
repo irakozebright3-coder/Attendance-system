@@ -27,11 +27,11 @@ export async function signIn(email, password) {
   return data;
 }
 
-export async function signUp(email, password, teamName) {
+export async function signUp(email, password, teamName, fullName) {
   const { data, error } = await db.auth.signUp({
     email,
     password,
-    options: { data: { team_name: teamName } }
+    options: { data: { team_name: teamName, full_name: fullName } }
   });
   if (error) fail(error);
   return data;
