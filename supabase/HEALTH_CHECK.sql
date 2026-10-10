@@ -131,3 +131,5 @@ select
     )
     and c.relrowsecurity=false
   ) then 'PASS' else 'FAIL' end as status;
+
+select 'permanent_person_deletion_rpc' as check_name, case when exists (select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='delete_person_permanently' and pg_get_function_identity_arguments(p.oid)='p_person_id uuid, p_team_id uuid') then 'PASS' else 'FAIL' end as status;
