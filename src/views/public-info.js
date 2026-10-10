@@ -65,7 +65,7 @@ export function footerMarkup(settings, faqs = []) {
         (s.support_hours ? '<span>' + esc(s.support_hours) + '</span>' : '') +
       '</div>' +
     '</div>' +
-    '<div class="footer-bottom"><span>' + copyrightText(s) + '</span><span>' + esc(s.site_name) + ' · Secure team attendance</span></div>' +
+    '<div class="footer-bottom"><span>' + copyrightText(s) + '</span><span id="footerOwnerName">' + (s.owner_name ? 'Owner: ' + esc(s.owner_name) + ' · ' : '') + esc(s.site_name) + ' · Secure team attendance</span></div>' +
   '</footer>';
 }
 
