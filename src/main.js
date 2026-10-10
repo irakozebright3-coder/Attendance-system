@@ -148,12 +148,38 @@ const ctx = {
       }
     },
     restorePerson: async (id) => {
+      if (!canManage()) { toast("Only owners and admins can restore people.", "error"); return; }
       try {
         await api.restorePerson(id, S.team.id);
         await load(false);
         toast("Person restored to the active register.", "success");
       } catch (err) {
         toast(err.message, "error");
+      }
+    },
+    permanentlyDeletePerson: async (id) => {
+      if (!canManage()) { toast("Only owners and admins can permanently delete people.", "error"); return; }
+      const person = S.people.find((p) => p.id === id);
+      if (!person) { toast("Person not found. Refresh and try again.", "error"); return; }
+
+      const ok = await confirmDialog({
+        title: "Permanently delete " + person.name + "?",
+        message: "This permanently removes this person and all of their attendance records from this team. The profile photo will also be removed from storage. This cannot be undone. Choose Deactivate instead if you need to preserve attendance history.",
+        confirmLabel: "Delete permanently",
+        danger: true
+      });
+      if (!ok) return;
+
+      try {
+        const result = await api.permanentlyDeletePerson(id, S.team.id);
+        await load(false);
+        if (result.photoCleanupFailed) {
+          toast("Person and attendance history were deleted, but the stored photo could not be removed. Check Supabase Storage permissions.", "error");
+        } else {
+          toast("Person permanently deleted, including " + result.deletedAttendanceRecords + " attendance record(s).", "success");
+        }
+      } catch (err) {
+        toast(err.message || "Could not permanently delete this person.", "error");
       }
     }
   }
