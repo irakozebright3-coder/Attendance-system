@@ -151,6 +151,7 @@ export async function personModal(ctx, person = null) {
       if (!file) return;
       const err = validatePhoto(file);
       if (err) { ctx.toast(err, "error"); e.target.value = ""; return; }
+      if (photo?.url) URL.revokeObjectURL(photo.url);
       photo = { file, url: URL.createObjectURL(file) };
       removedPhoto = false;
       swapPreview(photo.url);
