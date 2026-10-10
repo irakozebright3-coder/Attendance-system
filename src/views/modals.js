@@ -116,7 +116,7 @@ export async function personModal(ctx, person = null) {
           "</div>" +
           '<input id="file" type="file" accept="image/jpeg,image/png,image/webp" class="hidden">' +
           '<div id="cameraBox" class="hidden mt-3"><video id="video" autoplay playsinline muted class="camera-video w-full rounded-xl bg-black" aria-label="Live camera preview"></video>' +
-          '<button type="button" id="capture" class="w-full mt-2 rounded-xl bg-cyan-600 py-2 font-bold">Capture photo</button></div>' +
+          '<button type="button" id="capture" disabled class="w-full mt-2 rounded-xl bg-cyan-600 py-2 font-bold opacity-50 cursor-not-allowed">Camera starting…</button></div>' +
         "</div>" +
         '<label class="dialog-label">Full name<input id="personName" required maxlength="160" ' + (manager ? "" : "disabled") + ' value="' + esc(current.name) + '" placeholder="Full name" class="dialog-input"></label>' +
         '<label class="dialog-label">ID / employee number <span class="text-slate-500">(optional)</span><input id="personId" maxlength="80" ' + (manager ? "" : "disabled") + ' value="' + esc(current.identifier) + '" placeholder="Optional" class="dialog-input"></label>' +
@@ -158,20 +158,67 @@ export async function personModal(ctx, person = null) {
     document.getElementById("camera").onclick = async () => {
       await startCamera(ctx);
     };
-    document.getElementById("capture").onclick = () => {
-      const v = document.getElementById("video");
-      const c = document.createElement("canvas");
-      c.width = v.videoWidth || 640;
-      c.height = v.videoHeight || 480;
-      c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
-      c.toBlob((blob) => {
-        if (!blob) { ctx.toast("Camera capture failed. Try again.", "error"); return; }
-        photo = { file: blob, url: URL.createObjectURL(blob) };
+    document.getElementById("capture").onclick = async () => {
+      const button = document.getElementById("capture");
+      const video = document.getElementById("video");
+
+      if (!ctxCameraStream?.active || !video || video.readyState < 2 || video.videoWidth < 1 || video.videoHeight < 1) {
+        ctx.toast("The camera is not ready yet. Wait for the live preview, then try again.", "error");
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Capturing…";
+
+      try {
+        await video.play();
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+        const sourceWidth = video.videoWidth;
+        const sourceHeight = video.videoHeight;
+        if (!sourceWidth || !sourceHeight) throw new Error("No live camera frame is available yet.");
+
+        // Keep uploads within the supported size limit while preserving quality.
+        const scale = Math.min(1, 1280 / sourceWidth);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+        canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Could not prepare the camera image.");
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob((result) => {
+            if (result && result.size > 0) resolve(result);
+            else reject(new Error("The camera produced an empty image. Please try again."));
+          }, "image/jpeg", 0.82);
+        });
+
+        const capturedFile = new File(
+          [blob],
+          "attendanceflow-camera-" + Date.now() + ".jpg",
+          { type: "image/jpeg", lastModified: Date.now() }
+        );
+        const photoError = validatePhoto(capturedFile);
+        if (photoError) throw new Error(photoError);
+
+        if (photo?.url) URL.revokeObjectURL(photo.url);
+        photo = { file: capturedFile, url: URL.createObjectURL(capturedFile) };
         removedPhoto = false;
         stopCamera();
+        document.getElementById("cameraBox")?.classList.add("hidden");
         swapPreview(photo.url);
         document.getElementById("removePhoto")?.classList.remove("hidden");
-      }, "image/jpeg", 0.86);
+        ctx.toast("Photo captured. Click Save person to store it in the profile.", "success");
+      } catch (err) {
+        ctx.toast(err?.message || "Camera capture failed. Please try again.", "error");
+      } finally {
+        button.disabled = !ctxCameraStream?.active;
+        button.textContent = button.disabled ? "Camera starting…" : "Capture photo";
+        button.classList.toggle("opacity-50", button.disabled);
+        button.classList.toggle("cursor-not-allowed", button.disabled);
+      }
     };
     const rm = document.getElementById("removePhoto");
     if (rm) rm.onclick = () => {
@@ -299,8 +346,8 @@ async function loadHistory(ctx, person) {
 // ---------------- Camera ----------------
 
 async function startCamera(ctx) {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    ctx.toast("Camera access requires HTTPS or localhost.", "error");
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+    ctx.toast("Camera access requires HTTPS or localhost. Open the secure Vercel URL and allow camera access.", "error");
     return;
   }
 
@@ -308,54 +355,88 @@ async function startCamera(ctx) {
 
   const cameraBox = document.getElementById("cameraBox");
   const video = document.getElementById("video");
-  if (!cameraBox || !video) {
-    ctx.toast("Camera panel could not be opened. Please close and reopen the person dialog.", "error");
+  const capture = document.getElementById("capture");
+  if (!cameraBox || !video || !capture) {
+    ctx.toast("The camera panel could not be opened. Close and reopen the person dialog.", "error");
     return;
   }
 
+  cameraBox.classList.remove("hidden");
+  capture.disabled = true;
+  capture.textContent = "Camera starting…";
+  capture.classList.add("opacity-50", "cursor-not-allowed");
+  video.muted = true;
+  video.autoplay = true;
+  video.playsInline = true;
   video.pause();
   video.srcObject = null;
 
   try {
-    ctxCameraStream = await navigator.mediaDevices.getUserMedia({
+    const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: { ideal: cameraFacingMode },
-        width: { ideal: 1280, min: 640 },
-        height: { ideal: 720, min: 480 }
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
       },
       audio: false
     });
 
-    video.srcObject = ctxCameraStream;
-    cameraBox.classList.remove("hidden");
-    video.classList.add("camera-live");
+    ctxCameraStream = stream;
+    video.srcObject = stream;
 
-    // Some browsers attach the MediaStream successfully but do not start
-    // rendering until metadata is available / play() is requested.
-    await new Promise((resolve) => {
-      if (video.readyState >= 2) {
+    await new Promise((resolve, reject) => {
+      if (video.readyState >= 1 && video.videoWidth > 0) {
         resolve();
         return;
       }
-      const done = () => {
-        video.removeEventListener("loadedmetadata", done);
-        resolve();
+
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(new Error("Camera connected but did not provide video frames. Check that another application is not using the camera."));
+      }, 8000);
+
+      const onMetadata = () => {
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          cleanup();
+          resolve();
+        }
       };
-      video.addEventListener("loadedmetadata", done, { once: true });
-      setTimeout(done, 1800);
+      const onError = () => {
+        cleanup();
+        reject(new Error("The browser could not read the camera stream."));
+      };
+      const cleanup = () => {
+        clearTimeout(timeout);
+        video.removeEventListener("loadedmetadata", onMetadata);
+        video.removeEventListener("error", onError);
+      };
+
+      video.addEventListener("loadedmetadata", onMetadata);
+      video.addEventListener("error", onError);
     });
 
-    try {
-      await video.play();
-    } catch {
-      ctx.toast("Camera opened, but the browser blocked video playback. Click the preview and try again.", "error");
+    await video.play();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    if (!ctxCameraStream?.active || video.readyState < 2 || video.videoWidth < 1 || video.videoHeight < 1) {
+      throw new Error("The camera opened but no live frame is available. Check camera permissions and close any app using the camera.");
     }
+
+    video.classList.add("camera-live");
+    capture.disabled = false;
+    capture.textContent = "Capture photo";
+    capture.classList.remove("opacity-50", "cursor-not-allowed");
+    ctx.toast("Camera ready. Capture the photo, then save the person.", "success");
   } catch (err) {
+    stopCamera();
+    cameraBox.classList.add("hidden");
     const reason = err?.name === "NotAllowedError"
-      ? "Camera permission was denied. Allow camera access in your browser, then try again."
+      ? "Camera permission was denied. Allow camera access for this site in your browser settings."
       : err?.name === "NotFoundError"
         ? "No camera was found on this device."
-        : "The camera could not be started. Check browser permissions and HTTPS.";
+        : err?.name === "NotReadableError"
+          ? "The camera is busy. Close other apps using it and try again."
+          : err?.message || "The camera could not be started. Check browser permissions and HTTPS.";
     ctx.toast(reason, "error");
   }
 }
