@@ -204,6 +204,9 @@ export function renderRegister(ctx) {
   document.querySelectorAll("[data-person-remove]").forEach((x) => {
     x.onclick = () => ctx.handlers.deactivatePerson(x.dataset.personRemove);
   });
+  document.querySelectorAll("[data-person-delete]").forEach((x) => {
+    x.onclick = () => ctx.handlers.permanentlyDeletePerson(x.dataset.personDelete);
+  });
   document.querySelectorAll("[data-restore]").forEach((x) => {
     x.onclick = () => ctx.handlers.restorePerson(x.dataset.restore);
   });
@@ -268,9 +271,12 @@ function personRow(ctx, p, dates, manager) {
 
   const rowActions = !manager
     ? ""
-    : p.active
-      ? '<button data-person-remove="' + esc(p.id) + '" class="ml-auto text-slate-600 hover:text-red-300" title="Deactivate person" aria-label="Deactivate ' + esc(p.name) + '">×</button>'
-      : '<button data-restore="' + esc(p.id) + '" class="ml-auto text-cyan-400 hover:text-cyan-300 underline text-xs" title="Restore person" aria-label="Restore ' + esc(p.name) + '">restore</button>';
+    : '<div class="person-row-actions ml-auto">' +
+        (p.active
+          ? '<button data-person-remove="' + esc(p.id) + '" class="person-action-deactivate" title="Deactivate person" aria-label="Deactivate ' + esc(p.name) + '">Deactivate</button>'
+          : '<button data-restore="' + esc(p.id) + '" class="person-action-restore" title="Restore person" aria-label="Restore ' + esc(p.name) + '">Restore</button>') +
+        '<button data-person-delete="' + esc(p.id) + '" class="person-action-delete" title="Permanently delete person" aria-label="Permanently delete ' + esc(p.name) + '">Delete</button>' +
+      '</div>';
 
   const cells = dates.map((d) => {
     if (!p.active) {
