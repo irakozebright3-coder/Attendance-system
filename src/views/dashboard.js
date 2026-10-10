@@ -310,7 +310,7 @@ export function updateCell(ctx, personId, date) {
   const p = ctx.S.people.find((x) => x.id === personId);
   btn.className = "att " + s;
   btn.textContent = s === "present" ? "✓" : s === "absent" ? "✕" : "•";
-  btn.setAttribute("aria-label", (p?.name || "Person") + " on " + dateLabel(date, S.teamSettings) + ": " +
+  btn.setAttribute("aria-label", (p?.name || "Person") + " on " + dateLabel(date, ctx.S.teamSettings) + ": " +
     (s === "present" ? "present" : s === "absent" ? "absent" : "not marked") + ".");
   updateStats(ctx);
 }
