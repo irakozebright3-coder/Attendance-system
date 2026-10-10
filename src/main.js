@@ -247,7 +247,13 @@ async function doAuth(newUser) {
 
   const email = document.getElementById("authEmail").value.trim();
   const password = document.getElementById("authPassword").value;
+  const fullName = document.getElementById("authFullName")?.value.trim() || "";
   const team = document.getElementById("team").value.trim() || "My Team";
+  if (newUser && !fullName) {
+    setMessage("Please enter your full name to create an admin account.");
+    document.getElementById("authFullName")?.focus();
+    return;
+  }
   const loginBtn = document.getElementById("login");
   const signupBtn = document.getElementById("signup");
 
@@ -258,7 +264,7 @@ async function doAuth(newUser) {
   try {
     let data;
     if (newUser) {
-      data = await api.signUp(email, password, team);
+      data = await api.signUp(email, password, team, fullName);
 
       if (!data.session) {
         setMessage("Account created. Confirm your email if required, then sign in.", true);
