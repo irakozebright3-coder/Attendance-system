@@ -99,7 +99,9 @@ export function dashboard(ctx) {
 
   document.getElementById("teamLabel").textContent = S.team?.name || "Team attendance workspace";
   document.getElementById("emailLabel").textContent = S.session?.user?.email || "";
-  document.getElementById("roleLabel").textContent = (S.role || "member").toUpperCase();
+  document.getElementById("roleLabel").textContent = ["owner", "admin"].includes(String(S.role || "").toLowerCase())
+    ? "ADMIN"
+    : String(S.role || "member").toUpperCase();
   document.getElementById("logout").onclick = () => ctx.handlers.signOut();
   document.getElementById("reload").onclick = () => ctx.handlers.refresh();
   document.getElementById("settingsBtn").onclick = () => ctx.handlers.openSettings();
