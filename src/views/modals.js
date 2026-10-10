@@ -124,7 +124,7 @@ export async function personModal(ctx, person = null) {
         '<label class="dialog-label">Full name<input id="personName" required maxlength="160" ' + (manager ? "" : "disabled") + ' value="' + esc(current.name) + '" placeholder="Full name" class="dialog-input"></label>' +
         '<label class="dialog-label">ID / employee number <span class="text-slate-500">(optional)</span><input id="personId" maxlength="80" ' + (manager ? "" : "disabled") + ' value="' + esc(current.identifier) + '" placeholder="Optional" class="dialog-input"></label>' +
         (manager
-          ? '<button id="savePerson" type="submit" class="liquid w-full rounded-xl bg-violet-600 py-3 font-bold">' + (isEdit ? "Save changes" : "Save person") + "</button>"
+          ? '<button id="savePerson" type="submit" class="person-save-button liquid w-full rounded-xl bg-violet-600 py-3 font-bold">' + (isEdit ? "Save changes" : "Save person") + "</button>"
           : '<p class="text-xs text-slate-500">You are viewing this person. Only owners and admins can edit people.</p>') +
       "</form>" +
 
