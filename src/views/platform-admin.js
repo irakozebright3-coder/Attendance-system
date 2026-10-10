@@ -101,6 +101,8 @@ export async function platformAdminPanel(ctx) {
       payload.registration_enabled = document.getElementById("registrationEnabled").checked;
       const saved = await api.savePlatformSettings(payload);
       S.platformSettings = saved;
+      const footerOwner = document.getElementById("footerOwnerName");
+      if (footerOwner) footerOwner.textContent = (saved.owner_name ? "Owner: " + saved.owner_name + " · " : "") + (saved.site_name || "AttendanceFlow") + " · Secure team attendance";
       msg.textContent = "Saved globally.";
       toast("Website settings saved.", "success");
     } catch (err) {
