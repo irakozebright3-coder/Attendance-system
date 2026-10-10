@@ -248,6 +248,32 @@ export async function restorePerson(personId, teamId) {
   await updatePerson(personId, teamId, { active: true });
 }
 
+export async function permanentlyDeletePerson(personId, teamId) {
+  const { data, error } = await db.rpc("delete_person_permanently", {
+    p_person_id: personId,
+    p_team_id: teamId
+  });
+  if (error) fail(error);
+
+  let photoCleanupFailed = false;
+  const photoPath = data?.photo_path || null;
+  if (photoPath) {
+    const { error: storageError } = await db.storage.from(BUCKET).remove([photoPath]);
+    if (storageError) {
+      // The database deletion is already committed; report storage cleanup
+      // separately rather than claiming the person still exists.
+      console.warn("Person deleted, but photo cleanup failed:", storageError);
+      photoCleanupFailed = true;
+    }
+  }
+
+  return {
+    deleted: Boolean(data?.deleted),
+    deletedAttendanceRecords: Number(data?.deleted_attendance_records || 0),
+    photoCleanupFailed
+  };
+}
+
 export async function loadPersonHistory(teamId, personId) {
   const { data, error } = await db
     .from("attendance")
