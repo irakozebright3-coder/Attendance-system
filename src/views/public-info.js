@@ -56,7 +56,6 @@ export function footerMarkup(settings, faqs = []) {
           '<span>' + esc(s.site_name) + '</span>' +
         '</a>' +
         '<p>' + esc(s.footer_note || s.tagline) + '</p>' +
-        '<div class="footer-stack"><span>GitHub</span><span>Vercel</span><span>Supabase</span><span>Vite</span><span>JavaScript</span><span>Tailwind CSS</span><span>HTML5 Canvas</span><span>CSS3</span><span>WebGL-ready</span></div>' +
       '</div>' +
       '<div class="footer-col"><b>Product</b><button data-info="about">About us</button><button data-info="help">Help Center</button><button data-info="faq">FAQs' + (faqCount ? " (" + faqCount + ")" : "") + '</button></div>' +
       '<div class="footer-col"><b>Contact</b>' +
