@@ -1,7 +1,7 @@
 // Every database/storage operation in one place. The rest of the app calls
 // these helpers — no raw queries scattered across click handlers.
 import { db } from "./supabase.js";
-import { friendlyError, photoExt, today, isValidDate } from "./util.js";
+import { friendlyError, photoExt, today, isValidDate, validatePhoto } from "./util.js";
 
 const BUCKET = "avatars";
 
@@ -292,20 +292,36 @@ export async function loadAudit(teamId) {
 // ---------- storage ----------
 
 export async function uploadPhoto(teamId, file) {
-  const ext = photoExt(file.type || "image/jpeg");
-  const path = teamId + "/" + crypto.randomUUID() + "." + ext;
-  const { error } = await db.storage.from(BUCKET).upload(path, file, {
-    contentType: file.type || "image/jpeg",
+  if (!teamId) throw new Error("Select a team before uploading a photo.");
+  if (!file || typeof file.size !== "number" || file.size <= 0) {
+    throw new Error("The selected photo is empty. Capture or choose the photo again.");
+  }
+
+  const photoError = validatePhoto(file);
+  if (photoError) throw new Error(photoError);
+
+  const contentType = file.type || "image/jpeg";
+  const extension = photoExt(contentType);
+  const uniqueId = globalThis.crypto?.randomUUID
+    ? globalThis.crypto.randomUUID()
+    : Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+  const path = teamId + "/" + uniqueId + "." + extension;
+
+  const { data, error } = await db.storage.from(BUCKET).upload(path, file, {
+    contentType,
+    cacheControl: "3600",
     upsert: false
   });
+
   if (error) fail(error);
-  return path;
+  return data?.path || path;
 }
 
 export async function removePhotos(paths) {
   const list = (paths || []).filter(Boolean);
   if (!list.length) return;
-  await db.storage.from(BUCKET).remove(list);
+  const { error } = await db.storage.from(BUCKET).remove(list);
+  if (error) fail(error);
 }
 
 export { BUCKET, today };
