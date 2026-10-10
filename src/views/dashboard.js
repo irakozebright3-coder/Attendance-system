@@ -98,7 +98,10 @@ export function dashboard(ctx) {
     '<div id="modal" class="modal hidden" role="dialog" aria-modal="true"></div>';
 
   document.getElementById("teamLabel").textContent = S.team?.name || "Team attendance workspace";
-  document.getElementById("emailLabel").textContent = S.session?.user?.email || "";
+  const accountName = String(S.session?.user?.user_metadata?.full_name || S.session?.user?.user_metadata?.name || "").trim();
+  const emailLabel = document.getElementById("emailLabel");
+  emailLabel.textContent = accountName || S.session?.user?.email || "";
+  if (S.session?.user?.email) emailLabel.title = S.session.user.email;
   document.getElementById("roleLabel").textContent = ["owner", "admin"].includes(String(S.role || "").toLowerCase())
     ? "ADMIN"
     : String(S.role || "member").toUpperCase();
