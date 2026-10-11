@@ -1431,3 +1431,43 @@ body.registered-people-open #savedPeopleModal .saved-people-panel{
 body.registered-people-open #savedPeopleModal .saved-people-grid{
   padding-bottom:calc(48px + env(safe-area-inset-bottom))!important;
 }
+
+
+/* Keep dashboard dialogs in the foreground and prevent the page behind them from scrolling. */
+html:has(body.attendance-modal-open),
+body.attendance-modal-open{
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+}
+body.attendance-modal-open #modal:not(.hidden){
+  position:fixed!important;
+  inset:0!important;
+  display:grid!important;
+  grid-template-rows:minmax(0,1fr)!important;
+  align-content:start!important;
+  justify-items:center!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  height:100vh!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding:18px!important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain!important;
+  touch-action:pan-y!important;
+}
+body.attendance-modal-open #modal .modal-card{
+  align-self:start!important;
+  width:min(680px,100%)!important;
+  max-height:none!important;
+  min-height:0!important;
+  overflow:visible!important;
+  margin:0 auto 18px!important;
+}
+body.attendance-modal-open #modal .modal-card>:first-child{
+  max-height:none!important;
+}
+@media(max-width:640px){
+  body.attendance-modal-open #modal:not(.hidden){padding:10px!important}
+  body.attendance-modal-open #modal .modal-card{width:100%!important;margin-bottom:10px!important}
+}
