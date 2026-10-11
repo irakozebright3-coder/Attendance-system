@@ -1073,3 +1073,186 @@ thead .sticky{z-index:3}
   .person-row-actions{gap:4px}
   .person-row-actions button{padding:5px 6px;font-size:9px}
 }
+
+
+/* Saved people directory and social-style full-screen photo viewer */
+.person-photo-open{
+  display:inline-flex;
+  padding:0;
+  border:0;
+  background:transparent;
+  border-radius:999px;
+  cursor:zoom-in;
+  flex:0 0 auto;
+  line-height:0;
+}
+.person-photo-open .avatar{
+  display:block;
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.person-photo-open:hover .avatar{
+  transform:scale(1.07);
+  box-shadow:0 0 0 3px rgba(139,92,246,.48),0 8px 24px rgba(0,0,0,.3);
+}
+.saved-people-overlay{
+  position:fixed;
+  inset:0;
+  z-index:120;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:clamp(10px,3vw,30px);
+  background:rgba(3,6,15,.84);
+  backdrop-filter:blur(18px);
+}
+.saved-people-overlay.hidden,.photo-viewer.hidden{display:none!important}
+.saved-people-panel{
+  width:min(1100px,100%);
+  max-height:min(88vh,900px);
+  overflow:auto;
+  padding:clamp(18px,3vw,30px);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:26px;
+  background:linear-gradient(145deg,rgba(22,31,48,.98),rgba(9,14,27,.98));
+  box-shadow:0 30px 100px rgba(0,0,0,.55);
+}
+.saved-people-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  margin-bottom:24px;
+}
+.saved-people-header h2{font-size:clamp(22px,4vw,32px);font-weight:850;letter-spacing:-.04em;margin:7px 0}
+.saved-people-header p{font-size:13px;color:#9ca3af;margin:0}
+.saved-people-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(135px,1fr));
+  gap:18px;
+}
+.saved-person-card{
+  min-width:0;
+  text-align:center;
+  padding:12px 10px 14px;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:18px;
+  background:rgba(255,255,255,.025);
+  transition:transform .2s ease,border-color .2s ease,background .2s ease;
+}
+.saved-person-card:hover{transform:translateY(-3px);border-color:rgba(139,92,246,.38);background:rgba(139,92,246,.06)}
+.saved-person-photo-button{
+  display:block;
+  width:100%;
+  padding:0;
+  border:0;
+  background:transparent;
+  cursor:zoom-in;
+}
+.saved-person-photo{
+  width:100%;
+  aspect-ratio:1/1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  object-fit:cover;
+  border-radius:14px;
+  background:#101827;
+}
+.saved-person-photo-button .saved-person-photo{transition:transform .2s ease,filter .2s ease}
+.saved-person-photo-button:hover .saved-person-photo{filter:brightness(1.08);transform:scale(1.025)}
+.saved-person-no-photo{flex-direction:column;gap:7px;color:#c4b5fd}
+.saved-person-no-photo span{font-size:42px;font-weight:800}
+.saved-person-no-photo small{font-size:10px;color:#9ca3af}
+.saved-person-name{
+  margin-top:10px;
+  font-size:13px;
+  line-height:1.35;
+  font-weight:750;
+  color:#f8fafc;
+  overflow-wrap:anywhere;
+}
+.saved-people-empty{grid-column:1/-1;text-align:center;padding:50px 15px;color:#9ca3af}
+.saved-people-empty h3{font-size:18px;font-weight:800;color:#fff;margin:12px 0 5px}
+.saved-people-empty p{font-size:13px}
+.photo-viewer{
+  position:fixed;
+  inset:0;
+  z-index:140;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:64px 76px 48px;
+  background:rgba(0,0,0,.96);
+  backdrop-filter:blur(14px);
+}
+.photo-viewer-figure{
+  margin:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  max-width:100%;
+  max-height:100%;
+  gap:15px;
+}
+.photo-viewer-figure img{
+  display:block;
+  width:auto;
+  height:auto;
+  max-width:min(88vw,1400px);
+  max-height:calc(100vh - 145px);
+  object-fit:contain;
+  border-radius:8px;
+  box-shadow:0 20px 80px rgba(0,0,0,.5);
+}
+.photo-viewer-figure figcaption{
+  color:#f3f4f6;
+  font-size:15px;
+  font-weight:750;
+  text-align:center;
+}
+.photo-viewer-close,.photo-viewer-nav{
+  position:fixed;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.18);
+  color:#fff;
+  background:rgba(255,255,255,.09);
+  backdrop-filter:blur(10px);
+  cursor:pointer;
+  transition:background .18s ease,transform .18s ease;
+}
+.photo-viewer-close:hover,.photo-viewer-nav:hover{background:rgba(139,92,246,.42);transform:scale(1.04)}
+.photo-viewer-close{
+  top:20px;
+  right:22px;
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  font-size:19px;
+}
+.photo-viewer-nav{
+  top:50%;
+  width:48px;
+  height:58px;
+  border-radius:16px;
+  font-size:38px;
+  line-height:1;
+}
+.photo-viewer-prev{left:18px}
+.photo-viewer-next{right:18px}
+body.photo-viewer-open{overflow:hidden}
+@media(max-width:600px){
+  .saved-people-header{align-items:flex-start}
+  .saved-people-header .dashboard-action{font-size:11px;padding:8px}
+  .saved-people-grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:10px}
+  .saved-person-card{padding:8px}
+  .photo-viewer{padding:60px 12px 35px}
+  .photo-viewer-figure img{max-width:96vw;max-height:calc(100vh - 125px)}
+  .photo-viewer-nav{width:38px;height:46px;font-size:30px}
+  .photo-viewer-prev{left:7px}
+  .photo-viewer-next{right:7px}
+}
+@media(prefers-reduced-motion:reduce){
+  .saved-person-card,.saved-person-photo-button .saved-person-photo,.person-photo-open .avatar{transition:none}
+}
