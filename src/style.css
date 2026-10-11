@@ -1256,3 +1256,56 @@ body.photo-viewer-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){
   .saved-person-card,.saved-person-photo-button .saved-person-photo,.person-photo-open .avatar{transition:none}
 }
+
+
+/* Directory presentation: full-width compact list, not a photo grid */
+.saved-people-grid{
+  display:flex!important;
+  flex-direction:column;
+  gap:10px;
+  width:100%;
+}
+.saved-person-card{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  width:100%;
+  min-height:92px;
+  padding:12px 16px;
+  text-align:left;
+  border-radius:16px;
+  box-sizing:border-box;
+}
+.saved-person-card:hover{transform:translateX(2px)}
+.saved-person-photo-button{
+  width:68px;
+  min-width:68px;
+  flex:0 0 68px;
+  line-height:0;
+}
+.saved-person-photo{
+  width:68px;
+  height:68px;
+  aspect-ratio:1/1;
+  border-radius:12px;
+}
+.saved-person-no-photo{
+  flex-direction:column;
+  gap:2px;
+}
+.saved-person-no-photo span{font-size:28px}
+.saved-person-no-photo small{font-size:9px}
+.saved-person-name{
+  margin:0;
+  flex:1;
+  min-width:0;
+  font-size:15px;
+  text-align:left;
+}
+.saved-people-empty{width:100%;box-sizing:border-box}
+@media(max-width:600px){
+  .saved-person-card{gap:12px;padding:10px 12px;min-height:78px}
+  .saved-person-photo-button{width:56px;min-width:56px;flex-basis:56px}
+  .saved-person-photo{width:56px;height:56px;border-radius:10px}
+  .saved-person-name{font-size:13px}
+}
