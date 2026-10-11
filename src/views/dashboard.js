@@ -55,7 +55,8 @@ export function dashboard(ctx) {
           '<div class="dashboard-actions">' +
             (manager
               ? '<button id="newDate" class="liquid primary-cta dashboard-main-cta"><span class="cta-plus">+</span> Add attendance date <span>↗</span></button>' +
-                '<button id="newPerson" class="liquid secondary-cta dashboard-main-cta"><span class="cta-plus">+</span> Add person</button>'
+                '<button id="newPerson" class="liquid secondary-cta dashboard-main-cta"><span class="cta-plus">+</span> Add person</button>' +
+                '<button id="savedPeopleBtn" class="liquid secondary-cta dashboard-main-cta">▣ Saved people & photos</button>'
               : '<div class="register-live member-hint"><i></i><span>Mark cells: empty → present → absent</span></div>') +
           '</div>' +
         '</section>' +
@@ -95,7 +96,11 @@ export function dashboard(ctx) {
       '</div>' +
       footerMarkup(S.platformSettings, S.faqs) +
     '</main>' +
-    '<div id="modal" class="modal hidden" role="dialog" aria-modal="true"></div>';
+    '<div id="modal" class="modal hidden" role="dialog" aria-modal="true"></div>' +
+    '<div id="savedPeopleModal" class="saved-people-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="savedPeopleTitle">' +
+      '<section class="saved-people-panel"><header class="saved-people-header"><div><span class="register-kicker">PEOPLE DIRECTORY</span><h2 id="savedPeopleTitle">Saved people</h2><p>Only the people saved in this team and their profile photos.</p></div><button id="closeSavedPeople" class="liquid dashboard-action" aria-label="Close saved people">✕ Close</button></header>' +
+      '<div id="savedPeopleGrid" class="saved-people-grid"></div></section></div>' +
+    '<div id="photoViewer" class="photo-viewer hidden" role="dialog" aria-modal="true" aria-label="Full-size profile photo"><button id="closePhotoViewer" class="photo-viewer-close" aria-label="Close full-size photo">✕</button><button id="photoViewerPrev" class="photo-viewer-nav photo-viewer-prev" aria-label="Previous photo">‹</button><figure class="photo-viewer-figure"><img id="photoViewerImage" alt=""><figcaption id="photoViewerCaption"></figcaption></figure><button id="photoViewerNext" class="photo-viewer-nav photo-viewer-next" aria-label="Next photo">›</button></div>';
 
   document.getElementById("teamLabel").textContent = S.team?.name || "Team attendance workspace";
   const accountName = String(S.session?.user?.user_metadata?.full_name || S.session?.user?.user_metadata?.name || "").trim();
@@ -121,6 +126,19 @@ export function dashboard(ctx) {
   if (newDate) newDate.onclick = () => ctx.handlers.addDate();
   const newPerson = document.getElementById("newPerson");
   if (newPerson) newPerson.onclick = () => ctx.handlers.addPerson();
+  const savedPeopleBtn = document.getElementById("savedPeopleBtn");
+  if (savedPeopleBtn) savedPeopleBtn.onclick = () => openSavedPeople(ctx);
+  document.getElementById("closeSavedPeople").onclick = closeSavedPeople;
+  document.getElementById("closePhotoViewer").onclick = closePhotoViewer;
+  document.getElementById("photoViewerPrev").onclick = () => stepPhoto(-1);
+  document.getElementById("photoViewerNext").onclick = () => stepPhoto(1);
+  document.getElementById("savedPeopleModal").addEventListener("click", (e) => {
+    if (e.target.id === "savedPeopleModal") closeSavedPeople();
+  });
+  document.getElementById("photoViewer").addEventListener("click", (e) => {
+    if (e.target.id === "photoViewer") closePhotoViewer();
+  });
+  document.addEventListener("keydown", onPhotoViewerKey);
   document.getElementById("emptyAddPerson").onclick = () => ctx.handlers.addPerson();
   document.querySelector(".dashboard-brand-link").onclick = (e) => e.preventDefault();
 
@@ -224,6 +242,9 @@ export function renderRegister(ctx) {
   document.querySelectorAll("[data-person-edit]").forEach((x) => {
     x.onclick = () => ctx.handlers.openPerson(x.dataset.personEdit);
   });
+  document.querySelectorAll("[data-photo-view]").forEach((x) => {
+    x.onclick = (e) => { e.stopPropagation(); openPhotoViewer(ctx, x.dataset.photoView); };
+  });
 
   // empty states — real data only
   const hasPeople = S.people.length > 0;
@@ -271,7 +292,7 @@ function personRow(ctx, p, dates, manager) {
   const { S } = ctx;
   const canMark = ctx.canMarkAttendance ? ctx.canMarkAttendance() : true;
   const photo = p.photo_url
-    ? '<img class="avatar" loading="lazy" src="' + esc(p.photo_url) + '" alt="' + esc(p.name) + '">'
+    ? '<button type="button" class="person-photo-open" data-photo-view="' + esc(p.id) + '" aria-label="View full-size photo of ' + esc(p.name) + '"><img class="avatar" loading="lazy" src="' + esc(p.photo_url) + '" alt="' + esc(p.name) + '"></button>'
     : '<div class="avatar grid place-items-center text-violet-300 font-black" aria-hidden="true">' + esc((p.name || "?").charAt(0).toUpperCase()) + "</div>";
 
   const rowActions = !manager
@@ -306,6 +327,76 @@ function personRow(ctx, p, dates, manager) {
         rowActions +
       "</div>" +
     "</td>" + cells + "</tr>";
+}
+
+
+let photoViewerContext = null;
+let photoViewerPeople = [];
+let photoViewerIndex = 0;
+
+function openSavedPeople(ctx) {
+  const modal = document.getElementById("savedPeopleModal");
+  const grid = document.getElementById("savedPeopleGrid");
+  if (!modal || !grid) return;
+  const people = [...ctx.S.people].sort((a, b) =>
+    String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base", numeric: true })
+  );
+  grid.innerHTML = people.length ? people.map((p) => {
+    const image = p.photo_url
+      ? '<button class="saved-person-photo-button" type="button" data-photo-view="' + esc(p.id) + '" aria-label="Open full-size photo of ' + esc(p.name) + '"><img class="saved-person-photo" loading="lazy" src="' + esc(p.photo_url) + '" alt="' + esc(p.name) + '"></button>'
+      : '<div class="saved-person-photo saved-person-no-photo" aria-label="No photo saved"><span>' + esc((p.name || "?").charAt(0).toUpperCase()) + '</span><small>No photo</small></div>';
+    return '<article class="saved-person-card">' + image + '<div class="saved-person-name">' + esc(p.name || "Unnamed person") + '</div></article>';
+  }).join("") : '<div class="saved-people-empty"><div class="empty-icon">◎</div><h3>No saved people yet</h3><p>People you add to this workspace will appear here.</p></div>';
+  grid.querySelectorAll("[data-photo-view]").forEach((button) => {
+    button.onclick = () => openPhotoViewer(ctx, button.dataset.photoView);
+  });
+  modal.classList.remove("hidden");
+  document.body.classList.add("photo-viewer-open");
+}
+function closeSavedPeople() {
+  document.getElementById("savedPeopleModal")?.classList.add("hidden");
+  document.body.classList.remove("photo-viewer-open");
+}
+function openPhotoViewer(ctx, personId) {
+  photoViewerContext = ctx;
+  photoViewerPeople = ctx.S.people.filter((p) => p.photo_url);
+  photoViewerIndex = photoViewerPeople.findIndex((p) => p.id === personId);
+  if (photoViewerIndex < 0) return;
+  renderPhotoViewer();
+  document.getElementById("photoViewer")?.classList.remove("hidden");
+  document.body.classList.add("photo-viewer-open");
+}
+function renderPhotoViewer() {
+  const person = photoViewerPeople[photoViewerIndex];
+  if (!person) return;
+  const image = document.getElementById("photoViewerImage");
+  image.src = person.photo_url;
+  image.alt = person.name || "Saved person's photo";
+  document.getElementById("photoViewerCaption").textContent = person.name || "Saved person";
+  const multiple = photoViewerPeople.length > 1;
+  document.getElementById("photoViewerPrev").classList.toggle("hidden", !multiple);
+  document.getElementById("photoViewerNext").classList.toggle("hidden", !multiple);
+}
+function closePhotoViewer() {
+  document.getElementById("photoViewer")?.classList.add("hidden");
+  const image = document.getElementById("photoViewerImage");
+  if (image) image.removeAttribute("src");
+  document.body.classList.remove("photo-viewer-open");
+  photoViewerContext = null;
+  photoViewerPeople = [];
+  photoViewerIndex = 0;
+}
+function stepPhoto(direction) {
+  if (!photoViewerPeople.length) return;
+  photoViewerIndex = (photoViewerIndex + direction + photoViewerPeople.length) % photoViewerPeople.length;
+  renderPhotoViewer();
+}
+function onPhotoViewerKey(e) {
+  const viewer = document.getElementById("photoViewer");
+  if (!viewer || viewer.classList.contains("hidden")) return;
+  if (e.key === "Escape") closePhotoViewer();
+  if (e.key === "ArrowLeft") stepPhoto(-1);
+  if (e.key === "ArrowRight") stepPhoto(1);
 }
 
 export function updateCell(ctx, personId, date) {
