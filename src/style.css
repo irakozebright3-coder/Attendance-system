@@ -1309,3 +1309,67 @@ body.photo-viewer-open{overflow:hidden}
   .saved-person-photo{width:56px;height:56px;border-radius:10px}
   .saved-person-name{font-size:13px}
 }
+
+
+/* Registered People opens as a full-screen directory page */
+.saved-people-overlay{
+  inset:0!important;
+  display:block!important;
+  padding:0!important;
+  overflow-y:auto;
+  background:#080d18!important;
+  backdrop-filter:none!important;
+}
+.saved-people-overlay.hidden{display:none!important}
+.saved-people-panel{
+  width:100%!important;
+  min-height:100vh;
+  max-height:none!important;
+  overflow:visible!important;
+  margin:0!important;
+  padding:clamp(18px,3vw,42px) clamp(14px,5vw,72px)!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  box-sizing:border-box;
+  background:radial-gradient(ellipse at top right,rgba(59,130,246,.10),transparent 36%),linear-gradient(145deg,#0b0f19,#0d1423 60%,#0b0f19)!important;
+}
+.saved-people-header{
+  position:sticky;
+  top:0;
+  z-index:5;
+  padding:14px 0 20px;
+  margin:0 0 20px!important;
+  border-bottom:1px solid rgba(255,255,255,.09);
+  background:rgba(11,15,25,.94);
+  backdrop-filter:blur(16px);
+}
+.saved-people-header h2{font-size:clamp(26px,4vw,38px)!important}
+.saved-people-grid{gap:8px!important}
+.saved-person-card{min-height:82px!important;gap:18px!important;padding:12px 18px!important}
+.registered-person-number{
+  flex:0 0 44px;
+  width:44px;
+  color:#a5b4fc;
+  font-size:17px;
+  font-weight:850;
+  font-variant-numeric:tabular-nums;
+}
+.registered-person-status{
+  flex:0 0 auto;
+  padding:6px 10px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+}
+.registered-person-status.is-active{color:#6ee7b7;background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.2)}
+.registered-person-status.is-inactive{color:#fcd34d;background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.2)}
+@media(max-width:600px){
+  .saved-people-panel{padding:12px 12px 28px!important}
+  .saved-people-header{gap:10px;padding:12px 0 16px}
+  .saved-people-header .dashboard-action{max-width:145px;white-space:normal}
+  .saved-person-card{gap:10px!important;padding:10px!important}
+  .registered-person-number{flex-basis:28px;width:28px;font-size:14px}
+  .registered-person-status{font-size:10px;padding:5px 7px}
+}
