@@ -1373,3 +1373,35 @@ body.photo-viewer-open{overflow:hidden}
   .registered-person-number{flex-basis:28px;width:28px;font-size:14px}
   .registered-person-status{font-size:10px;padding:5px 7px}
 }
+
+
+/* Fix scrolling in the full-screen Registered People log */
+html:has(.saved-people-overlay:not(.hidden)),
+body.photo-viewer-open{
+  overscroll-behavior-y:contain;
+}
+.saved-people-overlay:not(.hidden){
+  position:fixed!important;
+  inset:0!important;
+  height:100vh!important;
+  height:100dvh!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  touch-action:pan-y;
+  scrollbar-gutter:stable;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+}
+.saved-people-panel{
+  height:auto!important;
+  min-height:100vh;
+  min-height:100dvh;
+  overflow:visible!important;
+  flex-shrink:0;
+}
+.saved-people-grid{
+  padding-bottom:max(28px,env(safe-area-inset-bottom));
+  touch-action:pan-y;
+}
