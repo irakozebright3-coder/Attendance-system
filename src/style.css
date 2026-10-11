@@ -1405,3 +1405,29 @@ body.photo-viewer-open{
   padding-bottom:max(28px,env(safe-area-inset-bottom));
   touch-action:pan-y;
 }
+
+
+/* Let the Registered People directory scroll independently; reserve scroll lock for photo lightbox only */
+body.registered-people-open{
+  overflow:hidden!important;
+}
+body.registered-people-open #savedPeopleModal:not(.hidden){
+  position:fixed!important;
+  inset:0!important;
+  height:100vh!important;
+  height:100dvh!important;
+  overflow-y:scroll!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior-y:contain;
+  touch-action:pan-y!important;
+}
+body.registered-people-open #savedPeopleModal .saved-people-panel{
+  min-height:calc(100vh + 1px)!important;
+  min-height:calc(100dvh + 1px)!important;
+  height:auto!important;
+  overflow:visible!important;
+}
+body.registered-people-open #savedPeopleModal .saved-people-grid{
+  padding-bottom:calc(48px + env(safe-area-inset-bottom))!important;
+}
