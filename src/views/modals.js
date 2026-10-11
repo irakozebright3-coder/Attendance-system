@@ -11,6 +11,7 @@ export function closeModal() {
   const preview = m.querySelector("#preview");
   if (preview?.src?.startsWith("blob:")) URL.revokeObjectURL(preview.src);
   m.classList.add("hidden");
+  document.body.classList.remove("attendance-modal-open");
   m.innerHTML = "";
 }
 
@@ -18,6 +19,8 @@ function openModal(html) {
   const m = modalHost();
   m.innerHTML = '<div class="modal-card glass rounded-3xl">' + html + "</div>";
   m.classList.remove("hidden");
+  document.body.classList.add("attendance-modal-open");
+  m.scrollTop = 0;
   m.onclick = (e) => { if (e.target === m) closeModal(); };
   m.onkeydown = (e) => { if (e.key === "Escape") closeModal(); };
   // let keyboard users reach inputs/canvas inside
