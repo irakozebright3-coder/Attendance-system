@@ -56,7 +56,7 @@ export function dashboard(ctx) {
             (manager
               ? '<button id="newDate" class="liquid primary-cta dashboard-main-cta"><span class="cta-plus">+</span> Add attendance date <span>↗</span></button>' +
                 '<button id="newPerson" class="liquid secondary-cta dashboard-main-cta"><span class="cta-plus">+</span> Add person</button>' +
-                '<button id="savedPeopleBtn" class="liquid secondary-cta dashboard-main-cta">▣ Saved people & photos</button>'
+                '<button id="savedPeopleBtn" class="liquid secondary-cta dashboard-main-cta">▣ Registered People</button>'
               : '<div class="register-live member-hint"><i></i><span>Mark cells: empty → present → absent</span></div>') +
           '</div>' +
         '</section>' +
@@ -98,7 +98,7 @@ export function dashboard(ctx) {
     '</main>' +
     '<div id="modal" class="modal hidden" role="dialog" aria-modal="true"></div>' +
     '<div id="savedPeopleModal" class="saved-people-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="savedPeopleTitle">' +
-      '<section class="saved-people-panel"><header class="saved-people-header"><div><span class="register-kicker">PEOPLE DIRECTORY</span><h2 id="savedPeopleTitle">Saved people</h2><p>Only the people saved in this team and their profile photos.</p></div><button id="closeSavedPeople" class="liquid dashboard-action" aria-label="Close saved people">✕ Close</button></header>' +
+      '<section class="saved-people-panel"><header class="saved-people-header"><div><span class="register-kicker">PEOPLE DIRECTORY</span><h2 id="savedPeopleTitle">Registered People</h2><p id="registeredPeopleSummary">People registered in this team, listed in order.</p></div><button id="closeSavedPeople" class="liquid dashboard-action" aria-label="Return to dashboard">← Back to dashboard</button></header>' +
       '<div id="savedPeopleGrid" class="saved-people-grid"></div></section></div>' +
     '<div id="photoViewer" class="photo-viewer hidden" role="dialog" aria-modal="true" aria-label="Full-size profile photo"><button id="closePhotoViewer" class="photo-viewer-close" aria-label="Close full-size photo">✕</button><button id="photoViewerPrev" class="photo-viewer-nav photo-viewer-prev" aria-label="Previous photo">‹</button><figure class="photo-viewer-figure"><img id="photoViewerImage" alt=""><figcaption id="photoViewerCaption"></figcaption></figure><button id="photoViewerNext" class="photo-viewer-nav photo-viewer-next" aria-label="Next photo">›</button></div>';
 
@@ -341,12 +341,14 @@ function openSavedPeople(ctx) {
   const people = [...ctx.S.people].sort((a, b) =>
     String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base", numeric: true })
   );
-  grid.innerHTML = people.length ? people.map((p) => {
+  grid.innerHTML = people.length ? people.map((p, index) => {
     const image = p.photo_url
       ? '<button class="saved-person-photo-button" type="button" data-photo-view="' + esc(p.id) + '" aria-label="Open full-size photo of ' + esc(p.name) + '"><img class="saved-person-photo" loading="lazy" src="' + esc(p.photo_url) + '" alt="' + esc(p.name) + '"></button>'
       : '<div class="saved-person-photo saved-person-no-photo" aria-label="No photo saved"><span>' + esc((p.name || "?").charAt(0).toUpperCase()) + '</span><small>No photo</small></div>';
-    return '<article class="saved-person-card">' + image + '<div class="saved-person-name">' + esc(p.name || "Unnamed person") + '</div></article>';
+    return '<article class="saved-person-card"><div class="registered-person-number">' + (index + 1) + '.</div>' + image + '<div class="saved-person-name">' + esc(p.name || "Unnamed person") + '</div><div class="registered-person-status ' + (p.active ? 'is-active' : 'is-inactive') + '">' + (p.active ? 'Active' : 'Inactive') + '</div></article>';
   }).join("") : '<div class="saved-people-empty"><div class="empty-icon">◎</div><h3>No saved people yet</h3><p>People you add to this workspace will appear here.</p></div>';
+  const summary = document.getElementById("registeredPeopleSummary");
+  if (summary) summary.textContent = people.length + " registered " + (people.length === 1 ? "person" : "people") + " in this team, sorted by name.";
   grid.querySelectorAll("[data-photo-view]").forEach((button) => {
     button.onclick = () => openPhotoViewer(ctx, button.dataset.photoView);
   });
