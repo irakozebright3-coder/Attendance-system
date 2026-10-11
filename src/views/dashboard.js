@@ -353,11 +353,11 @@ function openSavedPeople(ctx) {
     button.onclick = () => openPhotoViewer(ctx, button.dataset.photoView);
   });
   modal.classList.remove("hidden");
-  document.body.classList.add("photo-viewer-open");
+  document.body.classList.add("registered-people-open");
 }
 function closeSavedPeople() {
   document.getElementById("savedPeopleModal")?.classList.add("hidden");
-  document.body.classList.remove("photo-viewer-open");
+  document.body.classList.remove("registered-people-open");
 }
 function openPhotoViewer(ctx, personId) {
   photoViewerContext = ctx;
