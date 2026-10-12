@@ -105,8 +105,8 @@ export function dashboard(ctx) {
   document.getElementById("teamLabel").textContent = S.team?.name || "Team attendance workspace";
   const accountName = String(S.session?.user?.user_metadata?.full_name || S.session?.user?.user_metadata?.name || "").trim();
   const emailLabel = document.getElementById("emailLabel");
-  emailLabel.textContent = accountName || S.session?.user?.email || "";
-  if (S.session?.user?.email) emailLabel.title = S.session.user.email;
+  emailLabel.textContent = accountName || String(S.platformSettings?.owner_name || "").trim() || "Admin";
+  emailLabel.removeAttribute("title");
   document.getElementById("roleLabel").textContent = ["owner", "admin"].includes(String(S.role || "").toLowerCase())
     ? "ADMIN"
     : String(S.role || "member").toUpperCase();
