@@ -295,7 +295,12 @@ async function doAuth(newUser) {
     await loadApp();
   } catch (err) {
     console.error("AttendanceFlow authentication/workspace error:", err);
-    setMessage(err.message || "Authentication succeeded, but the workspace could not be opened.");
+    const authErrorMessage = friendlyError(err);
+    setMessage(
+      !authErrorMessage || authErrorMessage === "[object Object]" || authErrorMessage.trim() === "{}"
+        ? "Account creation failed, but the app received an empty error response. Check Supabase Authentication → Rate Limits and SMTP settings, then open the browser console for the underlying error."
+        : authErrorMessage
+    );
   } finally {
     loginBtn.disabled = false;
     signupBtn.disabled = false;
