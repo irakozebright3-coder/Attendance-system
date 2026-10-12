@@ -1471,3 +1471,41 @@ body.attendance-modal-open #modal .modal-card>:first-child{
   body.attendance-modal-open #modal:not(.hidden){padding:10px!important}
   body.attendance-modal-open #modal .modal-card{width:100%!important;margin-bottom:10px!important}
 }
+
+
+/* Auth dialog: scroll the foreground overlay, not the landing page behind it. */
+html:has(#authModal:not(.hidden)),
+body:has(#authModal:not(.hidden)){
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+}
+#authModal:not(.hidden){
+  display:block!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:5000!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  height:100vh!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding:22px 16px!important;
+  overscroll-behavior:contain!important;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y!important;
+}
+#authModal:not(.hidden) .auth-panel{
+  margin:0 auto 22px!important;
+  width:min(594px,100%)!important;
+  max-height:none!important;
+  min-height:0!important;
+  overflow:visible!important;
+}
+@media(max-height:760px){
+  #authModal:not(.hidden){padding-top:12px!important;padding-bottom:12px!important}
+  #authModal:not(.hidden) .auth-panel{padding-top:24px!important;padding-bottom:24px!important}
+}
+@media(max-width:640px){
+  #authModal:not(.hidden){padding:10px!important}
+  #authModal:not(.hidden) .auth-panel{width:100%!important;margin-bottom:10px!important;padding:26px 20px!important}
+}
