@@ -58,6 +58,8 @@ export function dashboard(ctx) {
               ? '<button id="newDate" class="liquid primary-cta dashboard-main-cta"><span class="cta-plus">+</span> Add attendance date <span>↗</span></button>' +
                 '<button id="savedPeopleBtn" class="liquid secondary-cta dashboard-main-cta">▣ Registered People</button>'
               : '<div class="register-live member-hint"><i></i><span>Mark cells: empty → present → absent</span></div>') +
+            '<button id="attendanceHistoryBtn" type="button" class="liquid secondary-cta dashboard-main-cta dashboard-history-cta">◷ Attendance History</button>' +
+            '<button id="teamGroupsBtn" type="button" class="liquid secondary-cta dashboard-main-cta dashboard-groups-cta">▦ Groups &amp; Committees</button>' +
           '</div>' +
         '</section>' +
 
@@ -73,8 +75,6 @@ export function dashboard(ctx) {
             '<div><div class="register-kicker">SHARED REGISTER</div><h2>Attendance register</h2><p>Click a cell: <b>empty</b> → <b class="present-text">present</b> → <b class="absent-text">absent</b> → empty</p></div>' +
             '<div id="toolbar" class="toolbar flex flex-wrap items-center gap-2">' +
               '<input id="searchInput" type="search" placeholder="Search name or ID…" aria-label="Search people by name or identifier" class="toolbar-input">' +
-              '<button id="attendanceHistoryBtn" type="button" class="toolbar-action">◷ History</button>' +
-              '<button id="teamGroupsBtn" type="button" class="toolbar-action">▦ Groups</button>' +
               '<button id="joinedOrderToggle" type="button" class="toolbar-action" aria-label="Toggle people by newest or oldest joined">Joined: Newest ↓</button>' +
               '<label class="sr-only" for="activeFilter">Filter people</label>' +
               '<select id="activeFilter" class="toolbar-select" aria-label="Filter by active state">' +
