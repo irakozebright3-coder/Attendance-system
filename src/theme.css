@@ -234,3 +234,29 @@ html[data-theme="purple"] .theme-picker {
   html[data-theme="purple"] *::before,
   html[data-theme="purple"] *::after { transition-duration: .01ms !important; }
 }
+
+
+/* Purple-mode styling for attendance history and group management. */
+html[data-theme="purple"] .toolbar-action{
+  color:#f3e8ff;
+  background:rgba(76,29,109,.72);
+  border-color:rgba(216,180,254,.22);
+}
+html[data-theme="purple"] .toolbar-action:hover{background:rgba(126,34,206,.28);border-color:rgba(216,180,254,.45)}
+html[data-theme="purple"] .history-summary{color:#c4b5fd}
+html[data-theme="purple"] .history-table-wrap{border-color:rgba(216,180,254,.17)}
+html[data-theme="purple"] .history-table th{background:rgba(43,20,70,.98);color:#e9d5ff}
+html[data-theme="purple"] .history-table td{color:#f5f0ff;border-color:rgba(216,180,254,.13)}
+html[data-theme="purple"] .team-groups-empty{border-color:rgba(192,132,252,.30)}
+html[data-theme="purple"] .team-groups-empty h3,
+html[data-theme="purple"] .team-group-card h3,
+html[data-theme="purple"] .group-editor-heading h3{color:#ffffff}
+html[data-theme="purple"] .team-group-card{border-color:rgba(216,180,254,.18);background:linear-gradient(145deg,rgba(55,28,82,.78),rgba(28,13,47,.70))}
+html[data-theme="purple"] .team-group-card p,
+html[data-theme="purple"] .team-groups-empty,
+html[data-theme="purple"] .group-editor-heading p{color:#c4b5fd}
+html[data-theme="purple"] .team-group-count,
+html[data-theme="purple"] .group-member-chip{color:#f3e8ff;background:rgba(147,51,234,.16);border-color:rgba(216,180,254,.24)}
+html[data-theme="purple"] .team-group-editor{background:rgba(88,28,135,.18);border-color:rgba(192,132,252,.28)}
+html[data-theme="purple"] .group-member-option{background:rgba(25,10,42,.62);border-color:rgba(216,180,254,.17)}
+html[data-theme="purple"] .group-member-option-name{color:#f5f0ff}
