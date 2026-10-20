@@ -1524,3 +1524,39 @@ body:has(#authModal:not(.hidden)){
   .saved-people-header{flex-direction:column;align-items:stretch}
   .saved-people-header-actions{justify-content:flex-start}
 }
+
+
+/* Person administration belongs exclusively to the Registered People directory. */
+.saved-person-actions{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.saved-person-actions button{
+  appearance:none;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:9px;
+  padding:6px 8px;
+  font-size:10px;
+  line-height:1.2;
+  font-weight:800;
+  cursor:pointer;
+  transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease;
+}
+.saved-person-actions button:hover{transform:translateY(-1px)}
+.person-action-edit{
+  color:#ddd6fe;
+  background:rgba(139,92,246,.14);
+  border-color:rgba(167,139,250,.30)!important;
+}
+.person-action-edit:hover{background:rgba(139,92,246,.24)}
+.saved-person-actions .person-action-deactivate{color:#fbbf24}
+.saved-person-actions .person-action-restore{color:#67e8f9}
+.saved-person-actions .person-action-delete{color:#fda4af}
+@media(max-width:760px){
+  .saved-person-actions{gap:5px}
+  .saved-person-actions button{padding:6px 7px;font-size:9px}
+}
