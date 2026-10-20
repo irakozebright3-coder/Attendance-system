@@ -305,4 +305,25 @@ revoke all on function public.save_team_group(uuid, uuid, text, text, uuid[]) fr
 revoke all on function public.save_team_group(uuid, uuid, text, text, uuid[]) from anon;
 grant execute on function public.save_team_group(uuid, uuid, text, text, uuid[]) to authenticated;
 
+-- Enable realtime notifications for the new team-scoped tables when the
+-- standard Supabase realtime publication exists.
+do $
+declare
+  table_name text;
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach table_name in array array['attendance_history','team_groups','team_group_members'] loop
+      if not exists (
+        select 1 from pg_publication_tables
+        where pubname = 'supabase_realtime'
+          and schemaname = 'public'
+          and tablename = table_name
+      ) then
+        execute format('alter publication supabase_realtime add table public.%I', table_name);
+      end if;
+    end loop;
+  end if;
+end;
+$;
+
 commit;
