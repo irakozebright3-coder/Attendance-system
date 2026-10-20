@@ -1560,3 +1560,83 @@ body:has(#authModal:not(.hidden)){
   .saved-person-actions{gap:5px}
   .saved-person-actions button{padding:6px 7px;font-size:9px}
 }
+
+
+/* Attendance history, joined-order control, and database-backed work groups */
+.toolbar-action{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:42px;
+  padding:10px 13px;
+  border:1px solid rgba(148,163,184,.17);
+  border-radius:12px;
+  background:rgba(15,23,42,.64);
+  color:#e2e8f0;
+  font-size:11px;
+  font-weight:850;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease;
+}
+.toolbar-action:hover{
+  transform:translateY(-1px);
+  border-color:rgba(167,139,250,.45);
+  background:rgba(124,58,237,.14);
+}
+.toolbar-action:focus-visible{
+  outline:2px solid #a78bfa;
+  outline-offset:2px;
+}
+.attendance-history-panel,.team-groups-panel{width:min(1220px,100%)}
+.history-summary{font-size:12px;color:#a5b4fc;margin:0 0 16px}
+.history-table-wrap{border:1px solid rgba(148,163,184,.13);border-radius:15px;overflow:auto}
+.history-table{width:100%;border-collapse:collapse;min-width:780px;font-size:12px}
+.history-table th{
+  position:sticky;top:0;text-align:left;background:rgba(15,23,42,.96);
+  color:#c4b5fd;padding:13px 12px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+}
+.history-table td{padding:12px;border-top:1px solid rgba(148,163,184,.10);color:#dbe4f0;vertical-align:middle}
+.history-table tbody tr:hover{background:rgba(139,92,246,.07)}
+.history-empty-cell{text-align:center!important;padding:34px 16px!important;color:#9ca3af!important;white-space:normal}
+.history-status{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900}
+.history-present{color:#6ee7b7;background:rgba(16,185,129,.13)}
+.history-absent{color:#fda4af;background:rgba(244,63,94,.13)}
+.team-groups-list{display:grid;gap:13px}
+.groups-loading{color:#a5b4fc;font-size:13px;padding:18px 0}
+.team-groups-empty{text-align:center;padding:38px 16px;border:1px dashed rgba(167,139,250,.24);border-radius:18px;color:#a5b4fc}
+.team-groups-empty h3{font-size:18px;font-weight:850;color:#f5f3ff;margin:12px 0 6px}
+.team-groups-empty p{font-size:12px;margin:5px auto;max-width:560px;line-height:1.6}
+.team-groups-empty .primary-cta{margin-top:15px}
+.team-group-card{padding:18px;border:1px solid rgba(148,163,184,.13);border-radius:17px;background:rgba(255,255,255,.025)}
+.team-group-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.team-group-card h3{font-size:16px;font-weight:850;color:#f5f3ff;margin:0 0 5px;overflow-wrap:anywhere}
+.team-group-card p{font-size:12px;line-height:1.6;color:#a5b4fc;margin:0}
+.team-group-count{flex:0 0 auto;border:1px solid rgba(167,139,250,.2);background:rgba(139,92,246,.12);color:#ddd6fe;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900}
+.team-group-members{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:14px}
+.group-member-chip{display:inline-flex;align-items:center;border:1px solid rgba(167,139,250,.17);background:rgba(139,92,246,.09);color:#ddd6fe;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:750;max-width:100%;overflow-wrap:anywhere}
+.group-member-more{color:#c4b5fd}
+.group-no-members{color:#94a3b8;font-size:11px}
+.team-group-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px;padding-top:13px;border-top:1px solid rgba(148,163,184,.10)}
+.group-delete-action{color:#fda4af!important}
+.team-group-editor{margin-top:24px;padding:clamp(16px,2.5vw,26px);border:1px solid rgba(167,139,250,.24);border-radius:20px;background:rgba(76,29,149,.08)}
+.group-editor-heading h3{margin:0 0 5px;font-weight:900;font-size:18px;color:#f5f3ff}
+.group-editor-heading p{margin:0 0 18px;color:#a5b4fc;font-size:12px;line-height:1.55}
+.team-group-form{display:grid;gap:16px}
+.team-group-form .dialog-input{margin-top:7px}
+.group-member-heading{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#c4b5fd;margin:2px 0 -7px}
+.team-group-member-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;max-height:330px;overflow:auto;padding:2px}
+.group-member-option{display:flex!important;align-items:center;gap:9px;border:1px solid rgba(148,163,184,.13);background:rgba(15,23,42,.38);border-radius:12px;padding:10px!important;cursor:pointer}
+.group-member-option input{width:16px!important;height:16px;flex:0 0 auto;accent-color:#8b5cf6}
+.group-member-option-name{display:grid;gap:3px;min-width:0;font-size:12px;color:#e2e8f0;overflow-wrap:anywhere}
+.group-member-option-name small{font-size:10px;color:#94a3b8;font-weight:600}
+.team-group-form-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+@media(max-width:760px){
+  .toolbar-action{padding:9px 10px;min-height:38px;font-size:10px}
+  .team-group-card-top{flex-direction:column}
+  .team-group-count{align-self:flex-start}
+  .team-group-member-picker{grid-template-columns:1fr}
+  .team-group-actions{justify-content:flex-start}
+  .history-table{min-width:720px}
+}
