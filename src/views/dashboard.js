@@ -595,20 +595,86 @@ function exportAttendanceHistory(ctx, format) {
 }
 
 function printAttendanceHistory(ctx) {
-  if (!filteredAttendanceHistory.length) {
+  const rows = historyExportRows();
+  if (!rows.length) {
     ctx.toast("No attendance history records match the selected dates.", "error");
     return;
   }
-  const originalTitle = document.title;
-  document.title = "AttendanceFlow-attendance-history-" + historyDateFilterLabel().replaceAll(/[^a-zA-Z0-9_-]/g, "_");
-  document.body.classList.add("print-attendance-history");
-  const cleanup = () => {
-    document.body.classList.remove("print-attendance-history");
-    document.title = originalTitle;
-    window.removeEventListener("afterprint", cleanup);
-  };
-  window.addEventListener("afterprint", cleanup);
-  window.print();
+
+  // Print a lightweight standalone document instead of rendering the entire
+  // animated dashboard and its overlays in the browser's print preview.
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    ctx.toast("The PDF preview was blocked. Allow pop-ups for AttendanceFlow and try again.", "error");
+    return;
+  }
+
+  const button = document.getElementById("historyExportPdf");
+  const originalLabel = button?.textContent || "↓ PDF";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Preparing…";
+  }
+
+  const title = "AttendanceFlow — Attendance History";
+  const filterLabel = historyDateFilterLabel();
+  const columns = [
+    ["attendance_date", "Attendance date"],
+    ["person_name", "Person"],
+    ["status", "Status"],
+    ["action", "Event"],
+    ["recorded_at", "Recorded at"],
+    ["marked_by", "Marked by"]
+  ];
+  const tableHead = columns.map(([, label]) => "<th>" + esc(label) + "</th>").join("");
+  const tableRows = rows.map((row) => "<tr>" + columns.map(([key]) => {
+    const value = key === "status"
+      ? (row[key] === "present" ? "Present" : row[key] === "absent" ? "Absent" : row[key])
+      : row[key];
+    return "<td>" + esc(value || "—") + "</td>";
+  }).join("") + "</tr>").join("");
+
+  try {
+    printWindow.document.open();
+    printWindow.document.write("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>" +
+      esc(title + " " + filterLabel) + "</title><style>" +
+      "@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font:12px/1.45 Arial,sans-serif;color:#172033;margin:0}" +
+      "h1{font-size:22px;margin:0 0 6px}p{margin:0 0 16px;color:#4b5563}.meta{font-size:11px}" +
+      "table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #d1d5db;padding:7px;text-align:left;vertical-align:top;overflow-wrap:anywhere}" +
+      "th{background:#eef2f7;font-weight:700}tr{break-inside:avoid}thead{display:table-header-group}" +
+      ".count{margin:0 0 12px;font-weight:700;color:#111827}@media screen{body{padding:24px;max-width:1400px;margin:auto} .hint{display:block;margin-top:18px;color:#6b7280}}" +
+      "@media print{.hint{display:none}}</style></head><body><h1>" + esc(title) +
+      "</h1><p class=\"meta\">Date filter: " + esc(filterLabel) + "</p><p class=\"count\">" +
+      rows.length + " record" + (rows.length === 1 ? "" : "s") + "</p><table><thead><tr>" +
+      tableHead + "</tr></thead><tbody>" + tableRows +
+      "</tbody></table><p class=\"hint\">Choose “Save as PDF” in the print destination to save this report.</p></body></html>");
+    printWindow.document.close();
+
+    const startPrint = () => {
+      try {
+        printWindow.focus();
+        printWindow.print();
+      } catch (err) {
+        ctx.toast("Could not open the PDF print preview. Try again or use CSV export.", "error");
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalLabel;
+        }
+      }
+    };
+    printWindow.onload = () => setTimeout(startPrint, 50);
+    // Some browsers fire load before the handler is assigned for about:blank.
+    if (printWindow.document.readyState === "complete") setTimeout(startPrint, 50);
+    ctx.toast("PDF preview prepared with " + rows.length + " filtered records.", "success");
+  } catch (err) {
+    printWindow.close();
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalLabel;
+    }
+    ctx.toast("PDF preview failed: " + (err.message || "browser error"), "error");
+  }
 }
 
 async function openAttendanceHistory(ctx) {
