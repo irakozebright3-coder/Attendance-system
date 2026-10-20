@@ -629,7 +629,13 @@ async function openAttendanceHistory(ctx) {
     filteredAttendanceHistory = [];
     summary.textContent = "Attendance history could not be loaded.";
     body.innerHTML = "<tr><td colspan=\"6\" class=\"history-empty-cell\">" + esc(err.message || "Database error") + "</td></tr>";
-    renderAttendanceHistory(ctx);
+    ["historyExportCsv","historyExportTsv","historyExportJson","historyExportPdf"].forEach((id) => {
+      const button = document.getElementById(id);
+      if (button) {
+        button.disabled = true;
+        button.title = "History could not be loaded.";
+      }
+    });
     ctx.toast("Could not load attendance history.", "error");
   }
 }
