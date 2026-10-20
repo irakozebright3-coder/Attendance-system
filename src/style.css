@@ -1708,3 +1708,164 @@ body:has(#authModal:not(.hidden)){
   .dashboard-actions{max-width:none;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .dashboard-actions .dashboard-main-cta{min-height:60px;padding:10px 7px;font-size:10px}
 }
+
+
+/* Attendance History date filters and export actions */
+.history-export-toolbar{
+  display:grid;
+  gap:14px;
+  margin:18px 0 16px;
+  padding:16px;
+  border:1px solid rgba(148,163,184,.14);
+  border-radius:17px;
+  background:rgba(15,23,42,.42);
+}
+.history-date-filters{
+  display:flex;
+  align-items:flex-end;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.history-filter-field{
+  display:grid;
+  gap:6px;
+  min-width:142px;
+  color:#a5b4fc;
+  font-size:10px;
+  font-weight:850;
+}
+.history-filter-field>span{
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.history-filter-field input,
+.history-filter-field select{
+  width:100%;
+  min-width:0;
+  min-height:40px;
+  color:#e2e8f0;
+  accent-color:#8b5cf6;
+}
+.history-range-fields{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.history-filter-actions{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+}
+.history-filter-actions button,
+.history-export-button{
+  min-height:40px;
+  padding:9px 13px;
+  border-radius:11px;
+  font-size:11px;
+  line-height:1.2;
+  font-weight:850;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:transform .16s ease,filter .16s ease,background .16s ease;
+}
+.history-filter-actions button:hover,
+.history-export-button:hover{transform:translateY(-1px);filter:brightness(1.1)}
+.history-filter-actions button:disabled,
+.history-export-button:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none}
+.history-export-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  padding-top:13px;
+  border-top:1px solid rgba(148,163,184,.12);
+}
+.history-export-label{
+  margin-right:5px;
+  color:#c4b5fd;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.history-export-button{
+  color:#e9d5ff;
+  border:1px solid rgba(167,139,250,.25);
+  background:rgba(91,33,182,.20);
+}
+.history-export-button.history-export-pdf{
+  color:#fff;
+  border-color:rgba(216,180,254,.35);
+  background:linear-gradient(120deg,#7c3aed,#5b21b6);
+}
+.history-export-button.history-export-csv{border-color:rgba(52,211,153,.24);background:rgba(16,185,129,.10);color:#a7f3d0}
+.history-export-button.history-export-tsv{border-color:rgba(56,189,248,.24);background:rgba(14,165,233,.10);color:#bae6fd}
+.history-export-button.history-export-json{border-color:rgba(129,140,248,.28);background:rgba(79,70,229,.12);color:#c7d2fe}
+.history-filter-field input[type="date"]::-webkit-calendar-picker-indicator,
+.history-filter-field input[type="month"]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.85}
+@media(max-width:760px){
+  .history-export-toolbar{padding:12px}
+  .history-date-filters{align-items:stretch}
+  .history-filter-field{flex:1 1 145px;min-width:0}
+  .history-range-fields{flex:1 1 100%}
+  .history-range-fields .history-filter-field{min-width:130px}
+  .history-filter-actions{flex:1 1 100%}
+  .history-export-label{flex:1 0 100%;margin:0 0 2px}
+}
+@media(max-width:420px){
+  .history-filter-actions button,.history-export-button{flex:1 1 auto}
+}
+
+/* Print only the filtered Attendance History table when users choose PDF. */
+@page{size:landscape;margin:12mm}
+@media print{
+  html,body{background:#fff!important;color:#111!important}
+  body.print-attendance-history *{visibility:hidden!important}
+  body.print-attendance-history #attendanceHistoryModal:not(.hidden),
+  body.print-attendance-history #attendanceHistoryModal:not(.hidden) *{visibility:visible!important}
+  body.print-attendance-history #attendanceHistoryModal:not(.hidden){
+    display:block!important;position:static!important;inset:auto!important;
+    width:auto!important;height:auto!important;max-height:none!important;overflow:visible!important;
+    padding:0!important;margin:0!important;background:#fff!important;backdrop-filter:none!important;
+  }
+  body.print-attendance-history #attendanceHistoryModal .attendance-history-panel{
+    display:block!important;position:static!important;width:100%!important;max-width:none!important;
+    min-height:0!important;height:auto!important;max-height:none!important;overflow:visible!important;
+    margin:0!important;padding:0!important;border:0!important;border-radius:0!important;
+    background:#fff!important;color:#111!important;box-shadow:none!important;
+  }
+  body.print-attendance-history #attendanceHistoryModal .saved-people-header{
+    display:flex!important;align-items:flex-start!important;margin:0 0 8mm!important;
+    border-bottom:1px solid #cbd5e1!important;padding:0 0 4mm!important;
+  }
+  body.print-attendance-history #attendanceHistoryModal .saved-people-header h2{
+    color:#111!important;font-size:22pt!important;letter-spacing:0!important;
+  }
+  body.print-attendance-history #attendanceHistoryModal .saved-people-header p,
+  body.print-attendance-history #attendanceHistoryModal .register-kicker,
+  body.print-attendance-history #attendanceHistoryModal .history-summary{color:#334155!important}
+  body.print-attendance-history #attendanceHistoryModal .saved-people-header-actions,
+  body.print-attendance-history #attendanceHistoryModal .history-export-toolbar{display:none!important}
+  body.print-attendance-history #attendanceHistoryModal .history-summary{font-size:9pt!important;margin:0 0 4mm!important}
+  body.print-attendance-history #attendanceHistoryModal .history-table-wrap{
+    display:block!important;width:100%!important;max-height:none!important;overflow:visible!important;
+    border:0!important;border-radius:0!important;
+  }
+  body.print-attendance-history #attendanceHistoryModal .history-table{
+    width:100%!important;min-width:0!important;border-collapse:collapse!important;font-size:8pt!important;
+  }
+  body.print-attendance-history #attendanceHistoryModal .history-table thead{display:table-header-group!important}
+  body.print-attendance-history #attendanceHistoryModal .history-table tr{break-inside:avoid!important;page-break-inside:avoid!important}
+  body.print-attendance-history #attendanceHistoryModal .history-table th{
+    position:static!important;background:#ede9fe!important;color:#2e1065!important;
+    padding:7px 6px!important;border:1px solid #c4b5fd!important;font-size:7pt!important;
+  }
+  body.print-attendance-history #attendanceHistoryModal .history-table td{
+    color:#111827!important;background:#fff!important;padding:6px!important;
+    border:1px solid #e2e8f0!important;
+  }
+  body.print-attendance-history #attendanceHistoryModal .history-status{
+    border:1px solid #94a3b8!important;background:#fff!important;color:#111827!important;
+  }
+}
