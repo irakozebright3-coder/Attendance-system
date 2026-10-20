@@ -286,6 +286,69 @@ export async function loadPersonHistory(teamId, personId) {
   return data || [];
 }
 
+/** Load every saved attendance-history event in pages so long-running teams
+ * are not silently cut off at the API's default row limit. */
+export async function loadAttendanceHistory(teamId) {
+  const pageSize = 500;
+  const allRows = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await db
+      .from("attendance_history")
+      .select("id,team_id,attendance_id,person_id,person_name,attendance_date,status,action,marked_by,recorded_at")
+      .eq("team_id", teamId)
+      .order("recorded_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) fail(error);
+    const page = data || [];
+    allRows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return allRows;
+}
+
+/** Read groups and their people links for the current team. */
+export async function loadTeamGroups(teamId) {
+  const [groupsRes, membersRes] = await Promise.all([
+    db.from("team_groups")
+      .select("id,team_id,name,description,created_by,created_at,updated_at")
+      .eq("team_id", teamId)
+      .order("name", { ascending: true }),
+    db.from("team_group_members")
+      .select("group_id,person_id")
+      .eq("team_id", teamId)
+  ]);
+  const error = groupsRes.error || membersRes.error;
+  if (error) fail(error);
+  const members = membersRes.data || [];
+  return (groupsRes.data || []).map((group) => ({
+    ...group,
+    person_ids: members.filter((m) => m.group_id === group.id).map((m) => m.person_id)
+  }));
+}
+
+/** Persist a group's details and member assignments in one database transaction. */
+export async function saveTeamGroup(teamId, { id = null, name, description = "", personIds = [] }) {
+  const { data, error } = await db.rpc("save_team_group", {
+    p_team_id: teamId,
+    p_group_id: id || null,
+    p_name: name,
+    p_description: description,
+    p_person_ids: [...new Set(personIds)]
+  });
+  if (error) fail(error);
+  return data;
+}
+
+export async function deleteTeamGroup(teamId, groupId) {
+  const { error } = await db
+    .from("team_groups")
+    .delete()
+    .eq("team_id", teamId)
+    .eq("id", groupId);
+  if (error) fail(error);
+}
+
 // ---------- attendance dates ----------
 
 export async function addDate(teamId, date) {
