@@ -278,3 +278,16 @@ html[data-theme="purple"] .dashboard-groups-cta{
 html[data-theme="purple"] .dashboard-actions .dashboard-main-cta{
   box-shadow:0 12px 30px rgba(7,2,18,.2);
 }
+
+
+html[data-theme="purple"] .history-export-toolbar{
+  background:rgba(43,20,70,.64);
+  border-color:rgba(216,180,254,.2);
+}
+html[data-theme="purple"] .history-filter-field{color:#ddd6fe}
+html[data-theme="purple"] .history-export-actions{border-top-color:rgba(216,180,254,.15)}
+html[data-theme="purple"] .history-export-label{color:#e9d5ff}
+html[data-theme="purple"] .history-export-button{color:#f3e8ff;border-color:rgba(216,180,254,.24);background:rgba(91,33,182,.32)}
+html[data-theme="purple"] .history-export-button.history-export-csv{color:#a7f3d0}
+html[data-theme="purple"] .history-export-button.history-export-tsv{color:#bae6fd}
+html[data-theme="purple"] .history-export-button.history-export-json{color:#c7d2fe}
