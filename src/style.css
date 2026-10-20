@@ -1640,3 +1640,45 @@ body:has(#authModal:not(.hidden)){
   .team-group-actions{justify-content:flex-start}
   .history-table{min-width:720px}
 }
+
+
+/* Prominent workspace navigation buttons shown in the dashboard hero. */
+.dashboard-actions{
+  max-width:560px;
+  align-items:stretch;
+}
+.dashboard-actions .dashboard-main-cta{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:54px;
+  border-radius:15px;
+  font-size:12px;
+  line-height:1.25;
+}
+.dashboard-history-cta{
+  color:#f5f3ff!important;
+  background:linear-gradient(130deg,rgba(91,33,182,.86),rgba(76,29,149,.72))!important;
+  border:1px solid rgba(196,181,253,.28)!important;
+  box-shadow:0 12px 32px rgba(76,29,149,.18);
+}
+.dashboard-groups-cta{
+  color:#f5f3ff!important;
+  background:linear-gradient(130deg,rgba(67,56,202,.8),rgba(88,28,135,.78))!important;
+  border:1px solid rgba(165,180,252,.28)!important;
+  box-shadow:0 12px 32px rgba(67,56,202,.16);
+}
+.dashboard-actions .dashboard-main-cta:hover{
+  transform:translateY(-2px);
+  filter:brightness(1.09);
+}
+@media(max-width:1100px){
+  .dashboard-hero{align-items:flex-start;flex-direction:column;gap:24px;padding-top:48px}
+  .dashboard-actions{max-width:100%;width:100%;justify-content:flex-start}
+}
+@media(max-width:620px){
+  .dashboard-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .dashboard-actions .dashboard-main-cta{white-space:normal;min-width:0;min-height:62px;padding:10px 8px;font-size:10px}
+  .dashboard-actions .member-hint{grid-column:1/-1;justify-content:center}
+}
