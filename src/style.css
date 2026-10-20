@@ -1682,3 +1682,29 @@ body:has(#authModal:not(.hidden)){
   .dashboard-actions .dashboard-main-cta{white-space:normal;min-width:0;min-height:62px;padding:10px 8px;font-size:10px}
   .dashboard-actions .member-hint{grid-column:1/-1;justify-content:center}
 }
+
+
+/* Final layout pass: keep the four primary dashboard actions clearly visible. */
+.dashboard-actions{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  width:100%;
+  max-width:560px;
+  justify-content:stretch;
+  align-items:stretch;
+  gap:10px;
+}
+.dashboard-actions .dashboard-main-cta{
+  width:100%;
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.dashboard-actions .member-hint{grid-column:1/-1}
+@media(max-width:1100px){
+  .dashboard-actions{max-width:560px;width:100%}
+}
+@media(max-width:620px){
+  .dashboard-actions{max-width:none;width:100%;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .dashboard-actions .dashboard-main-cta{min-height:60px;padding:10px 7px;font-size:10px}
+}
