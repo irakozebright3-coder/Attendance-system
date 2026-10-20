@@ -105,6 +105,17 @@ export function dashboard(ctx) {
     '<div id="attendanceHistoryModal" class="saved-people-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="attendanceHistoryTitle">' +
       '<section class="saved-people-panel attendance-history-panel"><header class="saved-people-header"><div><span class="register-kicker">SAVED RECORDS</span><h2 id="attendanceHistoryTitle">Attendance History</h2><p>Every recorded attendance change with its attendance date and time saved.</p></div>' +
       '<div class="saved-people-header-actions"><button id="refreshAttendanceHistory" class="liquid dashboard-action">↻ Refresh</button><button id="closeAttendanceHistory" class="liquid dashboard-action">← Back</button></div></header>' +
+      '<section class="history-export-toolbar" aria-label="Filter and export attendance history">' +
+        '<div class="history-date-filters">' +
+          '<label class="history-filter-field"><span>Date filter</span><select id="historyDateMode" class="toolbar-select"><option value="all">All dates</option><option value="day">Specific day</option><option value="month">Month</option><option value="year">Year</option><option value="range">Date range</option></select></label>' +
+          '<label id="historyDayWrap" class="history-filter-field hidden"><span>Day</span><input id="historyDayInput" type="date" class="toolbar-select"></label>' +
+          '<label id="historyMonthWrap" class="history-filter-field hidden"><span>Month</span><input id="historyMonthInput" type="month" class="toolbar-select"></label>' +
+          '<label id="historyYearWrap" class="history-filter-field hidden"><span>Year</span><input id="historyYearInput" type="number" min="2000" max="2200" step="1" inputmode="numeric" placeholder="YYYY" class="toolbar-select"></label>' +
+          '<div id="historyRangeWrap" class="history-range-fields hidden"><label class="history-filter-field"><span>From</span><input id="historyRangeStart" type="date" class="toolbar-select"></label><label class="history-filter-field"><span>To</span><input id="historyRangeEnd" type="date" class="toolbar-select"></label></div>' +
+          '<div class="history-filter-actions"><button id="applyHistoryFilter" type="button" class="liquid primary-cta">Apply dates</button><button id="clearHistoryFilter" type="button" class="liquid dashboard-action">Clear</button></div>' +
+        '</div>' +
+        '<div class="history-export-actions"><span class="history-export-label">Export filtered records</span><button id="historyExportPdf" type="button" class="history-export-button history-export-pdf">↓ PDF</button><button id="historyExportCsv" type="button" class="history-export-button">↓ CSV</button><button id="historyExportTsv" type="button" class="history-export-button">↓ TSV</button><button id="historyExportJson" type="button" class="history-export-button">↓ JSON</button></div>' +
+      '</section>' +
       '<p id="attendanceHistorySummary" class="history-summary">Loading saved attendance history…</p>' +
       '<div class="overflow-x-auto history-table-wrap"><table class="history-table"><thead><tr><th>Attendance date</th><th>Person</th><th>Status</th><th>Event</th><th>Recorded at</th><th>Marked by</th></tr></thead><tbody id="attendanceHistoryRows"></tbody></table></div>' +
       '</section></div>' +
@@ -159,6 +170,24 @@ export function dashboard(ctx) {
   document.getElementById("attendanceHistoryModal").addEventListener("click", (e) => {
     if (e.target.id === "attendanceHistoryModal") closeAttendanceHistory();
   });
+  const historyDateMode = document.getElementById("historyDateMode");
+  historyDateMode.onchange = syncHistoryDateControls;
+  document.getElementById("applyHistoryFilter").onclick = () => applyAttendanceHistoryFilter(ctx, true);
+  document.getElementById("clearHistoryFilter").onclick = () => {
+    historyDateMode.value = "all";
+    document.getElementById("historyDayInput").value = "";
+    document.getElementById("historyMonthInput").value = "";
+    document.getElementById("historyYearInput").value = "";
+    document.getElementById("historyRangeStart").value = "";
+    document.getElementById("historyRangeEnd").value = "";
+    syncHistoryDateControls();
+    applyAttendanceHistoryFilter(ctx, false);
+  };
+  document.getElementById("historyExportCsv").onclick = () => exportAttendanceHistory(ctx, "csv");
+  document.getElementById("historyExportTsv").onclick = () => exportAttendanceHistory(ctx, "tsv");
+  document.getElementById("historyExportJson").onclick = () => exportAttendanceHistory(ctx, "json");
+  document.getElementById("historyExportPdf").onclick = () => printAttendanceHistory(ctx);
+  syncHistoryDateControls();
   const teamGroupsBtn = document.getElementById("teamGroupsBtn");
   if (teamGroupsBtn) teamGroupsBtn.onclick = () => openTeamGroups(ctx);
   document.getElementById("closeTeamGroups").onclick = closeTeamGroups;
@@ -399,30 +428,76 @@ function closeAttendanceHistory() {
   document.body.classList.remove("registered-people-open");
 }
 
-async function openAttendanceHistory(ctx) {
-  const modal = document.getElementById("attendanceHistoryModal");
+let attendanceHistoryCache = [];
+let filteredAttendanceHistory = [];
+const attendanceHistoryActionLabels = {
+  baseline: "Existing record",
+  marked: "Marked",
+  changed: "Changed",
+  cleared: "Cleared from register"
+};
+
+function syncHistoryDateControls() {
+  const mode = document.getElementById("historyDateMode")?.value || "all";
+  const toggle = (id, visible) => document.getElementById(id)?.classList.toggle("hidden", !visible);
+  toggle("historyDayWrap", mode === "day");
+  toggle("historyMonthWrap", mode === "month");
+  toggle("historyYearWrap", mode === "year");
+  toggle("historyRangeWrap", mode === "range");
+}
+
+function historyDateFilterLabel() {
+  const mode = document.getElementById("historyDateMode")?.value || "all";
+  if (mode === "day") return document.getElementById("historyDayInput")?.value || "selected day";
+  if (mode === "month") return document.getElementById("historyMonthInput")?.value || "selected month";
+  if (mode === "year") return document.getElementById("historyYearInput")?.value || "selected year";
+  if (mode === "range") {
+    const from = document.getElementById("historyRangeStart")?.value || "start";
+    const to = document.getElementById("historyRangeEnd")?.value || "end";
+    return from + "_to_" + to;
+  }
+  return "all_dates";
+}
+
+function filterAttendanceHistory() {
+  const mode = document.getElementById("historyDateMode")?.value || "all";
+  const day = document.getElementById("historyDayInput")?.value || "";
+  const month = document.getElementById("historyMonthInput")?.value || "";
+  const yearText = document.getElementById("historyYearInput")?.value || "";
+  const start = document.getElementById("historyRangeStart")?.value || "";
+  const end = document.getElementById("historyRangeEnd")?.value || "";
+  if (mode === "day" && !/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error("Choose a valid day.");
+  if (mode === "month" && !/^\d{4}-\d{2}$/.test(month)) throw new Error("Choose a month.");
+  if (mode === "year" && !/^\d{4}$/.test(yearText)) throw new Error("Enter a four-digit year.");
+  if (mode === "range") {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+      throw new Error("Choose both the start and end dates.");
+    }
+    if (start > end) throw new Error("The start date must be on or before the end date.");
+  }
+  return attendanceHistoryCache.filter((row) => {
+    const date = String(row.attendance_date || "");
+    if (mode === "day") return date === day;
+    if (mode === "month") return date.startsWith(month);
+    if (mode === "year") return date.startsWith(yearText + "-");
+    if (mode === "range") return date >= start && date <= end;
+    return true;
+  });
+}
+
+function renderAttendanceHistory(ctx) {
   const body = document.getElementById("attendanceHistoryRows");
   const summary = document.getElementById("attendanceHistorySummary");
-  if (!modal || !body || !summary) return;
-  modal.classList.remove("hidden");
-  document.body.classList.add("registered-people-open");
-  summary.textContent = "Loading saved attendance history…";
-  body.innerHTML = "<tr><td colspan=\"6\" class=\"history-empty-cell\">Loading records…</td></tr>";
-  try {
-    const history = await ctx.handlers.loadAttendanceHistory();
-    if (!history.length) {
-      summary.textContent = "No saved attendance events were found.";
-      body.innerHTML = "<tr><td colspan=\"6\" class=\"history-empty-cell\">No records yet. After the database migration is applied, every new attendance change will be recorded here.</td></tr>";
-      return;
-    }
-    summary.textContent = history.length + " saved attendance event" + (history.length === 1 ? "" : "s") + ". Newest events appear first.";
-    const actionLabels = {
-      baseline: "Existing record",
-      marked: "Marked",
-      changed: "Changed",
-      cleared: "Cleared from register"
-    };
-    body.innerHTML = history.map((row) => {
+  if (!body || !summary) return;
+  const rows = filteredAttendanceHistory;
+  const total = attendanceHistoryCache.length;
+  const filterLabel = historyDateFilterLabel().replaceAll("_", " ");
+  summary.textContent = rows.length + " of " + total + " saved event" + (total === 1 ? "" : "s") +
+    " match " + filterLabel + ". Dates are the attendance dates; events are sorted newest recorded first.";
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="6" class="history-empty-cell">No saved attendance records match this date filter.</td></tr>';
+  } else {
+    body.innerHTML = rows.map((row) => {
       const status = row.status === "present" ? "Present" : "Absent";
       const recorded = row.recorded_at && !Number.isNaN(new Date(row.recorded_at).getTime())
         ? new Date(row.recorded_at).toLocaleString()
@@ -433,13 +508,128 @@ async function openAttendanceHistory(ctx) {
         "<td>" + esc(dateLabel(row.attendance_date, ctx.S.teamSettings)) + "</td>" +
         "<td><strong>" + esc(row.person_name || "Unknown person") + "</strong></td>" +
         "<td><span class=\"history-status " + statusClass + "\">" + status + "</span></td>" +
-        "<td>" + esc(actionLabels[row.action] || row.action || "Recorded") + (row.action === "cleared" ? " (previous value)" : "") + "</td>" +
+        "<td>" + esc(attendanceHistoryActionLabels[row.action] || row.action || "Recorded") + (row.action === "cleared" ? " (previous value)" : "") + "</td>" +
         "<td>" + esc(recorded) + "</td>" +
         "<td>" + esc(marker) + "</td></tr>";
     }).join("");
+  }
+  ["historyExportCsv","historyExportTsv","historyExportJson","historyExportPdf"].forEach((id) => {
+    const button = document.getElementById(id);
+    if (button) {
+      button.disabled = rows.length === 0;
+      button.title = rows.length === 0 ? "There are no records to export for these dates." : "";
+    }
+  });
+}
+
+function applyAttendanceHistoryFilter(ctx, showValidationToast = true) {
+  try {
+    filteredAttendanceHistory = filterAttendanceHistory();
+    renderAttendanceHistory(ctx);
+    return true;
   } catch (err) {
+    if (showValidationToast) ctx.toast(err.message || "Check the selected dates.", "error");
+    return false;
+  }
+}
+
+function downloadHistoryFile(filename, contents, mimeType) {
+  const blob = new Blob([contents], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function historyExportRows() {
+  return filteredAttendanceHistory.map((row) => ({
+    attendance_date: row.attendance_date || "",
+    person_name: row.person_name || "Unknown person",
+    status: row.status || "",
+    action: attendanceHistoryActionLabels[row.action] || row.action || "Recorded",
+    recorded_at: row.recorded_at || "",
+    marked_by: row.marked_by || ""
+  }));
+}
+
+function csvSafeValue(value) {
+  let textValue = String(value ?? "");
+  if (/^[\t\r ]*[=+\-@]/.test(textValue)) textValue = "'" + textValue;
+  return '"' + textValue.replaceAll('"', '""') + '"';
+}
+
+function exportAttendanceHistory(ctx, format) {
+  const rows = historyExportRows();
+  if (!rows.length) {
+    ctx.toast("No attendance history records match the selected dates.", "error");
+    return;
+  }
+  const filename = "attendance-history-" + historyDateFilterLabel().replaceAll(/[^a-zA-Z0-9_-]/g, "_");
+  try {
+    if (format === "csv") {
+      const columns = ["attendance_date","person_name","status","action","recorded_at","marked_by"];
+      const csv = [columns.map(csvSafeValue).join(","), ...rows.map((row) => columns.map((column) => csvSafeValue(row[column])).join(","))].join("\r\n");
+      downloadHistoryFile(filename + ".csv", "\uFEFF" + csv, "text/csv;charset=utf-8");
+    } else if (format === "tsv") {
+      const columns = ["attendance_date","person_name","status","action","recorded_at","marked_by"];
+      const tsvCell = (value) => String(value ?? "").replace(/[\t\r\n]+/g, " ").replace(/^[\t\r ]*[=+\-@]/, "'$&");
+      const tsv = [columns.join("\t"), ...rows.map((row) => columns.map((column) => tsvCell(row[column])).join("\t"))].join("\r\n");
+      downloadHistoryFile(filename + ".tsv", "\uFEFF" + tsv, "text/tab-separated-values;charset=utf-8");
+    } else if (format === "json") {
+      downloadHistoryFile(filename + ".json", JSON.stringify({
+        exported_at: new Date().toISOString(),
+        date_filter: historyDateFilterLabel(),
+        record_count: rows.length,
+        records: rows
+      }, null, 2), "application/json;charset=utf-8");
+    }
+    ctx.toast("Exported " + rows.length + " history record" + (rows.length === 1 ? "" : "s") + " as " + format.toUpperCase() + ".", "success");
+  } catch (err) {
+    ctx.toast("Export failed: " + (err.message || "browser download error"), "error");
+  }
+}
+
+function printAttendanceHistory(ctx) {
+  if (!filteredAttendanceHistory.length) {
+    ctx.toast("No attendance history records match the selected dates.", "error");
+    return;
+  }
+  const originalTitle = document.title;
+  document.title = "AttendanceFlow-attendance-history-" + historyDateFilterLabel().replaceAll(/[^a-zA-Z0-9_-]/g, "_");
+  document.body.classList.add("print-attendance-history");
+  const cleanup = () => {
+    document.body.classList.remove("print-attendance-history");
+    document.title = originalTitle;
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
+}
+
+async function openAttendanceHistory(ctx) {
+  const modal = document.getElementById("attendanceHistoryModal");
+  const body = document.getElementById("attendanceHistoryRows");
+  const summary = document.getElementById("attendanceHistorySummary");
+  if (!modal || !body || !summary) return;
+  modal.classList.remove("hidden");
+  document.body.classList.add("registered-people-open");
+  summary.textContent = "Loading saved attendance history…";
+  body.innerHTML = "<tr><td colspan=\"6\" class=\"history-empty-cell\">Loading records…</td></tr>";
+  try {
+    attendanceHistoryCache = await ctx.handlers.loadAttendanceHistory();
+    if (!Array.isArray(attendanceHistoryCache)) attendanceHistoryCache = [];
+    applyAttendanceHistoryFilter(ctx, false);
+  } catch (err) {
+    attendanceHistoryCache = [];
+    filteredAttendanceHistory = [];
     summary.textContent = "Attendance history could not be loaded.";
     body.innerHTML = "<tr><td colspan=\"6\" class=\"history-empty-cell\">" + esc(err.message || "Database error") + "</td></tr>";
+    renderAttendanceHistory(ctx);
     ctx.toast("Could not load attendance history.", "error");
   }
 }
