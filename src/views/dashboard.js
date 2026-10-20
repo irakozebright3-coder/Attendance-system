@@ -230,23 +230,11 @@ export function renderRegister(ctx) {
   const shown = S.showAllRows ? people : people.slice(0, ROW_LIMIT);
   tbody.innerHTML = shown.map((p) => personRow(ctx, p, dates, manager)).join("");
 
-  document.querySelectorAll("[data-person-remove]").forEach((x) => {
-    x.onclick = () => ctx.handlers.deactivatePerson(x.dataset.personRemove);
-  });
-  document.querySelectorAll("[data-person-delete]").forEach((x) => {
-    x.onclick = () => ctx.handlers.permanentlyDeletePerson(x.dataset.personDelete);
-  });
-  document.querySelectorAll("[data-restore]").forEach((x) => {
-    x.onclick = () => ctx.handlers.restorePerson(x.dataset.restore);
-  });
   document.querySelectorAll("[data-date-remove]").forEach((x) => {
     x.onclick = () => ctx.handlers.removeDate(x.dataset.dateRemove);
   });
   document.querySelectorAll("[data-person-cell]").forEach((x) => {
     x.onclick = () => ctx.handlers.toggle(x.dataset.personCell, x.dataset.date);
-  });
-  document.querySelectorAll("[data-person-edit]").forEach((x) => {
-    x.onclick = () => ctx.handlers.openPerson(x.dataset.personEdit);
   });
   document.querySelectorAll("[data-photo-view]").forEach((x) => {
     x.onclick = (e) => { e.stopPropagation(); openPhotoViewer(ctx, x.dataset.photoView); };
@@ -259,7 +247,8 @@ export function renderRegister(ctx) {
     empty.classList.remove("hidden");
     empty.querySelector("h3").textContent = title;
     empty.querySelector("p").textContent = text;
-    empty.querySelector("#emptyAddPerson").classList.toggle("hidden", !showAdd);
+    const openDirectory = empty.querySelector("#emptyOpenRegisteredPeople");
+    if (openDirectory) openDirectory.classList.toggle("hidden", !showAdd);
   };
   if (!hasPeople) {
     if (manager) showEmptyState("No people yet", "Add your first person to start the shared register.", true);
@@ -301,15 +290,6 @@ function personRow(ctx, p, dates, manager) {
     ? '<button type="button" class="person-photo-open" data-photo-view="' + esc(p.id) + '" aria-label="View full-size photo of ' + esc(p.name) + '"><img class="avatar" loading="lazy" src="' + esc(p.photo_url) + '" alt="' + esc(p.name) + '"></button>'
     : '<div class="avatar grid place-items-center text-violet-300 font-black" aria-hidden="true">' + esc((p.name || "?").charAt(0).toUpperCase()) + "</div>";
 
-  const rowActions = !manager
-    ? ""
-    : '<div class="person-row-actions ml-auto">' +
-        (p.active
-          ? '<button data-person-remove="' + esc(p.id) + '" class="person-action-deactivate" title="Deactivate person" aria-label="Deactivate ' + esc(p.name) + '">Deactivate</button>'
-          : '<button data-restore="' + esc(p.id) + '" class="person-action-restore" title="Restore person" aria-label="Restore ' + esc(p.name) + '">Restore</button>') +
-        '<button data-person-delete="' + esc(p.id) + '" class="person-action-delete" title="Permanently delete person" aria-label="Permanently delete ' + esc(p.name) + '">Delete</button>' +
-      '</div>';
-
   const cells = dates.map((d) => {
     if (!p.active) {
       return "<td class='px-3 py-3'><span class='att empty att-locked' aria-label='" + esc(p.name + " on " + dateLabel(d.date, S.teamSettings) + " — person is inactive") + "'>·</span></td>";
@@ -327,10 +307,9 @@ function personRow(ctx, p, dates, manager) {
   return "<tr class='border-t border-white/5" + inactive + "'>" +
     "<td class='sticky left-0 bg-slate-950/95 px-5 py-3'>" +
       "<div class='flex items-center gap-3'>" + photo +
-        "<div><button data-person-edit='" + esc(p.id) + "' class='text-left hover:underline underline-offset-2 font-bold' title='Open person details'>" + esc(p.name) + "</button>" +
+        "<div><span class='font-bold'>" + esc(p.name) + "</span>" +
         (p.active ? "" : " <span class='badge-inactive'>inactive</span>") +
         "<div class='text-[11px] text-slate-500'>" + esc(p.identifier || "") + "</div></div>" +
-        rowActions +
       "</div>" +
     "</td>" + cells + "</tr>";
 }
@@ -355,7 +334,16 @@ function openSavedPeople(ctx) {
     const image = p.photo_url
       ? '<button class="saved-person-photo-button" type="button" data-photo-view="' + esc(p.id) + '" aria-label="Open full-size photo of ' + esc(p.name) + '"><img class="saved-person-photo" loading="lazy" src="' + esc(p.photo_url) + '" alt="' + esc(p.name) + '"></button>'
       : '<div class="saved-person-photo saved-person-no-photo" aria-label="No photo saved"><span>' + esc((p.name || "?").charAt(0).toUpperCase()) + '</span><small>No photo</small></div>';
-    return '<article class="saved-person-card"><div class="registered-person-number">' + (index + 1) + '.</div>' + image + '<div class="saved-person-name">' + esc(p.name || "Unnamed person") + '</div><div class="registered-person-status ' + (p.active ? 'is-active' : 'is-inactive') + '">' + (p.active ? 'Active' : 'Inactive') + '</div></article>';
+    const actions = ctx.canManage()
+      ? '<div class="saved-person-actions">' +
+        '<button type="button" data-directory-edit="' + esc(p.id) + '" class="person-action-edit" aria-label="Edit ' + esc(p.name) + '">Edit</button>' +
+        (p.active
+          ? '<button type="button" data-directory-deactivate="' + esc(p.id) + '" class="person-action-deactivate" aria-label="Deactivate ' + esc(p.name) + '">Deactivate</button>'
+          : '<button type="button" data-directory-restore="' + esc(p.id) + '" class="person-action-restore" aria-label="Restore ' + esc(p.name) + '">Restore</button>') +
+        '<button type="button" data-directory-delete="' + esc(p.id) + '" class="person-action-delete" aria-label="Permanently delete ' + esc(p.name) + '">Delete</button>' +
+      '</div>'
+      : '';
+    return '<article class="saved-person-card"><div class="registered-person-number">' + (index + 1) + '.</div>' + image + '<div class="saved-person-name">' + esc(p.name || "Unnamed person") + '</div><div class="registered-person-status ' + (p.active ? 'is-active' : 'is-inactive') + '">' + (p.active ? 'Active' : 'Inactive') + '</div>' + actions + '</article>';
   }).join("") : '<div class="saved-people-empty"><div class="empty-icon">◎</div><h3>No saved people yet</h3><p>Start your team directory by adding the first person.</p>' +
     (ctx.canManage() ? '<button id="registeredEmptyAddPerson" class="liquid primary-cta">+ Add first person</button>' : '') + '</div>';
   const summary = document.getElementById("registeredPeopleSummary");
@@ -365,6 +353,28 @@ function openSavedPeople(ctx) {
   });
   const addFirstPerson = grid.querySelector("#registeredEmptyAddPerson");
   if (addFirstPerson) addFirstPerson.onclick = () => ctx.handlers.addPerson();
+
+  grid.querySelectorAll("[data-directory-edit]").forEach((button) => {
+    button.onclick = () => ctx.handlers.openPerson(button.dataset.directoryEdit);
+  });
+  grid.querySelectorAll("[data-directory-deactivate]").forEach((button) => {
+    button.onclick = async () => {
+      await ctx.handlers.deactivatePerson(button.dataset.directoryDeactivate);
+      ctx.refreshRegisteredPeople?.();
+    };
+  });
+  grid.querySelectorAll("[data-directory-restore]").forEach((button) => {
+    button.onclick = async () => {
+      await ctx.handlers.restorePerson(button.dataset.directoryRestore);
+      ctx.refreshRegisteredPeople?.();
+    };
+  });
+  grid.querySelectorAll("[data-directory-delete]").forEach((button) => {
+    button.onclick = async () => {
+      await ctx.handlers.permanentlyDeletePerson(button.dataset.directoryDelete);
+      ctx.refreshRegisteredPeople?.();
+    };
+  });
   modal.classList.remove("hidden");
   document.body.classList.add("registered-people-open");
 }
