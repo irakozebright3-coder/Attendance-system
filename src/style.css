@@ -1509,3 +1509,18 @@ body:has(#authModal:not(.hidden)){
   #authModal:not(.hidden){padding:10px!important}
   #authModal:not(.hidden) .auth-panel{width:100%!important;margin-bottom:10px!important;padding:26px 20px!important}
 }
+
+
+/* Registered People directory actions */
+.saved-people-header-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.saved-people-empty .primary-cta{margin-top:18px}
+@media(max-width:620px){
+  .saved-people-header{flex-direction:column;align-items:stretch}
+  .saved-people-header-actions{justify-content:flex-start}
+}
