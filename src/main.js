@@ -81,7 +81,7 @@ const S = {
   refreshTimer: null,
   currentUserId: null,
   loading: false,
-  filters: { search: "", active: "active", status: "any", sort: "name-asc" },
+  filters: { search: "", active: "active", status: "any", sort: "newest" },
   showAllRows: false,
   showAllDates: false,
   teamSettings: null,
@@ -157,6 +157,18 @@ const ctx = {
       // onAuthChange renders the landing page
     },
     refresh: () => load(true),
+    loadAttendanceHistory: () => api.loadAttendanceHistory(S.team.id),
+    loadGroups: () => api.loadTeamGroups(S.team.id),
+    saveGroup: (group) => {
+      if (!canManage()) throw new Error("Only owners and admins can manage groups.");
+      return api.saveTeamGroup(S.team.id, group);
+    },
+    deleteGroup: async (groupId) => {
+      if (!canManage()) throw new Error("Only owners and admins can manage groups.");
+      await api.deleteTeamGroup(S.team.id, groupId);
+      toast("Group deleted. Saved people and attendance history were preserved.", "success");
+    },
+    confirm: (options) => confirmDialog(options),
     addDate: () => { if (canManage()) dateModal(ctx); else toast("Only owners and admins can manage dates.", "error"); },
     addPerson: () => { if (canManage()) personModal(ctx, null); else toast("Only owners and admins can add people.", "error"); },
     openPerson: (id) => personModal(ctx, S.people.find((p) => p.id === id) || null),
@@ -444,7 +456,7 @@ function realtime() {
   stopRealtime();
   if (!S.team) return;
   S.channel = db.channel("team-" + S.team.id + "-" + Date.now());
-  ["people", "attendance_dates", "attendance"].forEach((table) => {
+  ["people", "attendance_dates", "attendance", "attendance_history", "team_groups", "team_group_members"].forEach((table) => {
     S.channel.on(
       "postgres_changes",
       { event: "*", schema: "public", table, filter: "team_id=eq." + S.team.id },
@@ -551,7 +563,7 @@ function resetState() {
   S.marks = new Map();
   S.showAllRows = false;
   S.showAllDates = false;
-  S.filters = { search: "", active: "active", status: "any", sort: "name-asc" };
+  S.filters = { search: "", active: "active", status: "any", sort: "newest" };
   S.teamSettings = null;
 }
 
