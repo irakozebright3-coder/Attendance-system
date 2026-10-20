@@ -291,3 +291,7 @@ html[data-theme="purple"] .history-export-button{color:#f3e8ff;border-color:rgba
 html[data-theme="purple"] .history-export-button.history-export-csv{color:#a7f3d0}
 html[data-theme="purple"] .history-export-button.history-export-tsv{color:#bae6fd}
 html[data-theme="purple"] .history-export-button.history-export-json{color:#c7d2fe}
+
+/* Scroll-to-top button in purple appearance */
+html[data-theme="purple"] .scroll-top-btn{background:rgba(43,20,70,.85);border-color:var(--af-line-light);color:var(--af-text)}
+html[data-theme="purple"] .scroll-top-btn:hover{background:rgba(168,85,247,.4);border-color:var(--af-purple);color:#fff}

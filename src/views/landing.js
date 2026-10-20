@@ -2,6 +2,9 @@
 import { esc } from "../lib/util.js";
 import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, normalizePlatformSettings, footerMarkup, bindFooter, openPublicInfo } from "./public-info.js";
 
+// Keeps a single scroll listener alive across landing re-renders.
+let topBtnScrollHandler = null;
+
 export function logoMarkup(extraClass = "") {
   return '<img src="/attendanceflow-logo.svg" alt="AttendanceFlow" class="brand-logo ' + esc(extraClass) + '">';
 }
@@ -111,6 +114,9 @@ export function authScreen(message = "", platformSettings = DEFAULT_PLATFORM_SET
         '<section class="final-cta"><div><span class="eyebrow">READY WHEN YOU ARE</span><h2>Make attendance feel<br><span class="gradient-text">effortless.</span></h2></div><button id="finalStart" class="liquid primary-cta">Open AttendanceFlow <span>↗</span></button></section>' +
       '</main>' +
       footerMarkup(settings, faqList) +
+      '<button id="scrollTopBtn" type="button" class="scroll-top-btn" aria-label="Scroll back to top" title="Back to top">' +
+        '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>' +
+      '</button>' +
     '</div>' +
     '<div id="authModal" class="auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="authTitle"><div class="auth-panel">' +
       '<button id="closeAuth" class="close-auth" aria-label="Close">×</button>' +
@@ -142,6 +148,23 @@ export function authScreen(message = "", platformSettings = DEFAULT_PLATFORM_SET
 
   bindParallax();
   bindFooter(settings, faqList);
+
+  const topBtn = $("scrollTopBtn");
+  if (topBtn) {
+    const reduceMotion = matchMedia("(prefers-reduced-motion:reduce)").matches;
+    const syncTopBtn = () => {
+      const doc = document.documentElement;
+      const scrolled = window.scrollY || doc.scrollTop;
+      const nearFooter = window.innerHeight + scrolled >= doc.scrollHeight - 140;
+      topBtn.classList.toggle("visible", scrolled > 420 || nearFooter);
+    };
+    if (topBtnScrollHandler) window.removeEventListener("scroll", topBtnScrollHandler, { passive: true });
+    topBtnScrollHandler = syncTopBtn;
+    window.addEventListener("scroll", topBtnScrollHandler, { passive: true });
+    topBtn.onclick = () => window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+    syncTopBtn();
+  }
+
   $("navLogin").onclick = () => openAuth(false);
   $("heroStart").onclick = () => openAuth(true);
   $("heroDemo").onclick = () => $("workflow").scrollIntoView({ behavior: "smooth" });
