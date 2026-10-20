@@ -1,0 +1,290 @@
+/* AttendanceFlow appearance modes: dark, white/light, and system default. */
+html[data-theme="light"] {
+  color-scheme: light;
+  --af-void: #f5f7fb;
+  --af-card: #ffffff;
+  --af-white: #172033;
+  --af-text: #172033;
+  --af-muted: #5b6474;
+  --af-surface: rgba(255,255,255,.82);
+  --af-surface-strong: rgba(255,255,255,.96);
+  --af-line: rgba(15,23,42,.13);
+  --af-line-soft: rgba(15,23,42,.08);
+  --af-line-light: rgba(15,23,42,.20);
+  --af-shadow: 0 22px 70px rgba(15,23,42,.09);
+  --af-shadow-deep: 0 32px 90px rgba(15,23,42,.16);
+  --af-inner: inset 1px 1px 0 rgba(255,255,255,.9), inset -18px -18px 50px rgba(15,23,42,.025);
+}
+
+html[data-theme="light"] body,
+html[data-theme="light"] #app {
+  color: #172033;
+}
+
+html[data-theme="light"] html,
+html[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 12% 4%, rgba(124,58,237,.08), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(8,145,178,.07), transparent 25%),
+    #f5f7fb !important;
+  color: #172033 !important;
+}
+
+html[data-theme="light"] body::before {
+  opacity: .28;
+}
+
+html[data-theme="light"] .home-shell,
+html[data-theme="light"] .app-shell,
+html[data-theme="light"] .dashboard-page {
+  color: #172033;
+}
+
+html[data-theme="light"] .nav-links,
+html[data-theme="light"] .hero-lead,
+html[data-theme="light"] .feature-card p,
+html[data-theme="light"] .workflow-copy p,
+html[data-theme="light"] .trust-row,
+html[data-theme="light"] .dashboard-hero-copy p,
+html[data-theme="light"] .stat-caption,
+html[data-theme="light"] .register-toolbar p {
+  color: #5b6474 !important;
+}
+
+html[data-theme="light"] .nav-links a:hover,
+html[data-theme="light"] .ghost-cta:hover {
+  color: #111827 !important;
+}
+
+html[data-theme="light"] .brand-accent,
+html[data-theme="light"] .gradient-text {
+  background-image: linear-gradient(100deg, #7c3aed, #0891b2 65%, #334155);
+}
+
+html[data-theme="light"] .section-heading h2,
+html[data-theme="light"] .workflow-copy h2,
+html[data-theme="light"] .feature-card h3,
+html[data-theme="light"] .hero-copy h1,
+html[data-theme="light"] .final-cta h2,
+html[data-theme="light"] .dashboard-hero h1,
+html[data-theme="light"] .register-toolbar h2,
+html[data-theme="light"] .rate {
+  color: #172033 !important;
+}
+
+html[data-theme="light"] .glass,
+html[data-theme="light"] .af-glass,
+html[data-theme="light"] .dashboard-topbar,
+html[data-theme="light"] .register-shell,
+html[data-theme="light"] .stat-card,
+html[data-theme="light"] .feature-card,
+html[data-theme="light"] .step,
+html[data-theme="light"] .final-cta,
+html[data-theme="light"] .float-card,
+html[data-theme="light"] .mock-register {
+  background: linear-gradient(145deg, rgba(255,255,255,.97), rgba(246,248,252,.94)) !important;
+  color: #172033 !important;
+  border-color: rgba(15,23,42,.11) !important;
+  border-top-color: rgba(255,255,255,.98) !important;
+  border-left-color: rgba(255,255,255,.9) !important;
+  box-shadow: 0 18px 55px rgba(15,23,42,.08), inset 1px 1px 0 rgba(255,255,255,.9) !important;
+}
+
+html[data-theme="light"] .ticker {
+  background: rgba(255,255,255,.65) !important;
+  border-color: rgba(15,23,42,.09) !important;
+  box-shadow: 0 12px 30px rgba(15,23,42,.04);
+}
+
+html[data-theme="light"] .ticker span,
+html[data-theme="light"] .dashboard-brand-link strong,
+html[data-theme="light"] .dashboard-brand-link small,
+html[data-theme="light"] .float-card b,
+html[data-theme="light"] .mock-register b {
+  color: #172033 !important;
+}
+
+html[data-theme="light"] .ticker i {
+  color: #7c3aed !important;
+}
+
+html[data-theme="light"] .nav-cta,
+html[data-theme="light"] .secondary-cta,
+html[data-theme="light"] .ghost-cta,
+html[data-theme="light"] .dashboard-action {
+  color: #273449 !important;
+  background: rgba(255,255,255,.86) !important;
+  border-color: rgba(15,23,42,.12) !important;
+}
+
+html[data-theme="light"] .primary-cta,
+html[data-theme="light"] .liquid.primary-cta,
+html[data-theme="light"] .auth-buttons .primary-cta {
+  color: #ffffff !important;
+}
+
+html[data-theme="light"] .role-badge {
+  color: #6d28d9 !important;
+  border-color: rgba(124,58,237,.22) !important;
+  background: rgba(124,58,237,.08) !important;
+}
+
+html[data-theme="light"] .backend-status {
+  color: #176b4b !important;
+  border-color: rgba(16,185,129,.22) !important;
+  background: rgba(16,185,129,.08) !important;
+}
+
+html[data-theme="light"] .dashboard-hero-meta,
+html[data-theme="light"] .register-kicker,
+html[data-theme="light"] .stat-label {
+  color: #64748b !important;
+}
+
+html[data-theme="light"] .register-stage,
+html[data-theme="light"] .register-toolbar,
+html[data-theme="light"] .register-scroll,
+html[data-theme="light"] .table-wrap {
+  background: rgba(255,255,255,.58) !important;
+  border-color: rgba(15,23,42,.09) !important;
+}
+
+html[data-theme="light"] table,
+html[data-theme="light"] th,
+html[data-theme="light"] td {
+  border-color: rgba(15,23,42,.10) !important;
+}
+
+html[data-theme="light"] tbody tr:hover {
+  background: rgba(124,58,237,.045) !important;
+}
+
+html[data-theme="light"] .empty,
+html[data-theme="light"] .empty-register,
+html[data-theme="light"] .member-hint {
+  color: #64748b !important;
+}
+
+html[data-theme="light"] input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] select,
+html[data-theme="light"] .dialog-input {
+  background: #ffffff !important;
+  color: #172033 !important;
+  border-color: rgba(15,23,42,.16) !important;
+  box-shadow: inset 0 1px 3px rgba(15,23,42,.035) !important;
+}
+
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder {
+  color: #8490a3 !important;
+}
+
+html[data-theme="light"] .auth-modal,
+html[data-theme="light"] .modal {
+  background: rgba(15,23,42,.25) !important;
+}
+
+html[data-theme="light"] .auth-panel,
+html[data-theme="light"] .modal > .glass,
+html[data-theme="light"] .modal .glass {
+  background: linear-gradient(145deg, #ffffff, #f6f8fc) !important;
+  color: #172033 !important;
+  border-color: rgba(15,23,42,.12) !important;
+  box-shadow: 0 32px 90px rgba(15,23,42,.18) !important;
+}
+
+html[data-theme="light"] .auth-panel h2,
+html[data-theme="light"] .auth-panel label,
+html[data-theme="light"] .dialog-label,
+html[data-theme="light"] .modal h2,
+html[data-theme="light"] .modal h3 {
+  color: #273449 !important;
+}
+
+html[data-theme="light"] .auth-panel > p,
+html[data-theme="light"] .auth-message,
+html[data-theme="light"] .modal p,
+html[data-theme="light"] .modal label {
+  color: #5b6474;
+}
+
+html[data-theme="light"] .close-auth {
+  color: #64748b !important;
+}
+
+html[data-theme="light"] footer {
+  color: #64748b !important;
+  border-color: rgba(15,23,42,.12) !important;
+}
+
+html[data-theme="light"] .theme-picker {
+  color: #475569;
+  background: rgba(255,255,255,.8);
+  border-color: rgba(15,23,42,.13);
+  box-shadow: 0 6px 18px rgba(15,23,42,.035);
+}
+
+.theme-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 5px 8px 5px 10px;
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 12px;
+  background: rgba(15,23,42,.52);
+  color: #cbd5e1;
+  flex: 0 0 auto;
+}
+
+.theme-picker-icon {
+  font-size: 17px;
+  line-height: 1;
+  color: #8b5cf6;
+}
+
+.theme-picker-label {
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.theme-picker select {
+  min-width: 116px;
+  max-width: 138px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 800;
+  cursor: pointer;
+  outline-offset: 2px;
+}
+
+.home-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .theme-picker-label { display: none; }
+  .theme-picker { gap: 5px; }
+  .theme-picker select { min-width: 112px; }
+}
+
+@media (max-width: 620px) {
+  .home-nav-actions { gap: 6px; }
+  .theme-picker { min-height: 35px; padding: 4px 6px; }
+  .theme-picker select { min-width: 102px; max-width: 110px; padding: 5px 6px; font-size: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="light"] *,
+  html[data-theme="light"] *::before,
+  html[data-theme="light"] *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
