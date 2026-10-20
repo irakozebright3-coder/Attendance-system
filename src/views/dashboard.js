@@ -29,6 +29,7 @@ export function dashboard(ctx) {
           '<div class="dashboard-user">' +
             '<span id="emailLabel" class="desktop-email"></span>' +
             '<span id="roleLabel" class="role-badge"></span>' +
+          '<label class="theme-picker"><span class="theme-picker-icon" aria-hidden="true">◐</span><span class="theme-picker-label">Appearance</span><select data-theme-select aria-label="Appearance mode"><option value="system">System default</option><option value="dark">Dark mode</option><option value="light">White mode</option></select></label>' +
             '<button id="settingsBtn" class="liquid dashboard-action">Settings</button>' +
             '<button id="reportsBtn" class="liquid dashboard-action">Reports</button>' +
             (manager
