@@ -56,7 +56,6 @@ export function dashboard(ctx) {
           '<div class="dashboard-actions">' +
             (manager
               ? '<button id="newDate" class="liquid primary-cta dashboard-main-cta"><span class="cta-plus">+</span> Add attendance date <span>↗</span></button>' +
-                '<button id="newPerson" class="liquid secondary-cta dashboard-main-cta"><span class="cta-plus">+</span> Add person</button>' +
                 '<button id="savedPeopleBtn" class="liquid secondary-cta dashboard-main-cta">▣ Registered People</button>'
               : '<div class="register-live member-hint"><i></i><span>Mark cells: empty → present → absent</span></div>') +
           '</div>' +
@@ -91,7 +90,8 @@ export function dashboard(ctx) {
             '</div>' +
           '</div>' +
           '<div class="register-stage"><div class="register-glow"></div><div class="overflow-x-auto register-scroll"><table class="w-full text-sm"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>' +
-          '<div id="empty" class="hidden empty-register"><div class="empty-icon">＋</div><h3>No people yet</h3><p>Add your first person to start the shared register.</p><button id="emptyAddPerson" class="liquid primary-cta">Add first person ↗</button></div>' +
+          '<div id="empty" class="hidden empty-register"><div class="empty-icon">＋</div><h3>No people yet</h3><p>Add your first person from the Registered People page.</p>' +
+            (manager ? '<button id="emptyOpenRegisteredPeople" class="liquid primary-cta">Open Registered People ↗</button>' : '') + '</div>' +
           '</div>' +
         '</section>' +
       '</div>' +
@@ -99,7 +99,10 @@ export function dashboard(ctx) {
     '</main>' +
     '<div id="modal" class="modal hidden" role="dialog" aria-modal="true"></div>' +
     '<div id="savedPeopleModal" class="saved-people-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="savedPeopleTitle">' +
-      '<section class="saved-people-panel"><header class="saved-people-header"><div><span class="register-kicker">PEOPLE DIRECTORY</span><h2 id="savedPeopleTitle">Registered People</h2><p id="registeredPeopleSummary">People registered in this team, listed in order.</p></div><button id="closeSavedPeople" class="liquid dashboard-action" aria-label="Return to dashboard">← Back to dashboard</button></header>' +
+      '<section class="saved-people-panel"><header class="saved-people-header"><div><span class="register-kicker">PEOPLE DIRECTORY</span><h2 id="savedPeopleTitle">Registered People</h2><p id="registeredPeopleSummary">People registered in this team, listed in order.</p></div>' +
+      '<div class="saved-people-header-actions">' +
+        (manager ? '<button id="registeredAddPerson" class="liquid primary-cta dashboard-action">+ Add person</button>' : '') +
+        '<button id="closeSavedPeople" class="liquid dashboard-action" aria-label="Return to dashboard">← Back to dashboard</button></div></header>' +
       '<div id="savedPeopleGrid" class="saved-people-grid"></div></section></div>' +
     '<div id="photoViewer" class="photo-viewer hidden" role="dialog" aria-modal="true" aria-label="Full-size profile photo"><button id="closePhotoViewer" class="photo-viewer-close" aria-label="Close full-size photo">✕</button><button id="photoViewerPrev" class="photo-viewer-nav photo-viewer-prev" aria-label="Previous photo">‹</button><figure class="photo-viewer-figure"><img id="photoViewerImage" alt=""><figcaption id="photoViewerCaption"></figcaption></figure><button id="photoViewerNext" class="photo-viewer-nav photo-viewer-next" aria-label="Next photo">›</button></div>';
 
@@ -125,10 +128,12 @@ export function dashboard(ctx) {
   }
   const newDate = document.getElementById("newDate");
   if (newDate) newDate.onclick = () => ctx.handlers.addDate();
-  const newPerson = document.getElementById("newPerson");
-  if (newPerson) newPerson.onclick = () => ctx.handlers.addPerson();
   const savedPeopleBtn = document.getElementById("savedPeopleBtn");
   if (savedPeopleBtn) savedPeopleBtn.onclick = () => openSavedPeople(ctx);
+  const registeredAddPerson = document.getElementById("registeredAddPerson");
+  if (registeredAddPerson) registeredAddPerson.onclick = () => ctx.handlers.addPerson();
+  const emptyOpenRegisteredPeople = document.getElementById("emptyOpenRegisteredPeople");
+  if (emptyOpenRegisteredPeople) emptyOpenRegisteredPeople.onclick = () => openSavedPeople(ctx);
   document.getElementById("closeSavedPeople").onclick = closeSavedPeople;
   document.getElementById("closePhotoViewer").onclick = closePhotoViewer;
   document.getElementById("photoViewerPrev").onclick = () => stepPhoto(-1);
@@ -140,7 +145,7 @@ export function dashboard(ctx) {
     if (e.target.id === "photoViewer") closePhotoViewer();
   });
   document.addEventListener("keydown", onPhotoViewerKey);
-  document.getElementById("emptyAddPerson").onclick = () => ctx.handlers.addPerson();
+  // Adding a person is intentionally routed through the Registered People directory.
   document.querySelector(".dashboard-brand-link").onclick = (e) => e.preventDefault();
 
   // toolbar wiring
@@ -339,6 +344,10 @@ function openSavedPeople(ctx) {
   const modal = document.getElementById("savedPeopleModal");
   const grid = document.getElementById("savedPeopleGrid");
   if (!modal || !grid) return;
+  ctx.refreshRegisteredPeople = () => {
+    const directory = document.getElementById("savedPeopleModal");
+    if (directory && !directory.classList.contains("hidden")) openSavedPeople(ctx);
+  };
   const people = [...ctx.S.people].sort((a, b) =>
     String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base", numeric: true })
   );
@@ -347,12 +356,15 @@ function openSavedPeople(ctx) {
       ? '<button class="saved-person-photo-button" type="button" data-photo-view="' + esc(p.id) + '" aria-label="Open full-size photo of ' + esc(p.name) + '"><img class="saved-person-photo" loading="lazy" src="' + esc(p.photo_url) + '" alt="' + esc(p.name) + '"></button>'
       : '<div class="saved-person-photo saved-person-no-photo" aria-label="No photo saved"><span>' + esc((p.name || "?").charAt(0).toUpperCase()) + '</span><small>No photo</small></div>';
     return '<article class="saved-person-card"><div class="registered-person-number">' + (index + 1) + '.</div>' + image + '<div class="saved-person-name">' + esc(p.name || "Unnamed person") + '</div><div class="registered-person-status ' + (p.active ? 'is-active' : 'is-inactive') + '">' + (p.active ? 'Active' : 'Inactive') + '</div></article>';
-  }).join("") : '<div class="saved-people-empty"><div class="empty-icon">◎</div><h3>No saved people yet</h3><p>People you add to this workspace will appear here.</p></div>';
+  }).join("") : '<div class="saved-people-empty"><div class="empty-icon">◎</div><h3>No saved people yet</h3><p>Start your team directory by adding the first person.</p>' +
+    (ctx.canManage() ? '<button id="registeredEmptyAddPerson" class="liquid primary-cta">+ Add first person</button>' : '') + '</div>';
   const summary = document.getElementById("registeredPeopleSummary");
   if (summary) summary.textContent = people.length + " registered " + (people.length === 1 ? "person" : "people") + " in this team, sorted by name.";
   grid.querySelectorAll("[data-photo-view]").forEach((button) => {
     button.onclick = () => openPhotoViewer(ctx, button.dataset.photoView);
   });
+  const addFirstPerson = grid.querySelector("#registeredEmptyAddPerson");
+  if (addFirstPerson) addFirstPerson.onclick = () => ctx.handlers.addPerson();
   modal.classList.remove("hidden");
   document.body.classList.add("registered-people-open");
 }
