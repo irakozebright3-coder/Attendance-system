@@ -650,7 +650,10 @@ function printAttendanceHistory(ctx) {
       "</tbody></table><p class=\"hint\">Choose “Save as PDF” in the print destination to save this report.</p></body></html>");
     printWindow.document.close();
 
+    let printStarted = false;
     const startPrint = () => {
+      if (printStarted) return;
+      printStarted = true;
       try {
         printWindow.focus();
         printWindow.print();
