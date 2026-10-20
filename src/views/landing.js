@@ -56,7 +56,7 @@ export function authScreen(message = "", platformSettings = DEFAULT_PLATFORM_SET
           '<a href="#security">Security</a>' +
         '</div>' +
         '<div class="home-nav-actions">' +
-          '<label class="theme-picker"><span class="theme-picker-icon" aria-hidden="true">◐</span><span class="theme-picker-label">Appearance</span><select data-theme-select aria-label="Appearance mode"><option value="system">System default</option><option value="dark">Dark mode</option><option value="light">White mode</option></select></label>' +
+          '<label class="theme-picker"><span class="theme-picker-icon" aria-hidden="true">◐</span><span class="theme-picker-label">Appearance</span><select data-theme-select aria-label="Appearance mode"><option value="system">System default</option><option value="dark">Dark mode</option><option value="purple">Purple mode</option></select></label>' +
           '<button id="navLogin" class="liquid nav-cta">Sign in</button>' +
         '</div>' +
       '</nav>' +
