@@ -1,5 +1,6 @@
 import "./style.css";
 import "./design-system.css";
+import "./theme.css";
 import { db, hasBackend } from "./lib/supabase.js";
 import * as api from "./lib/api.js";
 import { friendlyError, debounce } from "./lib/util.js";
@@ -14,6 +15,59 @@ import {
 } from "./views/modals.js";
 
 const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Per-browser appearance preference. "system" follows the operating-system theme.
+const THEME_STORAGE_KEY = "attendanceflow-theme";
+const SYSTEM_THEME_QUERY = window.matchMedia("(prefers-color-scheme: dark)");
+let themePreference = "system";
+
+function syncThemeControls() {
+  document.querySelectorAll("[data-theme-select]").forEach((select) => {
+    select.value = themePreference;
+  });
+}
+
+function applyThemePreference(value, persist = true) {
+  const allowed = ["system", "dark", "light"];
+  themePreference = allowed.includes(value) ? value : "system";
+  const resolvedTheme = themePreference === "system"
+    ? (SYSTEM_THEME_QUERY.matches ? "dark" : "light")
+    : themePreference;
+
+  document.documentElement.dataset.theme = resolvedTheme;
+  document.documentElement.dataset.themePreference = themePreference;
+  document.documentElement.style.colorScheme = resolvedTheme;
+
+  if (persist) {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, themePreference);
+    } catch {
+      // The chosen theme still works for this page even if storage is unavailable.
+    }
+  }
+  syncThemeControls();
+}
+
+try {
+  applyThemePreference(localStorage.getItem(THEME_STORAGE_KEY) || "system", false);
+} catch {
+  applyThemePreference("system", false);
+}
+
+document.addEventListener("change", (event) => {
+  if (event.target instanceof HTMLSelectElement && event.target.matches("[data-theme-select]")) {
+    applyThemePreference(event.target.value);
+  }
+});
+
+SYSTEM_THEME_QUERY.addEventListener("change", () => {
+  if (themePreference === "system") applyThemePreference("system", false);
+});
+
+// Views are rendered dynamically, so sync the selector whenever a new screen appears.
+const themeControlObserver = new MutationObserver(syncThemeControls);
+const appRoot = document.getElementById("app");
+if (appRoot) themeControlObserver.observe(appRoot, { childList: true, subtree: true });
 
 const S = {
   session: null,
