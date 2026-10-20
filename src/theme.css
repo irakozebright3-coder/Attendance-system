@@ -260,3 +260,16 @@ html[data-theme="purple"] .group-member-chip{color:#f3e8ff;background:rgba(147,5
 html[data-theme="purple"] .team-group-editor{background:rgba(88,28,135,.18);border-color:rgba(192,132,252,.28)}
 html[data-theme="purple"] .group-member-option{background:rgba(25,10,42,.62);border-color:rgba(216,180,254,.17)}
 html[data-theme="purple"] .group-member-option-name{color:#f5f0ff}
+
+
+/* Keep quick-navigation actions visually obvious in Purple mode. */
+html[data-theme="purple"] .dashboard-history-cta{
+  color:#fff!important;
+  background:linear-gradient(130deg,rgba(126,34,206,.92),rgba(76,29,149,.90))!important;
+  border-color:rgba(216,180,254,.36)!important;
+}
+html[data-theme="purple"] .dashboard-groups-cta{
+  color:#fff!important;
+  background:linear-gradient(130deg,rgba(79,70,229,.90),rgba(107,33,168,.92))!important;
+  border-color:rgba(199,210,254,.34)!important;
+}
