@@ -73,6 +73,9 @@ export function dashboard(ctx) {
             '<div><div class="register-kicker">SHARED REGISTER</div><h2>Attendance register</h2><p>Click a cell: <b>empty</b> → <b class="present-text">present</b> → <b class="absent-text">absent</b> → empty</p></div>' +
             '<div id="toolbar" class="toolbar flex flex-wrap items-center gap-2">' +
               '<input id="searchInput" type="search" placeholder="Search name or ID…" aria-label="Search people by name or identifier" class="toolbar-input">' +
+              '<button id="attendanceHistoryBtn" type="button" class="toolbar-action">◷ History</button>' +
+              '<button id="teamGroupsBtn" type="button" class="toolbar-action">▦ Groups</button>' +
+              '<button id="joinedOrderToggle" type="button" class="toolbar-action" aria-label="Toggle people by newest or oldest joined">Joined: Newest ↓</button>' +
               '<label class="sr-only" for="activeFilter">Filter people</label>' +
               '<select id="activeFilter" class="toolbar-select" aria-label="Filter by active state">' +
                 '<option value="all">All people</option><option value="active" selected>Active only</option><option value="inactive">Inactive only</option>' +
@@ -81,12 +84,7 @@ export function dashboard(ctx) {
               '<select id="statusFilter" class="toolbar-select" aria-label="Filter by latest-date status">' +
                 '<option value="any" selected>Any status</option><option value="present">Present (latest date)</option><option value="absent">Absent (latest date)</option><option value="unmarked">Unmarked (latest date)</option>' +
               '</select>' +
-              '<label class="sr-only" for="sortSelect">Sort people</label>' +
-              '<select id="sortSelect" class="toolbar-select" aria-label="Sort people">' +
-                '<option value="name-asc" selected>Name A→Z</option><option value="name-desc">Name Z→A</option>' +
-                '<option value="identifier-asc">ID A→Z</option><option value="identifier-desc">ID Z→A</option>' +
-                '<option value="newest">Newest first</option><option value="oldest">Oldest first</option>' +
-              '</select>' +
+
             '</div>' +
           '</div>' +
           '<div class="register-stage"><div class="register-glow"></div><div class="overflow-x-auto register-scroll"><table class="w-full text-sm"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>' +
@@ -104,6 +102,25 @@ export function dashboard(ctx) {
         (manager ? '<button id="registeredAddPerson" class="liquid primary-cta dashboard-action">+ Add person</button>' : '') +
         '<button id="closeSavedPeople" class="liquid dashboard-action" aria-label="Return to dashboard">← Back to dashboard</button></div></header>' +
       '<div id="savedPeopleGrid" class="saved-people-grid"></div></section></div>' +
+    '<div id="attendanceHistoryModal" class="saved-people-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="attendanceHistoryTitle">' +
+      '<section class="saved-people-panel attendance-history-panel"><header class="saved-people-header"><div><span class="register-kicker">SAVED RECORDS</span><h2 id="attendanceHistoryTitle">Attendance History</h2><p>Every recorded attendance change with its attendance date and time saved.</p></div>' +
+      '<div class="saved-people-header-actions"><button id="refreshAttendanceHistory" class="liquid dashboard-action">↻ Refresh</button><button id="closeAttendanceHistory" class="liquid dashboard-action">← Back</button></div></header>' +
+      '<p id="attendanceHistorySummary" class="history-summary">Loading saved attendance history…</p>' +
+      '<div class="overflow-x-auto history-table-wrap"><table class="history-table"><thead><tr><th>Attendance date</th><th>Person</th><th>Status</th><th>Event</th><th>Recorded at</th><th>Marked by</th></tr></thead><tbody id="attendanceHistoryRows"></tbody></table></div>' +
+      '</section></div>' +
+    '<div id="teamGroupsModal" class="saved-people-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="teamGroupsTitle">' +
+      '<section class="saved-people-panel team-groups-panel"><header class="saved-people-header"><div><span class="register-kicker">PEOPLE ORGANIZATION</span><h2 id="teamGroupsTitle">Groups & committees</h2><p>Create work groups and assign saved people. Group memberships are stored in the team database.</p></div>' +
+      '<div class="saved-people-header-actions">' +
+        (manager ? '<button id="createTeamGroup" class="liquid primary-cta dashboard-action">+ New group</button>' : '') +
+        '<button id="closeTeamGroups" class="liquid dashboard-action">← Back</button></div></header>' +
+      '<div id="teamGroupsList" class="team-groups-list"><p class="groups-loading">Loading groups…</p></div>' +
+      '<section id="teamGroupEditor" class="team-group-editor hidden"><div class="group-editor-heading"><h3 id="teamGroupEditorTitle">New group</h3><p>Choose a name and select the people who belong to this group.</p></div>' +
+      '<form id="teamGroupForm" class="team-group-form">' +
+        '<label class="dialog-label">Group name<input id="teamGroupName" maxlength="80" required placeholder="e.g. Attendance Committee" class="dialog-input"></label>' +
+        '<label class="dialog-label">Description <span class="text-slate-500">(optional)</span><textarea id="teamGroupDescription" maxlength="400" rows="2" placeholder="Purpose or responsibilities of this group" class="dialog-input"></textarea></label>' +
+        '<h4 class="group-member-heading">Select people</h4><div id="teamGroupMemberPicker" class="team-group-member-picker"></div>' +
+        '<div class="team-group-form-actions"><button id="cancelTeamGroup" type="button" class="liquid dashboard-action">Cancel</button><button id="saveTeamGroup" type="submit" class="liquid primary-cta">Save group</button></div>' +
+      '</form></section></section></div>' +
     '<div id="photoViewer" class="photo-viewer hidden" role="dialog" aria-modal="true" aria-label="Full-size profile photo"><button id="closePhotoViewer" class="photo-viewer-close" aria-label="Close full-size photo">✕</button><button id="photoViewerPrev" class="photo-viewer-nav photo-viewer-prev" aria-label="Previous photo">‹</button><figure class="photo-viewer-figure"><img id="photoViewerImage" alt=""><figcaption id="photoViewerCaption"></figcaption></figure><button id="photoViewerNext" class="photo-viewer-nav photo-viewer-next" aria-label="Next photo">›</button></div>';
 
   document.getElementById("teamLabel").textContent = S.team?.name || "Team attendance workspace";
@@ -135,6 +152,54 @@ export function dashboard(ctx) {
   const emptyOpenRegisteredPeople = document.getElementById("emptyOpenRegisteredPeople");
   if (emptyOpenRegisteredPeople) emptyOpenRegisteredPeople.onclick = () => openSavedPeople(ctx);
   document.getElementById("closeSavedPeople").onclick = closeSavedPeople;
+  const attendanceHistoryBtn = document.getElementById("attendanceHistoryBtn");
+  if (attendanceHistoryBtn) attendanceHistoryBtn.onclick = () => openAttendanceHistory(ctx);
+  document.getElementById("closeAttendanceHistory").onclick = closeAttendanceHistory;
+  document.getElementById("refreshAttendanceHistory").onclick = () => openAttendanceHistory(ctx);
+  document.getElementById("attendanceHistoryModal").addEventListener("click", (e) => {
+    if (e.target.id === "attendanceHistoryModal") closeAttendanceHistory();
+  });
+  const teamGroupsBtn = document.getElementById("teamGroupsBtn");
+  if (teamGroupsBtn) teamGroupsBtn.onclick = () => openTeamGroups(ctx);
+  document.getElementById("closeTeamGroups").onclick = closeTeamGroups;
+  const createTeamGroup = document.getElementById("createTeamGroup");
+  if (createTeamGroup) createTeamGroup.onclick = () => showTeamGroupEditor(ctx, null);
+  document.getElementById("teamGroupsModal").addEventListener("click", (e) => {
+    if (e.target.id === "teamGroupsModal") closeTeamGroups();
+  });
+  document.getElementById("cancelTeamGroup").onclick = () => {
+    document.getElementById("teamGroupEditor").classList.add("hidden");
+    document.getElementById("teamGroupForm").reset();
+    delete document.getElementById("teamGroupForm").dataset.groupId;
+  };
+  document.getElementById("teamGroupForm").onsubmit = async (e) => {
+    e.preventDefault();
+    if (!ctx.canManage()) { ctx.toast("Only owners and admins can manage groups.", "error"); return; }
+    const form = e.currentTarget;
+    const saveButton = document.getElementById("saveTeamGroup");
+    const originalLabel = saveButton.textContent;
+    saveButton.disabled = true;
+    saveButton.textContent = "Saving…";
+    const personIds = [...form.querySelectorAll('input[name="groupPerson"]:checked')].map((input) => input.value);
+    try {
+      await ctx.handlers.saveGroup({
+        id: form.dataset.groupId || null,
+        name: document.getElementById("teamGroupName").value.trim(),
+        description: document.getElementById("teamGroupDescription").value.trim(),
+        personIds
+      });
+      document.getElementById("teamGroupEditor").classList.add("hidden");
+      form.reset();
+      delete form.dataset.groupId;
+      ctx.toast("Group and its members were saved to the database.", "success");
+      await refreshTeamGroups(ctx);
+    } catch (err) {
+      ctx.toast(err.message || "Could not save this group.", "error");
+    } finally {
+      saveButton.disabled = false;
+      saveButton.textContent = originalLabel;
+    }
+  };
   document.getElementById("closePhotoViewer").onclick = closePhotoViewer;
   document.getElementById("photoViewerPrev").onclick = () => stepPhoto(-1);
   document.getElementById("photoViewerNext").onclick = () => stepPhoto(1);
@@ -159,10 +224,19 @@ export function dashboard(ctx) {
     S.filters.status = e.target.value;
     renderRegister(ctx);
   };
-  document.getElementById("sortSelect").onchange = (e) => {
-    S.filters.sort = e.target.value;
+  const joinedOrderToggle = document.getElementById("joinedOrderToggle");
+  const updateJoinedOrderLabel = () => {
+    if (!joinedOrderToggle) return;
+    const newest = S.filters.sort !== "oldest";
+    joinedOrderToggle.textContent = newest ? "Joined: Newest ↓" : "Joined: Oldest ↑";
+    joinedOrderToggle.setAttribute("aria-label", newest ? "Sorted newest joined first; click to show oldest joined first" : "Sorted oldest joined first; click to show newest joined first");
+  };
+  if (joinedOrderToggle) joinedOrderToggle.onclick = () => {
+    S.filters.sort = S.filters.sort === "oldest" ? "newest" : "oldest";
+    updateJoinedOrderLabel();
     renderRegister(ctx);
   };
+  updateJoinedOrderLabel();
 
   bindParallax();
 }
@@ -315,9 +389,154 @@ function personRow(ctx, p, dates, manager) {
 }
 
 
+let currentTeamGroups = [];
 let photoViewerContext = null;
 let photoViewerPeople = [];
 let photoViewerIndex = 0;
+
+function closeAttendanceHistory() {
+  document.getElementById("attendanceHistoryModal")?.classList.add("hidden");
+  document.body.classList.remove("registered-people-open");
+}
+
+async function openAttendanceHistory(ctx) {
+  const modal = document.getElementById("attendanceHistoryModal");
+  const body = document.getElementById("attendanceHistoryRows");
+  const summary = document.getElementById("attendanceHistorySummary");
+  if (!modal || !body || !summary) return;
+  modal.classList.remove("hidden");
+  document.body.classList.add("registered-people-open");
+  summary.textContent = "Loading saved attendance history…";
+  body.innerHTML = "<tr><td colspan=\"6\" class=\"history-empty-cell\">Loading records…</td></tr>";
+  try {
+    const history = await ctx.handlers.loadAttendanceHistory();
+    if (!history.length) {
+      summary.textContent = "No saved attendance events were found.";
+      body.innerHTML = "<tr><td colspan=\"6\" class=\"history-empty-cell\">No records yet. After the database migration is applied, every new attendance change will be recorded here.</td></tr>";
+      return;
+    }
+    summary.textContent = history.length + " saved attendance event" + (history.length === 1 ? "" : "s") + ". Newest events appear first.";
+    const actionLabels = {
+      baseline: "Existing record",
+      marked: "Marked",
+      changed: "Changed",
+      cleared: "Cleared from register"
+    };
+    body.innerHTML = history.map((row) => {
+      const status = row.status === "present" ? "Present" : "Absent";
+      const recorded = row.recorded_at && !Number.isNaN(new Date(row.recorded_at).getTime())
+        ? new Date(row.recorded_at).toLocaleString()
+        : "—";
+      const marker = row.marked_by ? String(row.marked_by).slice(0, 8) : "Unknown";
+      const statusClass = row.status === "present" ? "history-present" : "history-absent";
+      return "<tr>" +
+        "<td>" + esc(dateLabel(row.attendance_date, ctx.S.teamSettings)) + "</td>" +
+        "<td><strong>" + esc(row.person_name || "Unknown person") + "</strong></td>" +
+        "<td><span class=\"history-status " + statusClass + "\">" + status + "</span></td>" +
+        "<td>" + esc(actionLabels[row.action] || row.action || "Recorded") + (row.action === "cleared" ? " (previous value)" : "") + "</td>" +
+        "<td>" + esc(recorded) + "</td>" +
+        "<td>" + esc(marker) + "</td></tr>";
+    }).join("");
+  } catch (err) {
+    summary.textContent = "Attendance history could not be loaded.";
+    body.innerHTML = "<tr><td colspan=\"6\" class=\"history-empty-cell\">" + esc(err.message || "Database error") + "</td></tr>";
+    ctx.toast("Could not load attendance history.", "error");
+  }
+}
+
+function closeTeamGroups() {
+  document.getElementById("teamGroupsModal")?.classList.add("hidden");
+  document.body.classList.remove("registered-people-open");
+  document.getElementById("teamGroupEditor")?.classList.add("hidden");
+}
+
+async function openTeamGroups(ctx) {
+  const modal = document.getElementById("teamGroupsModal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  document.body.classList.add("registered-people-open");
+  await refreshTeamGroups(ctx);
+}
+
+async function refreshTeamGroups(ctx) {
+  const host = document.getElementById("teamGroupsList");
+  if (!host) return;
+  host.innerHTML = '<p class="groups-loading">Loading groups from the team database…</p>';
+  try {
+    currentTeamGroups = await ctx.handlers.loadGroups();
+    if (!currentTeamGroups.length) {
+      host.innerHTML = '<div class="team-groups-empty"><div class="empty-icon">▦</div><h3>No groups yet</h3><p>Groups are useful for committees, departments, or working teams.</p>' +
+        (ctx.canManage() ? '<button type="button" id="firstTeamGroup" class="liquid primary-cta">+ Create first group</button>' : '') + '</div>';
+    } else {
+      const peopleById = new Map(ctx.S.people.map((p) => [p.id, p]));
+      host.innerHTML = currentTeamGroups.map((group) => {
+        const members = (group.person_ids || []).map((id) => peopleById.get(id)).filter(Boolean);
+        const memberNames = members.length
+          ? members.slice(0, 5).map((p) => '<span class="group-member-chip">' + esc(p.name) + '</span>').join("") +
+            (members.length > 5 ? '<span class="group-member-chip group-member-more">+' + (members.length - 5) + ' more</span>' : '')
+          : '<span class="group-no-members">No people assigned yet</span>';
+        const actions = ctx.canManage()
+          ? '<div class="team-group-actions"><button type="button" class="liquid dashboard-action" data-group-edit="' + esc(group.id) + '">Edit group</button><button type="button" class="liquid dashboard-action group-delete-action" data-group-delete="' + esc(group.id) + '">Delete</button></div>'
+          : "";
+        return '<article class="team-group-card"><div class="team-group-card-top"><div><h3>' + esc(group.name) + '</h3><p>' + esc(group.description || "No description provided.") + '</p></div><span class="team-group-count">' + members.length + ' ' + (members.length === 1 ? 'person' : 'people') + '</span></div><div class="team-group-members">' + memberNames + '</div>' + actions + '</article>';
+      }).join("");
+    }
+    const first = host.querySelector("#firstTeamGroup");
+    if (first) first.onclick = () => showTeamGroupEditor(ctx, null);
+    host.querySelectorAll("[data-group-edit]").forEach((button) => {
+      button.onclick = () => {
+        const group = currentTeamGroups.find((item) => item.id === button.dataset.groupEdit);
+        if (group) showTeamGroupEditor(ctx, group);
+      };
+    });
+    host.querySelectorAll("[data-group-delete]").forEach((button) => {
+      button.onclick = async () => {
+        const group = currentTeamGroups.find((item) => item.id === button.dataset.groupDelete);
+        if (!group) return;
+        const confirmed = await ctx.handlers.confirm({
+          title: 'Delete group "' + group.name + '"?',
+          message: "This removes the group and its assignments only. People, photos, attendance dates, and attendance history remain saved.",
+          confirmLabel: "Delete group",
+          danger: true
+        });
+        if (!confirmed) return;
+        try {
+          await ctx.handlers.deleteGroup(group.id);
+          await refreshTeamGroups(ctx);
+        } catch (err) {
+          ctx.toast(err.message || "Could not delete this group.", "error");
+        }
+      };
+    });
+  } catch (err) {
+    host.innerHTML = '<div class="team-groups-empty"><h3>Groups could not be loaded</h3><p>' + esc(err.message || "Database error") + '</p><p>Check that the AttendanceFlow history/groups SQL migration has been run in Supabase.</p></div>';
+    ctx.toast("Could not load groups from the database.", "error");
+  }
+}
+
+function showTeamGroupEditor(ctx, group = null) {
+  if (!ctx.canManage()) {
+    ctx.toast("Only owners and admins can manage groups.", "error");
+    return;
+  }
+  const editor = document.getElementById("teamGroupEditor");
+  const form = document.getElementById("teamGroupForm");
+  const memberPicker = document.getElementById("teamGroupMemberPicker");
+  if (!editor || !form || !memberPicker) return;
+  form.dataset.groupId = group?.id || "";
+  document.getElementById("teamGroupEditorTitle").textContent = group ? "Edit group" : "Create a group";
+  document.getElementById("teamGroupName").value = group?.name || "";
+  document.getElementById("teamGroupDescription").value = group?.description || "";
+  const selected = new Set(group?.person_ids || []);
+  const people = [...ctx.S.people].sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" }));
+  memberPicker.innerHTML = people.length ? people.map((person) =>
+    '<label class="group-member-option"><input type="checkbox" name="groupPerson" value="' + esc(person.id) + '"' + (selected.has(person.id) ? " checked" : "") + '><span class="group-member-option-name">' + esc(person.name || "Unnamed person") + '<small>' + esc(person.identifier || (person.active ? "No ID" : "Inactive")) + '</small></span>' +
+    (!person.active ? '<span class="badge-inactive">inactive</span>' : '') + '</label>'
+  ).join("") : '<p class="group-no-members">Add people in Registered People before assigning group members.</p>';
+  editor.classList.remove("hidden");
+  editor.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  document.getElementById("teamGroupName").focus();
+}
 
 function openSavedPeople(ctx) {
   const modal = document.getElementById("savedPeopleModal");
