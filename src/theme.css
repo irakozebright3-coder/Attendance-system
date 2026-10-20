@@ -273,3 +273,8 @@ html[data-theme="purple"] .dashboard-groups-cta{
   background:linear-gradient(130deg,rgba(79,70,229,.90),rgba(107,33,168,.92))!important;
   border-color:rgba(199,210,254,.34)!important;
 }
+
+
+html[data-theme="purple"] .dashboard-actions .dashboard-main-cta{
+  box-shadow:0 12px 30px rgba(7,2,18,.2);
+}
