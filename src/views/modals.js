@@ -322,6 +322,8 @@ export async function personModal(ctx, person = null) {
       closeModal();
       if (localPhotoUrl) URL.revokeObjectURL(localPhotoUrl);
       await ctx.refresh();
+      // Keep the Registered People directory current after adding or editing a profile.
+      ctx.refreshRegisteredPeople?.();
     } catch (err) {
       ctx.toast(err.message || "Could not save the person.", "error");
       save.disabled = false;
