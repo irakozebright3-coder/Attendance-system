@@ -28,15 +28,16 @@ function syncThemeControls() {
 }
 
 function applyThemePreference(value, persist = true) {
-  const allowed = ["system", "dark", "light"];
-  themePreference = allowed.includes(value) ? value : "system";
+  const normalizedValue = value === "light" ? "purple" : value; // Migrate saved White mode preferences.
+  const allowed = ["system", "dark", "purple"];
+  themePreference = allowed.includes(normalizedValue) ? normalizedValue : "system";
   const resolvedTheme = themePreference === "system"
-    ? (SYSTEM_THEME_QUERY.matches ? "dark" : "light")
+    ? (SYSTEM_THEME_QUERY.matches ? "dark" : "purple")
     : themePreference;
 
   document.documentElement.dataset.theme = resolvedTheme;
   document.documentElement.dataset.themePreference = themePreference;
-  document.documentElement.style.colorScheme = resolvedTheme;
+  document.documentElement.style.colorScheme = resolvedTheme === "purple" ? "dark" : resolvedTheme;
 
   if (persist) {
     try {
