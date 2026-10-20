@@ -29,6 +29,7 @@ end;
 $$;
 
 drop trigger if exists attendanceflow_people_updated_at on public.people;
+drop trigger if exists people_touch_updated_at on public.people;
 create trigger attendanceflow_people_updated_at
 before update on public.people
 for each row execute function public.attendanceflow_touch_people_updated_at();
@@ -127,7 +128,7 @@ for each row execute function public.attendanceflow_capture_attendance_history()
 insert into public.attendance_history
   (team_id, attendance_id, person_id, person_name, attendance_date, status, action, marked_by, recorded_at)
 select a.team_id, a.id, a.person_id, coalesce(p.name, 'Unknown person'),
-       a.date, a.status, 'baseline', a.marked_by, coalesce(a.marked_at, a.updated_at, now())
+       a.date, a.status, 'baseline', a.marked_by, coalesce(a.marked_at, now())
 from public.attendance a
 left join public.people p on p.id = a.person_id and p.team_id = a.team_id
 where not exists (
@@ -307,7 +308,7 @@ grant execute on function public.save_team_group(uuid, uuid, text, text, uuid[])
 
 -- Enable realtime notifications for the new team-scoped tables when the
 -- standard Supabase realtime publication exists.
-do $
+do $$
 declare
   table_name text;
 begin
@@ -324,6 +325,6 @@ begin
     end loop;
   end if;
 end;
-$;
+$$;
 
 commit;

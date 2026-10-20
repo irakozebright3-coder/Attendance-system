@@ -262,7 +262,7 @@ function applyFilters(ctx) {
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
   const byName = (a, b) => collator.compare(a.name || "", b.name || "");
   const byId = (a, b) => collator.compare(a.identifier || "￿", b.identifier || "￿");
-  const byNew = (a, b) => String(b.created_at || "").localeCompare(String(a.created_at || ""));
+  const byNew = (a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")) || collator.compare(a.id || "", b.id || "");
   const sorters = {
     "name-asc": (a, b) => byName(a, b),
     "name-desc": (a, b) => byName(b, a),
