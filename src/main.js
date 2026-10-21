@@ -28,16 +28,18 @@ function syncThemeControls() {
 }
 
 function applyThemePreference(value, persist = true) {
-  const normalizedValue = value === "light" ? "purple" : value; // Migrate saved White mode preferences.
-  const allowed = ["system", "dark", "purple"];
+  // Migrate old saved preferences so legacy Purple mode is never rendered.
+  const migrations = { light: "white", dark: "black", purple: "system" };
+  const normalizedValue = migrations[value] || value;
+  const allowed = ["system", "white", "black"];
   themePreference = allowed.includes(normalizedValue) ? normalizedValue : "system";
   const resolvedTheme = themePreference === "system"
-    ? (SYSTEM_THEME_QUERY.matches ? "dark" : "purple")
+    ? (SYSTEM_THEME_QUERY.matches ? "black" : "white")
     : themePreference;
 
   document.documentElement.dataset.theme = resolvedTheme;
   document.documentElement.dataset.themePreference = themePreference;
-  document.documentElement.style.colorScheme = resolvedTheme === "purple" ? "dark" : resolvedTheme;
+  document.documentElement.style.colorScheme = resolvedTheme === "white" ? "light" : "dark";
 
   if (persist) {
     try {
@@ -501,7 +503,9 @@ function visual() {
       if (q.y > innerHeight) q.y = 0;
       x.beginPath();
       x.arc(q.x, q.y, q.r, 0, Math.PI * 2);
-      x.fillStyle = "rgba(167,139,250,.35)";
+      x.fillStyle = document.documentElement.dataset.theme === "white"
+        ? "rgba(0,0,0,.10)"
+        : "rgba(255,255,255,.18)";
       x.fill();
     });
     requestAnimationFrame(draw);
