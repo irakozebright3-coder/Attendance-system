@@ -584,3 +584,123 @@ html[data-theme="white"] ::selection { background: #d7d7d7; color: #111111; }
   html[data-theme="white"] *::before,
   html[data-theme="white"] *::after { transition-duration: .01ms !important; }
 }
+
+
+/* Extra monochrome coverage for admin/owner pages and shared modal utilities. */
+html[data-theme="black"] .platform-admin-page,
+html[data-theme="black"] .platform-stack-panel,
+html[data-theme="black"] .team-members-drawer { background: #050505 !important; color: #f5f5f5 !important; }
+html[data-theme="white"] .platform-admin-page,
+html[data-theme="white"] .platform-stack-panel,
+html[data-theme="white"] .team-members-drawer { background: #ffffff !important; color: #171717 !important; }
+html[data-theme="black"] .platform-admin-bg,
+html[data-theme="white"] .platform-admin-bg { background: none !important; opacity: 0 !important; }
+html[data-theme="black"] .platform-card,
+html[data-theme="black"] .platform-metric,
+html[data-theme="black"] .platform-admin-header,
+html[data-theme="black"] .member-line,
+html[data-theme="black"] .faq-admin-item,
+html[data-theme="black"] .setting-toggle-row,
+html[data-theme="black"] .admin-safety-note,
+html[data-theme="black"] .admin-table,
+html[data-theme="black"] .report-scroll,
+html[data-theme="black"] .person-stats,
+html[data-theme="black"] .person-stats > div,
+html[data-theme="black"] .faq-admin-list {
+  background: #121212 !important;
+  color: #eeeeee !important;
+  border-color: #383838 !important;
+  box-shadow: none !important;
+}
+html[data-theme="white"] .platform-card,
+html[data-theme="white"] .platform-metric,
+html[data-theme="white"] .platform-admin-header,
+html[data-theme="white"] .member-line,
+html[data-theme="white"] .faq-admin-item,
+html[data-theme="white"] .setting-toggle-row,
+html[data-theme="white"] .admin-safety-note,
+html[data-theme="white"] .admin-table,
+html[data-theme="white"] .report-scroll,
+html[data-theme="white"] .person-stats,
+html[data-theme="white"] .person-stats > div,
+html[data-theme="white"] .faq-admin-list {
+  background: #ffffff !important;
+  color: #171717 !important;
+  border-color: #dedede !important;
+  box-shadow: none !important;
+}
+html[data-theme="black"] .platform-card-head,
+html[data-theme="black"] .platform-admin-page .settings-message,
+html[data-theme="black"] .platform-admin-page .settings-form,
+html[data-theme="black"] .platform-admin-page .faq-admin-form,
+html[data-theme="white"] .platform-card-head,
+html[data-theme="white"] .platform-admin-page .settings-message,
+html[data-theme="white"] .platform-admin-page .settings-form,
+html[data-theme="white"] .platform-admin-page .faq-admin-form {
+  border-color: var(--af-line) !important;
+  box-shadow: none !important;
+}
+html[data-theme="black"] .auth-modal,
+html[data-theme="black"] .modal,
+html[data-theme="black"] .saved-people-overlay,
+html[data-theme="black"] .photo-viewer {
+  background: rgba(0,0,0,.78) !important;
+}
+html[data-theme="white"] .auth-modal,
+html[data-theme="white"] .modal,
+html[data-theme="white"] .saved-people-overlay,
+html[data-theme="white"] .photo-viewer {
+  background: rgba(0,0,0,.42) !important;
+}
+html[data-theme="black"] [class*="text-slate-"],
+html[data-theme="black"] [class*="text-violet-"],
+html[data-theme="black"] [class*="text-cyan-"],
+html[data-theme="black"] [class*="text-green-"],
+html[data-theme="black"] [class*="text-red-"] { color: #d0d0d0 !important; }
+html[data-theme="white"] [class*="text-slate-"],
+html[data-theme="white"] [class*="text-violet-"],
+html[data-theme="white"] [class*="text-cyan-"],
+html[data-theme="white"] [class*="text-green-"],
+html[data-theme="white"] [class*="text-red-"] { color: #454545 !important; }
+html[data-theme="black"] [class*="bg-violet-"],
+html[data-theme="black"] [class*="bg-cyan-"],
+html[data-theme="black"] [class*="bg-green-"],
+html[data-theme="black"] [class*="bg-red-"],
+html[data-theme="white"] [class*="bg-violet-"],
+html[data-theme="white"] [class*="bg-cyan-"],
+html[data-theme="white"] [class*="bg-green-"],
+html[data-theme="white"] [class*="bg-red-"] {
+  background-image: none !important;
+  background-color: #222222 !important;
+  color: #ffffff !important;
+}
+html[data-theme="white"] [class*="bg-violet-"],
+html[data-theme="white"] [class*="bg-cyan-"],
+html[data-theme="white"] [class*="bg-green-"],
+html[data-theme="white"] [class*="bg-red-"] {
+  background-color: #eeeeee !important;
+  color: #171717 !important;
+}
+html[data-theme="black"] [class*="border-white/"],
+html[data-theme="black"] [class*="border-violet-"],
+html[data-theme="white"] [class*="border-white/"],
+html[data-theme="white"] [class*="border-violet-"] { border-color: var(--af-line) !important; }
+html[data-theme="black"] .liquid::after,
+html[data-theme="black"] .af-glow::after,
+html[data-theme="black"] .af-tilt::after,
+html[data-theme="white"] .liquid::after,
+html[data-theme="white"] .af-glow::after,
+html[data-theme="white"] .af-tilt::after {
+  background: radial-gradient(circle, rgba(128,128,128,.14), transparent 72%) !important;
+  box-shadow: none !important;
+}
+html[data-theme="black"] .stat-mint,
+html[data-theme="black"] .stat-red,
+html[data-theme="black"] .stat-blue,
+html[data-theme="black"] .present-text,
+html[data-theme="black"] .absent-text { color: #dddddd !important; }
+html[data-theme="white"] .stat-mint,
+html[data-theme="white"] .stat-red,
+html[data-theme="white"] .stat-blue,
+html[data-theme="white"] .present-text,
+html[data-theme="white"] .absent-text { color: #333333 !important; }
