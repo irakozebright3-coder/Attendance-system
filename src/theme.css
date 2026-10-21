@@ -767,3 +767,74 @@ html[data-theme="black"] [class*="border-gray-"],
 html[data-theme="white"] [class*="border-white/"],
 html[data-theme="white"] [class*="border-slate-"],
 html[data-theme="white"] [class*="border-gray-"] { border-color: var(--af-line) !important; }
+
+
+/* Remaining decorative feedback/status elements stay achromatic too. */
+html[data-theme="black"] .red,
+html[data-theme="black"] .green,
+html[data-theme="black"] .cyan,
+html[data-theme="black"] .violet,
+html[data-theme="black"] .check,
+html[data-theme="black"] .mini-label,
+html[data-theme="black"] .orb-back span,
+html[data-theme="black"] .orb-bars i,
+html[data-theme="black"] .mock-register strong,
+html[data-theme="black"] .feature-icon,
+html[data-theme="black"] .history-export-button,
+html[data-theme="black"] .badge-inactive {
+  color: #eeeeee !important;
+  border-color: #505050 !important;
+}
+html[data-theme="white"] .red,
+html[data-theme="white"] .green,
+html[data-theme="white"] .cyan,
+html[data-theme="white"] .violet,
+html[data-theme="white"] .check,
+html[data-theme="white"] .mini-label,
+html[data-theme="white"] .orb-back span,
+html[data-theme="white"] .orb-bars i,
+html[data-theme="white"] .mock-register strong,
+html[data-theme="white"] .feature-icon,
+html[data-theme="white"] .history-export-button,
+html[data-theme="white"] .badge-inactive {
+  color: #222222 !important;
+  border-color: #cccccc !important;
+}
+html[data-theme="black"] .toast,
+html[data-theme="black"] .toast.success,
+html[data-theme="black"] .toast.error,
+html[data-theme="black"] .toast.info,
+html[data-theme="black"] .settings-message,
+html[data-theme="black"] .auth-message.success,
+html[data-theme="black"] .drawer-loading.error {
+  background: #202020 !important;
+  color: #f2f2f2 !important;
+  border-color: #555555 !important;
+  box-shadow: none !important;
+}
+html[data-theme="white"] .toast,
+html[data-theme="white"] .toast.success,
+html[data-theme="white"] .toast.error,
+html[data-theme="white"] .toast.info,
+html[data-theme="white"] .settings-message,
+html[data-theme="white"] .auth-message.success,
+html[data-theme="white"] .drawer-loading.error {
+  background: #f4f4f4 !important;
+  color: #171717 !important;
+  border-color: #cccccc !important;
+  box-shadow: none !important;
+}
+html[data-theme="black"] #cursorOuter,
+html[data-theme="black"] #cursorDot {
+  box-shadow: none !important;
+}
+html[data-theme="white"] #cursorOuter,
+html[data-theme="white"] #cursorDot {
+  box-shadow: none !important;
+}
+html[data-theme="black"] .nav-links a:hover,
+html[data-theme="black"] .ghost-cta:hover,
+html[data-theme="black"] footer a:hover { color: #ffffff !important; }
+html[data-theme="white"] .nav-links a:hover,
+html[data-theme="white"] .ghost-cta:hover,
+html[data-theme="white"] footer a:hover { color: #111111 !important; }
