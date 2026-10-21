@@ -1,211 +1,334 @@
-/* AttendanceFlow: Dark, Purple, and System appearance modes. */
-html[data-theme="purple"] {
+/* AttendanceFlow monochrome appearance system: White, Black, and System default.
+   System default is resolved in src/main.js to the operating-system preference. */
+
+html[data-theme="black"] {
   color-scheme: dark;
-  --af-void: #170b2b;
-  --af-card: #26113f;
-  --af-purple: #c084fc;
-  --af-blue: #818cf8;
+  --af-void: #050505;
+  --af-card: #111111;
+  --af-purple: #eeeeee;
+  --af-blue: #cfcfcf;
+  --af-mint: #e5e5e5;
   --af-white: #ffffff;
-  --af-text: #f5f0ff;
-  --af-muted: #c4b5fd;
-  --af-surface: rgba(43, 20, 70, .78);
-  --af-surface-strong: rgba(43, 20, 70, .94);
-  --af-line: rgba(216, 180, 254, .22);
-  --af-line-soft: rgba(216, 180, 254, .13);
-  --af-line-light: rgba(233, 213, 255, .32);
-  --af-shadow: 0 26px 80px rgba(10, 2, 24, .42);
-  --af-shadow-deep: 0 40px 110px rgba(10, 2, 24, .58);
+  --af-text: #f5f5f5;
+  --af-muted: #b8b8b8;
+  --af-surface: rgba(24,24,24,.94);
+  --af-surface-strong: #181818;
+  --af-line: #383838;
+  --af-line-soft: #282828;
+  --af-line-light: #555555;
+  --af-shadow: 0 22px 64px rgba(0,0,0,.38);
+  --af-shadow-deep: 0 30px 88px rgba(0,0,0,.58);
 }
 
-html[data-theme="purple"],
-html[data-theme="purple"] body,
-html[data-theme="purple"] #app {
-  background:
-    radial-gradient(circle at 12% 4%, rgba(168,85,247,.27), transparent 30%),
-    radial-gradient(circle at 88% 12%, rgba(99,102,241,.19), transparent 28%),
-    linear-gradient(145deg, #160924 0%, #211036 48%, #12091f 100%) !important;
-  color: #f5f0ff !important;
+html[data-theme="white"] {
+  color-scheme: light;
+  --af-void: #ffffff;
+  --af-card: #ffffff;
+  --af-purple: #222222;
+  --af-blue: #444444;
+  --af-mint: #333333;
+  --af-white: #111111;
+  --af-text: #171717;
+  --af-muted: #626262;
+  --af-surface: #ffffff;
+  --af-surface-strong: #f7f7f7;
+  --af-line: #d8d8d8;
+  --af-line-soft: #e9e9e9;
+  --af-line-light: #bdbdbd;
+  --af-shadow: 0 18px 48px rgba(0,0,0,.08);
+  --af-shadow-deep: 0 24px 64px rgba(0,0,0,.14);
 }
 
-html[data-theme="purple"] body::before {
-  opacity: .7;
-  background:
-    radial-gradient(680px 460px at 2% 0%, rgba(216,180,254,.12), transparent 63%),
-    radial-gradient(620px 520px at 84% 15%, rgba(129,140,248,.12), transparent 62%);
+/* Remove tinted background glows and animated color accents in both themes. */
+html[data-theme="black"],
+html[data-theme="black"] body,
+html[data-theme="black"] #app {
+  background: #050505 !important;
+  color: #f5f5f5 !important;
+}
+html[data-theme="white"],
+html[data-theme="white"] body,
+html[data-theme="white"] #app {
+  background: #ffffff !important;
+  color: #171717 !important;
+}
+html[data-theme="black"] body::before,
+html[data-theme="white"] body::before {
+  background: none !important;
+  opacity: 0 !important;
+}
+html[data-theme="black"] #ambientCanvas,
+html[data-theme="white"] #ambientCanvas {
+  opacity: .24 !important;
+}
+html[data-theme="black"] .noise,
+html[data-theme="white"] .noise {
+  opacity: .012 !important;
+}
+html[data-theme="black"] .home-shell,
+html[data-theme="black"] .app-shell,
+html[data-theme="black"] .dashboard-page,
+html[data-theme="black"] .setup-shell {
+  background: #050505 !important;
+  color: #f5f5f5 !important;
+}
+html[data-theme="white"] .home-shell,
+html[data-theme="white"] .app-shell,
+html[data-theme="white"] .dashboard-page,
+html[data-theme="white"] .setup-shell {
+  background: #ffffff !important;
+  color: #171717 !important;
 }
 
-html[data-theme="purple"] .home-shell,
-html[data-theme="purple"] .app-shell,
-html[data-theme="purple"] .dashboard-page { color: #f5f0ff; }
-
-html[data-theme="purple"] .nav-links,
-html[data-theme="purple"] .hero-lead,
-html[data-theme="purple"] .feature-card p,
-html[data-theme="purple"] .workflow-copy p,
-html[data-theme="purple"] .trust-row,
-html[data-theme="purple"] .dashboard-hero-copy p,
-html[data-theme="purple"] .stat-caption,
-html[data-theme="purple"] .register-toolbar p,
-html[data-theme="purple"] .dashboard-brand-link small {
-  color: #c4b5fd !important;
+/* Neutralize logos, headings, labels, links, gradients, and decorative objects. */
+html[data-theme="black"] .gradient-text,
+html[data-theme="black"] .brand-accent,
+html[data-theme="black"] .muted-gradient,
+html[data-theme="white"] .gradient-text,
+html[data-theme="white"] .brand-accent,
+html[data-theme="white"] .muted-gradient {
+  color: inherit !important;
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
 }
+html[data-theme="black"] .gradient-text,
+html[data-theme="black"] .brand-accent { color: #ffffff !important; }
+html[data-theme="white"] .gradient-text,
+html[data-theme="white"] .brand-accent { color: #111111 !important; }
 
-html[data-theme="purple"] .nav-links a:hover,
-html[data-theme="purple"] .ghost-cta:hover { color: #ffffff !important; }
-
-html[data-theme="purple"] .brand-accent,
-html[data-theme="purple"] .gradient-text {
-  background-image: linear-gradient(100deg, #d8b4fe, #a5b4fc 58%, #f5d0fe);
-}
-
-html[data-theme="purple"] .section-heading h2,
-html[data-theme="purple"] .workflow-copy h2,
-html[data-theme="purple"] .feature-card h3,
-html[data-theme="purple"] .hero-copy h1,
-html[data-theme="purple"] .final-cta h2,
-html[data-theme="purple"] .dashboard-hero h1,
-html[data-theme="purple"] .register-toolbar h2,
-html[data-theme="purple"] .rate,
-html[data-theme="purple"] .dashboard-brand-link strong,
-html[data-theme="purple"] .float-card b,
-html[data-theme="purple"] .mock-register b {
+html[data-theme="black"] .hero-copy h1,
+html[data-theme="black"] .section-heading h2,
+html[data-theme="black"] .workflow-copy h2,
+html[data-theme="black"] .feature-card h3,
+html[data-theme="black"] .final-cta h2,
+html[data-theme="black"] .dashboard-hero h1,
+html[data-theme="black"] .register-toolbar h2,
+html[data-theme="black"] .dashboard-brand-link strong,
+html[data-theme="black"] .float-card b,
+html[data-theme="black"] .mock-register b,
+html[data-theme="black"] .auth-panel h2,
+html[data-theme="black"] .modal h2,
+html[data-theme="black"] .modal h3,
+html[data-theme="black"] .saved-people-panel h2,
+html[data-theme="black"] .team-group-card h3,
+html[data-theme="black"] .group-editor-heading h3 {
   color: #ffffff !important;
 }
-
-/* Rich purple glass surfaces instead of the original white mode. */
-html[data-theme="purple"] .glass,
-html[data-theme="purple"] .af-glass,
-html[data-theme="purple"] .dashboard-topbar,
-html[data-theme="purple"] .register-shell,
-html[data-theme="purple"] .stat-card,
-html[data-theme="purple"] .feature-card,
-html[data-theme="purple"] .step,
-html[data-theme="purple"] .final-cta,
-html[data-theme="purple"] .float-card,
-html[data-theme="purple"] .mock-register,
-html[data-theme="purple"] .auth-panel,
-html[data-theme="purple"] .modal > .glass,
-html[data-theme="purple"] .modal .glass {
-  background: linear-gradient(145deg, rgba(55,28,82,.95), rgba(28,13,47,.92)) !important;
-  color: #f5f0ff !important;
-  border-color: rgba(216,180,254,.20) !important;
-  border-top-color: rgba(233,213,255,.32) !important;
-  border-left-color: rgba(233,213,255,.22) !important;
-  box-shadow: 0 20px 60px rgba(7,2,18,.34), inset 1px 1px 0 rgba(233,213,255,.08) !important;
+html[data-theme="white"] .hero-copy h1,
+html[data-theme="white"] .section-heading h2,
+html[data-theme="white"] .workflow-copy h2,
+html[data-theme="white"] .feature-card h3,
+html[data-theme="white"] .final-cta h2,
+html[data-theme="white"] .dashboard-hero h1,
+html[data-theme="white"] .register-toolbar h2,
+html[data-theme="white"] .dashboard-brand-link strong,
+html[data-theme="white"] .float-card b,
+html[data-theme="white"] .mock-register b,
+html[data-theme="white"] .auth-panel h2,
+html[data-theme="white"] .modal h2,
+html[data-theme="white"] .modal h3,
+html[data-theme="white"] .saved-people-panel h2,
+html[data-theme="white"] .team-group-card h3,
+html[data-theme="white"] .group-editor-heading h3 {
+  color: #111111 !important;
 }
 
-html[data-theme="purple"] .feature-card:hover,
-html[data-theme="purple"] .step:hover {
-  border-color: rgba(192,132,252,.48) !important;
-  box-shadow: 0 26px 70px rgba(7,2,18,.4), 0 0 32px rgba(168,85,247,.15) !important;
+html[data-theme="black"] .nav-links,
+html[data-theme="black"] .hero-lead,
+html[data-theme="black"] .feature-card p,
+html[data-theme="black"] .workflow-copy p,
+html[data-theme="black"] .trust-row,
+html[data-theme="black"] .dashboard-hero-copy p,
+html[data-theme="black"] .stat-caption,
+html[data-theme="black"] .register-toolbar p,
+html[data-theme="black"] .dashboard-brand-link small,
+html[data-theme="black"] .section-heading .eyebrow,
+html[data-theme="black"] .auth-panel > p,
+html[data-theme="black"] .auth-message,
+html[data-theme="black"] .modal p,
+html[data-theme="black"] .modal label,
+html[data-theme="black"] .history-summary,
+html[data-theme="black"] .team-group-card p,
+html[data-theme="black"] .team-groups-empty,
+html[data-theme="black"] .group-editor-heading p {
+  color: #b8b8b8 !important;
 }
-
-html[data-theme="purple"] .ticker {
-  background: rgba(43,20,70,.52) !important;
-  border-color: rgba(216,180,254,.19) !important;
-  box-shadow: 0 12px 45px rgba(7,2,18,.24);
+html[data-theme="white"] .nav-links,
+html[data-theme="white"] .hero-lead,
+html[data-theme="white"] .feature-card p,
+html[data-theme="white"] .workflow-copy p,
+html[data-theme="white"] .trust-row,
+html[data-theme="white"] .dashboard-hero-copy p,
+html[data-theme="white"] .stat-caption,
+html[data-theme="white"] .register-toolbar p,
+html[data-theme="white"] .dashboard-brand-link small,
+html[data-theme="white"] .section-heading .eyebrow,
+html[data-theme="white"] .auth-panel > p,
+html[data-theme="white"] .auth-message,
+html[data-theme="white"] .modal p,
+html[data-theme="white"] .modal label,
+html[data-theme="white"] .history-summary,
+html[data-theme="white"] .team-group-card p,
+html[data-theme="white"] .team-groups-empty,
+html[data-theme="white"] .group-editor-heading p {
+  color: #626262 !important;
 }
-html[data-theme="purple"] .ticker span { color: #f5f0ff !important; }
-html[data-theme="purple"] .ticker i { color: #d8b4fe !important; }
+html[data-theme="black"] .eyebrow,
+html[data-theme="black"] .register-kicker,
+html[data-theme="black"] .stat-label { color: #bdbdbd !important; }
+html[data-theme="white"] .eyebrow,
+html[data-theme="white"] .register-kicker,
+html[data-theme="white"] .stat-label { color: #555555 !important; }
 
-html[data-theme="purple"] .nav-cta,
-html[data-theme="purple"] .secondary-cta,
-html[data-theme="purple"] .ghost-cta,
-html[data-theme="purple"] .dashboard-action {
-  color: #f5f0ff !important;
-  background: rgba(76,29,109,.72) !important;
-  border-color: rgba(216,180,254,.22) !important;
+html[data-theme="black"] .hero-orb,
+html[data-theme="black"] .orb-face,
+html[data-theme="black"] .orbital-ring,
+html[data-theme="black"] .float-card,
+html[data-theme="black"] .tiny-avatar,
+html[data-theme="black"] .feature-icon,
+html[data-theme="black"] .security-chip,
+html[data-theme="black"] .camera-preview,
+html[data-theme="black"] .signal,
+html[data-theme="black"] .mock-avatar,
+html[data-theme="black"] .stat-orb,
+html[data-theme="white"] .hero-orb,
+html[data-theme="white"] .orb-face,
+html[data-theme="white"] .orbital-ring,
+html[data-theme="white"] .float-card,
+html[data-theme="white"] .tiny-avatar,
+html[data-theme="white"] .feature-icon,
+html[data-theme="white"] .security-chip,
+html[data-theme="white"] .camera-preview,
+html[data-theme="white"] .signal,
+html[data-theme="white"] .mock-avatar,
+html[data-theme="white"] .stat-orb {
+  filter: grayscale(1) !important;
+  box-shadow: none !important;
 }
-
-html[data-theme="purple"] .primary-cta,
-html[data-theme="purple"] .liquid.primary-cta {
-  color: #ffffff !important;
-  background: linear-gradient(120deg, #9333ea, #7c3aed 48%, #4f46e5) !important;
-  border-color: rgba(233,213,255,.22) !important;
+html[data-theme="black"] .hero-orb,
+html[data-theme="black"] .orb-face,
+html[data-theme="black"] .float-card {
+  background: #151515 !important;
+  border-color: #444444 !important;
 }
-
-html[data-theme="purple"] .role-badge {
-  color: #e9d5ff !important;
-  border-color: rgba(192,132,252,.38) !important;
-  background: rgba(147,51,234,.18) !important;
+html[data-theme="white"] .hero-orb,
+html[data-theme="white"] .orb-face,
+html[data-theme="white"] .float-card {
+  background: #f7f7f7 !important;
+  color: #111111 !important;
+  border-color: #d7d7d7 !important;
 }
-html[data-theme="purple"] .backend-status {
-  color: #a7f3d0 !important;
-  border-color: rgba(52,211,153,.25) !important;
-  background: rgba(16,185,129,.10) !important;
+html[data-theme="black"] .ticker {
+  background: #111111 !important;
+  border-color: #303030 !important;
+  box-shadow: none !important;
 }
-
-html[data-theme="purple"] .dashboard-hero-meta,
-html[data-theme="purple"] .register-kicker,
-html[data-theme="purple"] .stat-label { color: #c4b5fd !important; }
-
-html[data-theme="purple"] .register-stage,
-html[data-theme="purple"] .register-toolbar,
-html[data-theme="purple"] .register-scroll,
-html[data-theme="purple"] .table-wrap {
-  background: rgba(25,10,42,.42) !important;
-  border-color: rgba(216,180,254,.16) !important;
+html[data-theme="white"] .ticker {
+  background: #f5f5f5 !important;
+  border-color: #dedede !important;
+  box-shadow: none !important;
 }
-html[data-theme="purple"] table,
-html[data-theme="purple"] th,
-html[data-theme="purple"] td { color: #f5f0ff; border-color: rgba(216,180,254,.15) !important; }
-html[data-theme="purple"] tbody tr:hover { background: rgba(168,85,247,.10) !important; }
-html[data-theme="purple"] .empty,
-html[data-theme="purple"] .empty-register,
-html[data-theme="purple"] .member-hint { color: #c4b5fd !important; }
+html[data-theme="black"] .ticker span,
+html[data-theme="black"] .ticker i { color: #d8d8d8 !important; text-shadow: none !important; }
+html[data-theme="white"] .ticker span,
+html[data-theme="white"] .ticker i { color: #333333 !important; text-shadow: none !important; }
 
-html[data-theme="purple"] input,
-html[data-theme="purple"] textarea,
-html[data-theme="purple"] select,
-html[data-theme="purple"] .dialog-input,
-html[data-theme="purple"] .theme-picker select {
-  background: rgba(25,10,42,.92) !important;
-  color: #f5f0ff !important;
-  border-color: rgba(216,180,254,.24) !important;
-  box-shadow: inset 0 1px 4px rgba(7,2,18,.22) !important;
+/* Monochrome cards, panels, shells, popups, history, groups, and setup. */
+html[data-theme="black"] .glass,
+html[data-theme="black"] .af-glass,
+html[data-theme="black"] .dashboard-topbar,
+html[data-theme="black"] .register-shell,
+html[data-theme="black"] .stat-card,
+html[data-theme="black"] .feature-card,
+html[data-theme="black"] .step,
+html[data-theme="black"] .final-cta,
+html[data-theme="black"] .mock-register,
+html[data-theme="black"] .auth-panel,
+html[data-theme="black"] .modal > .glass,
+html[data-theme="black"] .modal .glass,
+html[data-theme="black"] .saved-people-panel,
+html[data-theme="black"] .attendance-history-panel,
+html[data-theme="black"] .team-groups-panel,
+html[data-theme="black"] .setup-panel,
+html[data-theme="black"] .setup-card,
+html[data-theme="black"] .team-group-card,
+html[data-theme="black"] .team-group-editor,
+html[data-theme="black"] .history-export-toolbar,
+html[data-theme="black"] .group-member-option {
+  background: #121212 !important;
+  color: #f5f5f5 !important;
+  border-color: #333333 !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.22) !important;
 }
-html[data-theme="purple"] input::placeholder,
-html[data-theme="purple"] textarea::placeholder { color: #a99acb !important; }
-
-html[data-theme="purple"] .auth-modal,
-html[data-theme="purple"] .modal { background: rgba(12,4,24,.72) !important; }
-
-html[data-theme="purple"] .auth-panel h2,
-html[data-theme="purple"] .auth-panel label,
-html[data-theme="purple"] .dialog-label,
-html[data-theme="purple"] .modal h2,
-html[data-theme="purple"] .modal h3 { color: #f5f0ff !important; }
-
-html[data-theme="purple"] .auth-panel > p,
-html[data-theme="purple"] .auth-message,
-html[data-theme="purple"] .modal p,
-html[data-theme="purple"] .modal label { color: #c4b5fd !important; }
-
-html[data-theme="purple"] .close-auth { color: #c4b5fd !important; }
-html[data-theme="purple"] footer { color: #a99acb !important; border-color: rgba(216,180,254,.17) !important; }
-html[data-theme="purple"] .present { background: rgba(16,185,129,.16) !important; color: #6ee7b7 !important; }
-html[data-theme="purple"] .absent { background: rgba(239,68,68,.16) !important; color: #fca5a5 !important; }
-
-/* Appearance control stays easy to find across screen sizes. */
+html[data-theme="white"] .glass,
+html[data-theme="white"] .af-glass,
+html[data-theme="white"] .dashboard-topbar,
+html[data-theme="white"] .register-shell,
+html[data-theme="white"] .stat-card,
+html[data-theme="white"] .feature-card,
+html[data-theme="white"] .step,
+html[data-theme="white"] .final-cta,
+html[data-theme="white"] .mock-register,
+html[data-theme="white"] .auth-panel,
+html[data-theme="white"] .modal > .glass,
+html[data-theme="white"] .modal .glass,
+html[data-theme="white"] .saved-people-panel,
+html[data-theme="white"] .attendance-history-panel,
+html[data-theme="white"] .team-groups-panel,
+html[data-theme="white"] .setup-panel,
+html[data-theme="white"] .setup-card,
+html[data-theme="white"] .team-group-card,
+html[data-theme="white"] .team-group-editor,
+html[data-theme="white"] .history-export-toolbar,
+html[data-theme="white"] .group-member-option {
+  background: #ffffff !important;
+  color: #171717 !important;
+  border-color: #dedede !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.06) !important;
+}
+html[data-theme="black"] .dashboard-ambient,
+html[data-theme="white"] .dashboard-ambient {
+  background: none !important;
+  opacity: 0 !important;
+}
+html[data-theme="black"] .register-stage,
+html[data-theme="black"] .register-toolbar,
+html[data-theme="black"] .register-scroll,
+html[data-theme="black"] .table-wrap {
+  background: #0c0c0c !important;
+  border-color: #333333 !important;
+}
+html[data-theme="white"] .register-stage,
+html[data-theme="white"] .register-toolbar,
+html[data-theme="white"] .register-scroll,
+html[data-theme="white"] .table-wrap {
+  background: #fafafa !important;
+  border-color: #dedede !important;
+}
+html[data-theme="black"] .theme-picker {
+  color: #f0f0f0 !important;
+  background: #151515 !important;
+  border-color: #3a3a3a !important;
+  box-shadow: none !important;
+}
+html[data-theme="white"] .theme-picker {
+  color: #222222 !important;
+  background: #f7f7f7 !important;
+  border-color: #d8d8d8 !important;
+  box-shadow: none !important;
+}
 .theme-picker {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   min-height: 38px;
   padding: 5px 8px 5px 10px;
-  border: 1px solid rgba(148,163,184,.18);
+  border: 1px solid #777777;
   border-radius: 12px;
-  background: rgba(15,23,42,.52);
-  color: #e9d5ff;
   flex: 0 0 auto;
 }
-html[data-theme="purple"] .theme-picker {
-  color: #e9d5ff;
-  background: rgba(43,20,70,.78);
-  border-color: rgba(216,180,254,.24);
-  box-shadow: 0 8px 20px rgba(7,2,18,.16);
-}
-.theme-picker-icon { font-size: 17px; line-height: 1; color: #c084fc; }
+.theme-picker-icon { font-size: 17px; line-height: 1; color: currentColor !important; }
 .theme-picker-label { font-size: 10px; font-weight: 800; white-space: nowrap; }
 .theme-picker select {
   min-width: 116px;
@@ -229,69 +352,235 @@ html[data-theme="purple"] .theme-picker {
   .theme-picker { min-height: 35px; padding: 4px 6px; }
   .theme-picker select { min-width: 102px; max-width: 110px; padding: 5px 6px; font-size: 9px; }
 }
+
+/* Buttons use only neutral grayscale. */
+html[data-theme="black"] .liquid,
+html[data-theme="black"] .dashboard-action,
+html[data-theme="black"] .toolbar-action,
+html[data-theme="black"] .history-export-button,
+html[data-theme="black"] .nav-cta,
+html[data-theme="black"] .secondary-cta,
+html[data-theme="black"] .ghost-cta,
+html[data-theme="black"] .scroll-top-btn {
+  background: #1b1b1b !important;
+  color: #f3f3f3 !important;
+  border: 1px solid #444444 !important;
+  box-shadow: none !important;
+}
+html[data-theme="white"] .liquid,
+html[data-theme="white"] .dashboard-action,
+html[data-theme="white"] .toolbar-action,
+html[data-theme="white"] .history-export-button,
+html[data-theme="white"] .nav-cta,
+html[data-theme="white"] .secondary-cta,
+html[data-theme="white"] .ghost-cta,
+html[data-theme="white"] .scroll-top-btn {
+  background: #f5f5f5 !important;
+  color: #171717 !important;
+  border: 1px solid #d0d0d0 !important;
+  box-shadow: none !important;
+}
+html[data-theme="black"] .primary-cta,
+html[data-theme="black"] .liquid.primary-cta {
+  background: #f5f5f5 !important;
+  color: #080808 !important;
+  border-color: #f5f5f5 !important;
+}
+html[data-theme="white"] .primary-cta,
+html[data-theme="white"] .liquid.primary-cta {
+  background: #111111 !important;
+  color: #ffffff !important;
+  border-color: #111111 !important;
+}
+html[data-theme="black"] .liquid:hover,
+html[data-theme="black"] .dashboard-action:hover,
+html[data-theme="black"] .toolbar-action:hover,
+html[data-theme="black"] .history-export-button:hover,
+html[data-theme="black"] .secondary-cta:hover {
+  background: #303030 !important;
+  border-color: #777777 !important;
+  box-shadow: none !important;
+}
+html[data-theme="white"] .liquid:hover,
+html[data-theme="white"] .dashboard-action:hover,
+html[data-theme="white"] .toolbar-action:hover,
+html[data-theme="white"] .history-export-button:hover,
+html[data-theme="white"] .secondary-cta:hover {
+  background: #e7e7e7 !important;
+  border-color: #aaaaaa !important;
+  box-shadow: none !important;
+}
+html[data-theme="black"] .dashboard-history-cta,
+html[data-theme="black"] .dashboard-groups-cta,
+html[data-theme="white"] .dashboard-history-cta,
+html[data-theme="white"] .dashboard-groups-cta {
+  background-image: none !important;
+}
+
+/* Inputs and selects are readable without colored focus rings. */
+html[data-theme="black"] input,
+html[data-theme="black"] textarea,
+html[data-theme="black"] select,
+html[data-theme="black"] .dialog-input {
+  background: #0a0a0a !important;
+  color: #f5f5f5 !important;
+  border: 1px solid #414141 !important;
+  box-shadow: none !important;
+}
+html[data-theme="white"] input,
+html[data-theme="white"] textarea,
+html[data-theme="white"] select,
+html[data-theme="white"] .dialog-input {
+  background: #ffffff !important;
+  color: #171717 !important;
+  border: 1px solid #cfcfcf !important;
+  box-shadow: none !important;
+}
+html[data-theme="black"] input::placeholder,
+html[data-theme="black"] textarea::placeholder { color: #999999 !important; }
+html[data-theme="white"] input::placeholder,
+html[data-theme="white"] textarea::placeholder { color: #737373 !important; }
+html[data-theme="black"] input:focus,
+html[data-theme="black"] textarea:focus,
+html[data-theme="black"] select:focus,
+html[data-theme="black"] .dialog-input:focus { outline: 2px solid #aaaaaa !important; outline-offset: 1px; }
+html[data-theme="white"] input:focus,
+html[data-theme="white"] textarea:focus,
+html[data-theme="white"] select:focus,
+html[data-theme="white"] .dialog-input:focus { outline: 2px solid #555555 !important; outline-offset: 1px; }
+
+/* Tables and attendance-status cells are grayscale as well. */
+html[data-theme="black"] table,
+html[data-theme="black"] th,
+html[data-theme="black"] td { color: #eeeeee; border-color: #333333 !important; }
+html[data-theme="white"] table,
+html[data-theme="white"] th,
+html[data-theme="white"] td { color: #171717; border-color: #dedede !important; }
+html[data-theme="black"] th,
+html[data-theme="black"] .history-table th {
+  background: #202020 !important;
+  color: #f5f5f5 !important;
+}
+html[data-theme="white"] th,
+html[data-theme="white"] .history-table th {
+  background: #eeeeee !important;
+  color: #171717 !important;
+}
+html[data-theme="black"] tbody tr:hover { background: #191919 !important; }
+html[data-theme="white"] tbody tr:hover { background: #f2f2f2 !important; }
+html[data-theme="black"] .present,
+html[data-theme="black"] .history-present,
+html[data-theme="black"] .att.present {
+  background: #303030 !important;
+  color: #ffffff !important;
+  border-color: #747474 !important;
+}
+html[data-theme="black"] .absent,
+html[data-theme="black"] .history-absent,
+html[data-theme="black"] .att.absent {
+  background: #161616 !important;
+  color: #d0d0d0 !important;
+  border-color: #555555 !important;
+}
+html[data-theme="white"] .present,
+html[data-theme="white"] .history-present,
+html[data-theme="white"] .att.present {
+  background: #e7e7e7 !important;
+  color: #111111 !important;
+  border-color: #888888 !important;
+}
+html[data-theme="white"] .absent,
+html[data-theme="white"] .history-absent,
+html[data-theme="white"] .att.absent {
+  background: #f8f8f8 !important;
+  color: #333333 !important;
+  border-color: #b6b6b6 !important;
+}
+
+/* History exports, group cards, footer, setup, auth, and admin dialogs. */
+html[data-theme="black"] .history-export-label,
+html[data-theme="black"] .history-filter-field,
+html[data-theme="black"] .group-member-option-name,
+html[data-theme="black"] footer,
+html[data-theme="black"] .close-auth,
+html[data-theme="black"] .auth-panel label,
+html[data-theme="black"] .dialog-label {
+  color: #dddddd !important;
+}
+html[data-theme="white"] .history-export-label,
+html[data-theme="white"] .history-filter-field,
+html[data-theme="white"] .group-member-option-name,
+html[data-theme="white"] footer,
+html[data-theme="white"] .close-auth,
+html[data-theme="white"] .auth-panel label,
+html[data-theme="white"] .dialog-label {
+  color: #333333 !important;
+}
+html[data-theme="black"] .history-table-wrap,
+html[data-theme="black"] .team-groups-empty,
+html[data-theme="black"] .team-group-card,
+html[data-theme="black"] .team-group-editor,
+html[data-theme="black"] .group-member-option,
+html[data-theme="black"] .history-export-toolbar {
+  border-color: #333333 !important;
+}
+html[data-theme="white"] .history-table-wrap,
+html[data-theme="white"] .team-groups-empty,
+html[data-theme="white"] .team-group-card,
+html[data-theme="white"] .team-group-editor,
+html[data-theme="white"] .group-member-option,
+html[data-theme="white"] .history-export-toolbar {
+  border-color: #dedede !important;
+}
+html[data-theme="black"] .team-group-count,
+html[data-theme="black"] .group-member-chip {
+  background: #2a2a2a !important; color: #f1f1f1 !important; border-color: #484848 !important;
+}
+html[data-theme="white"] .team-group-count,
+html[data-theme="white"] .group-member-chip {
+  background: #eeeeee !important; color: #222222 !important; border-color: #d0d0d0 !important;
+}
+html[data-theme="black"] footer { border-color: #303030 !important; }
+html[data-theme="white"] footer { border-color: #e2e2e2 !important; }
+html[data-theme="black"] .role-badge {
+  color: #eeeeee !important; border-color: #555555 !important; background: #242424 !important;
+}
+html[data-theme="white"] .role-badge {
+  color: #222222 !important; border-color: #cccccc !important; background: #f3f3f3 !important;
+}
+html[data-theme="black"] .backend-status {
+  color: #eeeeee !important; border-color: #444444 !important; background: #181818 !important;
+}
+html[data-theme="white"] .backend-status {
+  color: #222222 !important; border-color: #d2d2d2 !important; background: #f5f5f5 !important;
+}
+html[data-theme="black"] .status-live,
+html[data-theme="black"] .pulse-dot,
+html[data-theme="black"] .backend-status i,
+html[data-theme="white"] .status-live,
+html[data-theme="white"] .pulse-dot,
+html[data-theme="white"] .backend-status i { background: currentColor !important; }
+html[data-theme="black"] .saved-person-photo,
+html[data-theme="white"] .saved-person-photo { border-color: #777777 !important; }
+html[data-theme="black"] .scroll-top-btn { color: #f3f3f3 !important; }
+html[data-theme="white"] .scroll-top-btn { color: #171717 !important; }
+html[data-theme="black"] .history-export-button.history-export-csv,
+html[data-theme="black"] .history-export-button.history-export-tsv,
+html[data-theme="black"] .history-export-button.history-export-json,
+html[data-theme="white"] .history-export-button.history-export-csv,
+html[data-theme="white"] .history-export-button.history-export-tsv,
+html[data-theme="white"] .history-export-button.history-export-json { color: inherit !important; }
+
+/* Keep focus, selection, and reduced-motion behavior accessible. */
+html[data-theme="black"] :focus-visible { outline-color: #eeeeee; }
+html[data-theme="white"] :focus-visible { outline-color: #333333; }
+html[data-theme="black"] ::selection { background: #555555; color: #ffffff; }
+html[data-theme="white"] ::selection { background: #d7d7d7; color: #111111; }
 @media (prefers-reduced-motion: reduce) {
-  html[data-theme="purple"] *,
-  html[data-theme="purple"] *::before,
-  html[data-theme="purple"] *::after { transition-duration: .01ms !important; }
+  html[data-theme="black"] *,
+  html[data-theme="black"] *::before,
+  html[data-theme="black"] *::after,
+  html[data-theme="white"] *,
+  html[data-theme="white"] *::before,
+  html[data-theme="white"] *::after { transition-duration: .01ms !important; }
 }
-
-
-/* Purple-mode styling for attendance history and group management. */
-html[data-theme="purple"] .toolbar-action{
-  color:#f3e8ff;
-  background:rgba(76,29,109,.72);
-  border-color:rgba(216,180,254,.22);
-}
-html[data-theme="purple"] .toolbar-action:hover{background:rgba(126,34,206,.28);border-color:rgba(216,180,254,.45)}
-html[data-theme="purple"] .history-summary{color:#c4b5fd}
-html[data-theme="purple"] .history-table-wrap{border-color:rgba(216,180,254,.17)}
-html[data-theme="purple"] .history-table th{background:rgba(43,20,70,.98);color:#e9d5ff}
-html[data-theme="purple"] .history-table td{color:#f5f0ff;border-color:rgba(216,180,254,.13)}
-html[data-theme="purple"] .team-groups-empty{border-color:rgba(192,132,252,.30)}
-html[data-theme="purple"] .team-groups-empty h3,
-html[data-theme="purple"] .team-group-card h3,
-html[data-theme="purple"] .group-editor-heading h3{color:#ffffff}
-html[data-theme="purple"] .team-group-card{border-color:rgba(216,180,254,.18);background:linear-gradient(145deg,rgba(55,28,82,.78),rgba(28,13,47,.70))}
-html[data-theme="purple"] .team-group-card p,
-html[data-theme="purple"] .team-groups-empty,
-html[data-theme="purple"] .group-editor-heading p{color:#c4b5fd}
-html[data-theme="purple"] .team-group-count,
-html[data-theme="purple"] .group-member-chip{color:#f3e8ff;background:rgba(147,51,234,.16);border-color:rgba(216,180,254,.24)}
-html[data-theme="purple"] .team-group-editor{background:rgba(88,28,135,.18);border-color:rgba(192,132,252,.28)}
-html[data-theme="purple"] .group-member-option{background:rgba(25,10,42,.62);border-color:rgba(216,180,254,.17)}
-html[data-theme="purple"] .group-member-option-name{color:#f5f0ff}
-
-
-/* Keep quick-navigation actions visually obvious in Purple mode. */
-html[data-theme="purple"] .dashboard-history-cta{
-  color:#fff!important;
-  background:linear-gradient(130deg,rgba(126,34,206,.92),rgba(76,29,149,.90))!important;
-  border-color:rgba(216,180,254,.36)!important;
-}
-html[data-theme="purple"] .dashboard-groups-cta{
-  color:#fff!important;
-  background:linear-gradient(130deg,rgba(79,70,229,.90),rgba(107,33,168,.92))!important;
-  border-color:rgba(199,210,254,.34)!important;
-}
-
-
-html[data-theme="purple"] .dashboard-actions .dashboard-main-cta{
-  box-shadow:0 12px 30px rgba(7,2,18,.2);
-}
-
-
-html[data-theme="purple"] .history-export-toolbar{
-  background:rgba(43,20,70,.64);
-  border-color:rgba(216,180,254,.2);
-}
-html[data-theme="purple"] .history-filter-field{color:#ddd6fe}
-html[data-theme="purple"] .history-export-actions{border-top-color:rgba(216,180,254,.15)}
-html[data-theme="purple"] .history-export-label{color:#e9d5ff}
-html[data-theme="purple"] .history-export-button{color:#f3e8ff;border-color:rgba(216,180,254,.24);background:rgba(91,33,182,.32)}
-html[data-theme="purple"] .history-export-button.history-export-csv{color:#a7f3d0}
-html[data-theme="purple"] .history-export-button.history-export-tsv{color:#bae6fd}
-html[data-theme="purple"] .history-export-button.history-export-json{color:#c7d2fe}
-
-/* Scroll-to-top button in purple appearance */
-html[data-theme="purple"] .scroll-top-btn{background:rgba(43,20,70,.85);border-color:var(--af-line-light);color:var(--af-text)}
-html[data-theme="purple"] .scroll-top-btn:hover{background:rgba(168,85,247,.4);border-color:var(--af-purple);color:#fff}
