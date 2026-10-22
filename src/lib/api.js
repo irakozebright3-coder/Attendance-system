@@ -286,11 +286,8 @@ export async function loadPersonHistory(teamId, personId) {
   return data || [];
 }
 
-/** Load the saved attendance history in pages so long-running teams are not
- * silently cut off at the API's default row limit. Rows are ordered newest
- * first, then collapsed to the latest event per person per attendance date so
- * the same name never appears twice for one day — a person marked Present and
- * later changed to Absent shows a single row with the final status. */
+/** Load every saved attendance-history event in pages so long-running teams
+ * are not silently cut off at the API's default row limit. */
 export async function loadAttendanceHistory(teamId) {
   const pageSize = 500;
   const allRows = [];
@@ -307,12 +304,7 @@ export async function loadAttendanceHistory(teamId) {
     allRows.push(...page);
     if (page.length < pageSize) break;
   }
-  const latestByPersonAndDate = new Map();
-  for (const row of allRows) {
-    const key = row.person_id + "::" + row.attendance_date;
-    if (!latestByPersonAndDate.has(key)) latestByPersonAndDate.set(key, row);
-  }
-  return [...latestByPersonAndDate.values()];
+  return allRows;
 }
 
 /** Read groups and their people links for the current team. */
