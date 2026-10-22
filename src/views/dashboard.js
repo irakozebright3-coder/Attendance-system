@@ -103,7 +103,7 @@ export function dashboard(ctx) {
         '<button id="closeSavedPeople" class="liquid dashboard-action" aria-label="Return to dashboard">← Back to dashboard</button></div></header>' +
       '<div id="savedPeopleGrid" class="saved-people-grid"></div></section></div>' +
     '<div id="attendanceHistoryModal" class="saved-people-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="attendanceHistoryTitle">' +
-      '<section class="saved-people-panel attendance-history-panel"><header class="saved-people-header"><div><span class="register-kicker">SAVED RECORDS</span><h2 id="attendanceHistoryTitle">Attendance History</h2><p>Every recorded attendance change with its attendance date and time saved.</p></div>' +
+      '<section class="saved-people-panel attendance-history-panel"><header class="saved-people-header"><div><span class="register-kicker">SAVED RECORDS</span><h2 id="attendanceHistoryTitle">Attendance History</h2><p>The latest saved attendance status per person per day — no repeated names.</p></div>' +
       '<div class="saved-people-header-actions"><button id="refreshAttendanceHistory" class="liquid dashboard-action">↻ Refresh</button><button id="closeAttendanceHistory" class="liquid dashboard-action">← Back</button></div></header>' +
       '<section class="history-export-toolbar" aria-label="Filter and export attendance history">' +
         '<div class="history-date-filters">' +
@@ -492,8 +492,8 @@ function renderAttendanceHistory(ctx) {
   const rows = filteredAttendanceHistory;
   const total = attendanceHistoryCache.length;
   const filterLabel = historyDateFilterLabel().replaceAll("_", " ");
-  summary.textContent = rows.length + " of " + total + " saved event" + (total === 1 ? "" : "s") +
-    " match " + filterLabel + ". Dates are the attendance dates; events are sorted newest recorded first.";
+  summary.textContent = rows.length + " of " + total + " saved record" + (total === 1 ? "" : "s") +
+    " match " + filterLabel + ". One row per person per day, sorted newest recorded first.";
   if (!rows.length) {
     body.innerHTML = '<tr><td colspan="6" class="history-empty-cell">No saved attendance records match this date filter.</td></tr>';
   } else {
