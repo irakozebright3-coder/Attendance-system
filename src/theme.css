@@ -838,3 +838,137 @@ html[data-theme="black"] footer a:hover { color: #ffffff !important; }
 html[data-theme="white"] .nav-links a:hover,
 html[data-theme="white"] .ghost-cta:hover,
 html[data-theme="white"] footer a:hover { color: #111111 !important; }
+
+
+/* ============================================================
+   Yellow accent layer — the AttendanceFlow signature is now
+   White × Black × Yellow. Layout, text, and surfaces stay
+   strictly white/black; yellow is the single accent color for
+   primary actions, highlights, and focus feedback.
+   ============================================================ */
+html[data-theme="black"] {
+  --af-yellow: #ffd60a;        /* fills, buttons */
+  --af-yellow-hover: #e6c106;
+  --af-yellow-ink: #0a0a0a;    /* text on yellow fills */
+  --af-yellow-text: #facc15;   /* yellow text on dark surfaces */
+  --af-yellow-ring: rgba(255,214,10,.28);
+}
+html[data-theme="white"] {
+  --af-yellow: #ffd60a;
+  --af-yellow-hover: #ebc400;
+  --af-yellow-ink: #111111;
+  --af-yellow-text: #ca8a04;   /* readable yellow on white surfaces */
+  --af-yellow-ring: rgba(202,138,4,.30);
+}
+
+/* Primary CTAs are the yellow moment on every screen. */
+html[data-theme="black"] .primary-cta,
+html[data-theme="black"] .liquid.primary-cta {
+  background: var(--af-yellow) !important;
+  color: var(--af-yellow-ink) !important;
+  border-color: var(--af-yellow) !important;
+}
+html[data-theme="black"] .primary-cta:hover,
+html[data-theme="black"] .liquid.primary-cta:hover,
+html[data-theme="black"] .primary-cta:focus-visible,
+html[data-theme="black"] .liquid.primary-cta:focus-visible {
+  background: var(--af-yellow-hover) !important;
+  color: var(--af-yellow-ink) !important;
+  border-color: var(--af-yellow-hover) !important;
+}
+html[data-theme="white"] .primary-cta,
+html[data-theme="white"] .liquid.primary-cta {
+  background: var(--af-yellow) !important;
+  color: var(--af-yellow-ink) !important;
+  border-color: var(--af-yellow) !important;
+}
+html[data-theme="white"] .primary-cta:hover,
+html[data-theme="white"] .liquid.primary-cta:hover,
+html[data-theme="white"] .primary-cta:focus-visible,
+html[data-theme="white"] .liquid.primary-cta:focus-visible {
+  background: var(--af-yellow-hover) !important;
+  color: var(--af-yellow-ink) !important;
+  border-color: var(--af-yellow-hover) !important;
+}
+
+/* Brand accents, gradient text, and section kickers pick up the yellow. */
+html[data-theme="black"] .gradient-text,
+html[data-theme="black"] .brand-accent,
+html[data-theme="black"] .register-kicker,
+html[data-theme="black"] .section-kicker,
+html[data-theme="black"] .feature-icon {
+  color: var(--af-yellow-text) !important;
+}
+html[data-theme="white"] .gradient-text,
+html[data-theme="white"] .brand-accent,
+html[data-theme="white"] .register-kicker,
+html[data-theme="white"] .section-kicker,
+html[data-theme="white"] .feature-icon {
+  color: var(--af-yellow-text) !important;
+}
+
+/* Focus feedback: yellow rings on inputs, selects, and toolbars. */
+html[data-theme="black"] input:focus,
+html[data-theme="black"] textarea:focus,
+html[data-theme="black"] select:focus,
+html[data-theme="black"] .dialog-input:focus,
+html[data-theme="black"] .toolbar-select:focus {
+  border-color: var(--af-yellow) !important;
+  box-shadow: 0 0 0 3px var(--af-yellow-ring) !important;
+  outline: none !important;
+}
+html[data-theme="white"] input:focus,
+html[data-theme="white"] textarea:focus,
+html[data-theme="white"] select:focus,
+html[data-theme="white"] .dialog-input:focus,
+html[data-theme="white"] .toolbar-select:focus {
+  border-color: var(--af-yellow) !important;
+  box-shadow: 0 0 0 3px var(--af-yellow-ring) !important;
+  outline: none !important;
+}
+
+/* Present status becomes the yellow pill; Absent stays neutral. */
+html[data-theme="black"] .history-present,
+html[data-theme="white"] .history-present {
+  background: var(--af-yellow) !important;
+  color: var(--af-yellow-ink) !important;
+  border: 1px solid transparent !important;
+}
+html[data-theme="black"] .present-text,
+html[data-theme="black"] .stat-mint { color: var(--af-yellow-text) !important; }
+html[data-theme="white"] .present-text,
+html[data-theme="white"] .stat-mint { color: var(--af-yellow-text) !important; }
+
+/* Hover edges and link hovers lean yellow without shouting. */
+html[data-theme="black"] .nav-links a:hover,
+html[data-theme="black"] footer a:hover,
+html[data-theme="black"] .ghost-cta:hover { color: var(--af-yellow-text) !important; }
+html[data-theme="white"] .nav-links a:hover,
+html[data-theme="white"] footer a:hover,
+html[data-theme="white"] .ghost-cta:hover { color: var(--af-yellow-text) !important; }
+html[data-theme="black"] .history-export-button:hover,
+html[data-theme="black"] .dashboard-action:hover,
+html[data-theme="black"] .toolbar-action:hover { border-color: var(--af-yellow) !important; }
+html[data-theme="white"] .history-export-button:hover,
+html[data-theme="white"] .dashboard-action:hover,
+html[data-theme="white"] .toolbar-action:hover { border-color: var(--af-yellow) !important; }
+html[data-theme="black"] .cursor-hover {
+  border-color: var(--af-yellow) !important;
+  box-shadow: 0 0 0 1px var(--af-yellow-ring) !important;
+}
+html[data-theme="white"] .cursor-hover {
+  border-color: var(--af-yellow) !important;
+  box-shadow: 0 0 0 1px var(--af-yellow-ring) !important;
+}
+
+/* Selected/active filter chips keep the yellow spotlight. */
+html[data-theme="black"] .liquid:active,
+html[data-theme="black"] .dashboard-action:active,
+html[data-theme="black"] .history-export-button:active {
+  border-color: var(--af-yellow) !important;
+}
+html[data-theme="white"] .liquid:active,
+html[data-theme="white"] .dashboard-action:active,
+html[data-theme="white"] .history-export-button:active {
+  border-color: var(--af-yellow) !important;
+}
