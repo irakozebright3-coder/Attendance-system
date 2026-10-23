@@ -146,6 +146,29 @@ export async function loadPlatformUsers() {
   return data || [];
 }
 
+export async function deletePlatformUser(userId) {
+  if (!userId) throw new Error("A user account must be selected.");
+
+  const { data, error } = await db.functions.invoke("platform-delete-user", {
+    body: { userId }
+  });
+
+  if (error) {
+    let message = error.message || "Account deletion request failed.";
+    try {
+      const context = error.context;
+      const response = context instanceof Response ? context.clone() : null;
+      const details = response ? await response.json() : null;
+      if (details?.error) message = details.error;
+    } catch {
+      // Keep the invocation error message when the response is not readable JSON.
+    }
+    throw new Error(message);
+  }
+  if (!data?.ok) throw new Error(data?.error || "The server did not confirm account deletion.");
+  return data;
+}
+
 export async function loadPlatformTeamMembers(teamId) {
   const { data, error } = await db.rpc("platform_list_team_members", { p_team_id: teamId });
   if (error) fail(error);
