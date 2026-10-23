@@ -9,6 +9,7 @@ import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, footerMarkup, bindFooter } fro
 
 export async function platformAdminPanel(ctx) {
   const { S, toast } = ctx;
+  if (!S.isPlatformAdmin) throw new Error("Platform-owner access is required to open this panel.");
   const app = document.getElementById("app");
 
   app.innerHTML =
@@ -66,8 +67,8 @@ export async function platformAdminPanel(ctx) {
           '<div id="teamMembersDrawer" class="team-members-drawer hidden"></div>' +
         '</section>' +
 
-        '<section class="af-glass platform-card platform-wide"><div class="platform-card-head"><div><div class="register-kicker">AUTH USERS</div><h2>Registered users & emails</h2><p>Platform administrators can review account metadata; passwords are never exposed.</p></div></div>' +
-          '<div class="overflow-x-auto admin-table"><table><thead><tr><th>Email</th><th>Teams</th><th>Platform role</th><th>Created</th><th>Last sign-in</th></tr></thead><tbody id="usersTable"></tbody></table></div>' +
+        '<section class="af-glass platform-card platform-wide"><div class="platform-card-head"><div><div class="register-kicker">AUTH USERS</div><h2>Registered users & emails</h2><p>Review account metadata or permanently delete a regular user account. Platform-admin accounts and accounts that own or created a team are protected.</p></div></div>' +
+          '<div class="overflow-x-auto admin-table"><table><thead><tr><th>Email</th><th>Teams</th><th>Platform role</th><th>Created</th><th>Last sign-in</th><th>Account action</th></tr></thead><tbody id="usersTable"></tbody></table></div>' +
         '</section>' +
 
         '<section class="platform-stack-panel"><div><div class="eyebrow">PLATFORM STACK</div><h2>AttendanceFlow infrastructure</h2></div><div class="footer-stack large"><span>GitHub</span><span>Vercel</span><span>Supabase</span><span>PostgreSQL</span><span>Vite</span><span>JavaScript</span><span>Tailwind CSS</span><span>HTML5 Canvas</span><span>CSS3</span><span>WebGL-ready</span></div></section>' +
@@ -158,9 +159,40 @@ export async function platformAdminPanel(ctx) {
         };
       });
 
-      document.getElementById("usersTable").innerHTML = users.length ? users.map((u) =>
-        '<tr><td><b>' + esc(u.email || "—") + '</b></td><td>' + esc(u.team_count) + '</td><td>' + (u.is_platform_admin ? '<span class="role-badge">SUPER ADMIN</span>' : '<span class="user-role">User</span>') + '</td><td>' + esc(timeLabel(u.created_at)) + '</td><td>' + esc(u.last_sign_in_at ? timeLabel(u.last_sign_in_at) : "Never") + '</td></tr>'
-      ).join("") : '<tr><td colspan="5" class="empty-table">No users found.</td></tr>';
+      document.getElementById("usersTable").innerHTML = users.length ? users.map((u) => {
+        const isSelf = String(u.user_id || "") === String(S.session?.user?.id || "");
+        const canDeleteAccount = Boolean(u.user_id) && !u.is_platform_admin && !isSelf;
+        const accountAction = canDeleteAccount
+          ? '<button type="button" class="liquid small-admin-btn account-delete-action" data-delete-user="' + esc(u.user_id) + '" data-delete-email="' + esc(u.email || "") + '">Delete account</button>'
+          : '<span class="user-protected">' + (isSelf ? "Current account" : "Protected") + '</span>';
+        return '<tr><td><b>' + esc(u.email || "—") + '</b></td><td>' + esc(u.team_count) + '</td><td>' + (u.is_platform_admin ? '<span class="role-badge">SUPER ADMIN</span>' : '<span class="user-role">User</span>') + '</td><td>' + esc(timeLabel(u.created_at)) + '</td><td>' + esc(u.last_sign_in_at ? timeLabel(u.last_sign_in_at) : "Never") + '</td><td>' + accountAction + '</td></tr>';
+      }).join("") : '<tr><td colspan="6" class="empty-table">No users found.</td></tr>';
+
+      document.querySelectorAll("[data-delete-user]").forEach((button) => {
+        button.onclick = async () => {
+          const email = button.dataset.deleteEmail || "this user";
+          const confirmed = window.confirm(
+            'Permanently delete the AttendanceFlow login account for "' + email + '"?\n\nThis action cannot be undone. Accounts with platform-admin access, or accounts that own/created team workspaces, are protected. Team members lose access when their account is deleted.'
+          );
+          if (!confirmed) return;
+
+          button.disabled = true;
+          const originalLabel = button.textContent;
+          button.textContent = "Deleting…";
+          try {
+            const result = await api.deletePlatformUser(button.dataset.deleteUser);
+            toast("Account permanently deleted" + (result.email ? ": " + result.email : "") + ".", "success");
+            await loadAdminData();
+          } catch (err) {
+            toast(err.message || "Could not delete this account.", "error");
+          } finally {
+            if (button.isConnected) {
+              button.disabled = false;
+              button.textContent = originalLabel;
+            }
+          }
+        };
+      });
     } catch (err) {
       toast(err.message || "Could not load platform data.", "error");
     }
