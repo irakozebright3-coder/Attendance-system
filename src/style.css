@@ -1925,3 +1925,40 @@ body:has(#authModal:not(.hidden)){
 @media(max-width:620px){
   .panel-search-control{width:100%;margin-top:12px}
 }
+
+
+/* Search controls across dashboard, registered lists, admin panels and dialogs. */
+.panel-search-control{
+  width:min(100%,620px);
+  color:#e5e7eb;
+  background:rgba(17,24,39,.72);
+  border-color:rgba(148,163,184,.28);
+}
+.panel-search-control .panel-search-input{color:inherit!important;background:transparent!important}
+.panel-search-control .panel-search-input::placeholder{color:#9ca3af}
+.panel-search-no-results{color:inherit;border-color:currentColor}
+.account-delete-action{
+  min-height:34px;
+  padding:7px 10px;
+  border:1px solid #777!important;
+  border-radius:9px;
+  background:transparent!important;
+  color:inherit!important;
+  box-shadow:none!important;
+  font-size:10px;
+  font-weight:850;
+  white-space:nowrap;
+}
+.account-delete-action:hover{background:#333!important;color:#fff!important}
+.account-delete-action:disabled{opacity:.55;cursor:wait}
+.user-protected{
+  display:inline-block;
+  padding:6px 9px;
+  border:1px solid #888;
+  border-radius:8px;
+  color:inherit;
+  font-size:10px;
+  font-weight:800;
+  white-space:nowrap;
+}
+.admin-table td{vertical-align:middle}
