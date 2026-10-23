@@ -72,8 +72,13 @@ function attachPanelSearch(panel) {
   if (panel.dataset.panelSearchReady === "true") {
     const input = panel.querySelector(":scope > .panel-search-control input");
     const empty = panel.querySelector(":scope > .panel-search-no-results");
-    if (input && empty && input.value.trim()) applyFilter(panel, input, empty);
-    return;
+    if (input && empty) {
+      if (input.value.trim()) applyFilter(panel, input, empty);
+      return;
+    }
+    // Some panels replace their innerHTML while loading. Recreate their search
+    // bar after the next content update instead of leaving a stale bound flag.
+    panel.dataset.panelSearchReady = "false";
   }
 
   const wrapper = document.createElement("label");
