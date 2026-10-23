@@ -972,3 +972,30 @@ html[data-theme="white"] .dashboard-action:active,
 html[data-theme="white"] .history-export-button:active {
   border-color: var(--af-yellow) !important;
 }
+
+
+/* Search and account-action controls follow the chosen grayscale theme. */
+html[data-theme="black"] .panel-search-control,
+html[data-theme="black"] .panel-search-no-results {
+  background:#111111!important;
+  color:#f1f1f1!important;
+  border-color:#444444!important;
+}
+html[data-theme="black"] .panel-search-control .panel-search-input {
+  color:#f5f5f5!important;
+  background:transparent!important;
+}
+html[data-theme="black"] .panel-search-control .panel-search-input::placeholder { color:#9a9a9a!important; }
+html[data-theme="white"] .panel-search-control,
+html[data-theme="white"] .panel-search-no-results {
+  background:#fafafa!important;
+  color:#222222!important;
+  border-color:#d2d2d2!important;
+}
+html[data-theme="white"] .panel-search-control .panel-search-input {
+  color:#171717!important;
+  background:transparent!important;
+}
+html[data-theme="white"] .panel-search-control .panel-search-input::placeholder { color:#737373!important; }
+html[data-theme="black"] .account-delete-action:hover { background:#333333!important;color:#ffffff!important; }
+html[data-theme="white"] .account-delete-action:hover { background:#e4e4e4!important;color:#171717!important; }
