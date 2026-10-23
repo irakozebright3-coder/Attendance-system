@@ -20,6 +20,10 @@ npx supabase link --project-ref iivbsxrclqlfgkeogmla
 npx supabase functions deploy platform-delete-user
 ```
 
+Alternatively, use the Supabase Dashboard for the same project: open **Edge Functions**, create a function named `platform-delete-user`, paste the complete contents of `supabase/functions/platform-delete-user/index.ts` into the function editor, and deploy it. Keep the platform's normal JWT verification enabled.
+
+**Deploying the frontend on Vercel does not deploy this Supabase function.** Account deletion will return a configuration/function error until the Edge Function has also been deployed to Supabase.
+
 The function expects the standard server-side Supabase environment values `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. It also supports `SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY` where those newer key names are used. Supabase supplies its standard project environment values to Edge Functions; if your project doesn't, configure them as **Edge Function secrets** in the Supabase dashboard. The secret/service-role key stays in Supabase only.
 
 The function verifies the caller's session and `public.is_platform_admin()` permission on the server. It refuses to delete the current account, another platform-admin account, or an account that owns/created a workspace. Transfer ownership or safely remove the workspace first. Successful deletion is permanent in Supabase Auth; the function attempts to append an audit event as well.
