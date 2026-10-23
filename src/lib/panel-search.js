@@ -6,7 +6,8 @@ const PANEL_SELECTOR = [
   ".modal-card",
   ".platform-card",
   ".team-group-editor",
-  ".team-members-drawer"
+  ".team-members-drawer",
+  ".platform-stack-panel"
 ].join(",");
 
 const ITEM_SELECTOR = [
@@ -18,12 +19,14 @@ const ITEM_SELECTOR = [
   ".faq-admin-item",
   ".member-line",
   ".settings-grid > label",
+  ".modal-card .dialog-label",
   ".modal-card form label",
   ".platform-card form label",
   ".team-group-editor form label",
   ".report-scroll tr",
   ".report-scroll > article",
-  ".history-list > *"
+  ".history-list > *",
+  ".footer-stack > span"
 ].join(",");
 
 function searchableText(element) {
@@ -60,6 +63,12 @@ function applyFilter(panel, input, emptyMessage) {
 }
 
 function attachPanelSearch(panel) {
+  // A generic confirmation message is not a searchable data panel; leave it
+  // clean. Async list panels will be picked up when their content arrives.
+  if (panel.matches(".modal-card") && !panel.querySelector(
+    "table, .dialog-label, label, .report-scroll, .history-list, .faq-admin-list, .settings-form"
+  )) return;
+
   if (panel.dataset.panelSearchReady === "true") {
     const input = panel.querySelector(":scope > .panel-search-control input");
     const empty = panel.querySelector(":scope > .panel-search-no-results");
