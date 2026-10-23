@@ -4,6 +4,7 @@ import "./theme.css";
 import { db, hasBackend } from "./lib/supabase.js";
 import * as api from "./lib/api.js";
 import { friendlyError, debounce } from "./lib/util.js";
+import { observePanelSearch } from "./lib/panel-search.js";
 import { authScreen, setMessage, workspaceSetupScreen, bindParallax } from "./views/landing.js";
 import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, normalizePlatformSettings } from "./views/public-info.js";
 import { platformAdminPanel } from "./views/platform-admin.js";
@@ -71,6 +72,7 @@ SYSTEM_THEME_QUERY.addEventListener("change", () => {
 const themeControlObserver = new MutationObserver(syncThemeControls);
 const appRoot = document.getElementById("app");
 if (appRoot) themeControlObserver.observe(appRoot, { childList: true, subtree: true });
+if (appRoot) observePanelSearch(appRoot);
 
 const S = {
   session: null,
