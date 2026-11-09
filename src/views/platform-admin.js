@@ -10,6 +10,7 @@ import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, footerMarkup, bindFooter } fro
 export async function platformAdminPanel(ctx) {
   const { S, toast } = ctx;
   if (!S.isPlatformAdmin) throw new Error("Platform-owner access is required to open this panel.");
+  const canManagePlatformAdmins = await api.isPrimaryPlatformOwner().catch(() => false);
   const app = document.getElementById("app");
 
   app.innerHTML =
@@ -70,6 +71,11 @@ export async function platformAdminPanel(ctx) {
         '<section class="af-glass platform-card platform-wide"><div class="platform-card-head"><div><div class="register-kicker">AUTH USERS</div><h2>Registered users & emails</h2><p>Review account metadata or permanently delete a regular user account. Platform-admin accounts and accounts that own or created a team are protected.</p></div></div>' +
           '<div class="overflow-x-auto admin-table"><table><thead><tr><th>Email</th><th>Teams</th><th>Platform role</th><th>Created</th><th>Last sign-in</th><th>Account action</th></tr></thead><tbody id="usersTable"></tbody></table></div>' +
         '</section>' +
+        (canManagePlatformAdmins
+          ? '<section class="af-glass platform-card platform-wide"><div class="platform-card-head"><div><div class="register-kicker">ACCESS CONTROL</div><h2>Admin Management</h2><p>Give a registered user their own Super Admin access, or revoke it later. The other person must have their own AttendanceFlow account. Your primary-owner account is protected.</p></div></div>' +
+            '<div class="overflow-x-auto admin-table"><table><thead><tr><th>Email</th><th>Current access</th><th>Admin action</th></tr></thead><tbody id="platformAdminsTable"></tbody></table></div>' +
+          '</section>'
+          : '') +
 
         '<section class="platform-stack-panel"><div><div class="eyebrow">PLATFORM STACK</div><h2>AttendanceFlow infrastructure</h2></div><div class="footer-stack large"><span>GitHub</span><span>Vercel</span><span>Supabase</span><span>PostgreSQL</span><span>Vite</span><span>JavaScript</span><span>Tailwind CSS</span><span>HTML5 Canvas</span><span>CSS3</span><span>WebGL-ready</span></div></section>' +
       '</div>' +
@@ -193,6 +199,57 @@ export async function platformAdminPanel(ctx) {
           }
         };
       });
+
+      if (canManagePlatformAdmins) {
+        const adminTable = document.getElementById("platformAdminsTable");
+        if (adminTable) {
+          const currentUserId = String(S.session?.user?.id || "");
+          adminTable.innerHTML = users.length ? users.map((u) => {
+            const userId = String(u.user_id || "");
+            const isSelf = userId === currentUserId;
+            const isAdmin = Boolean(u.is_platform_admin);
+            const accessLabel = isSelf
+              ? "PRIMARY OWNER"
+              : isAdmin ? "SUPER ADMIN" : "STANDARD USER";
+            const action = isSelf
+              ? '<span class="user-protected">Protected owner</span>'
+              : '<button type="button" class="liquid small-admin-btn platform-admin-toggle" data-admin-user="' + esc(userId) + '" data-admin-next="' + (isAdmin ? "remove" : "grant") + '" data-admin-email="' + esc(u.email || "") + '">' + (isAdmin ? "Revoke Super Admin" : "Grant Super Admin") + '</button>';
+            return '<tr><td><b>' + esc(u.email || "—") + '</b></td><td><span class="role-badge">' + accessLabel + '</span></td><td>' + action + '</td></tr>';
+          }).join("") : '<tr><td colspan="3" class="empty-table">No registered users found.</td></tr>';
+
+          adminTable.querySelectorAll("[data-admin-user]").forEach((button) => {
+            button.onclick = async () => {
+              const userId = button.dataset.adminUser;
+              const email = button.dataset.adminEmail || "this user";
+              const makeAdmin = button.dataset.adminNext === "grant";
+              const actionText = makeAdmin ? "grant Super Admin access to" : "revoke Super Admin access from";
+              const confirmed = window.confirm(
+                'Are you sure you want to ' + actionText + ' "' + email + '"?\n\n' +
+                (makeAdmin
+                  ? "They will use their own account and receive access to all platform administration features."
+                  : "They will lose platform administration access but their login account and team data will remain.")
+              );
+              if (!confirmed) return;
+
+              button.disabled = true;
+              const originalLabel = button.textContent;
+              button.textContent = makeAdmin ? "Granting…" : "Revoking…";
+              try {
+                await api.setPlatformAdmin(userId, makeAdmin);
+                toast(makeAdmin ? "Super Admin access granted to " + email + "." : "Super Admin access revoked from " + email + ".", "success");
+                await loadAdminData();
+              } catch (err) {
+                toast(err.message || "Could not update platform access.", "error");
+              } finally {
+                if (button.isConnected) {
+                  button.disabled = false;
+                  button.textContent = originalLabel;
+                }
+              }
+            };
+          });
+        }
+      }
     } catch (err) {
       toast(err.message || "Could not load platform data.", "error");
     }
