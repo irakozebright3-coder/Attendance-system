@@ -224,6 +224,12 @@ where not exists (select 1 from public.platform_faqs);
 -- SECURITY HELPERS
 -- ------------------------------------------------------------
 
+-- Older deployments used a different parameter name for these helpers.
+-- PostgreSQL cannot rename parameters via CREATE OR REPLACE, so drop the
+-- legacy signatures first. Dependent policies are recreated further down.
+drop function if exists public.is_team_member(uuid) cascade;
+drop function if exists public.is_team_admin(uuid) cascade;
+
 create or replace function public.is_team_member(p_team_id uuid)
 returns boolean
 language sql
