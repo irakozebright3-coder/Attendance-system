@@ -1962,3 +1962,20 @@ body:has(#authModal:not(.hidden)){
   white-space:nowrap;
 }
 .admin-table td{vertical-align:middle}
+
+
+/* Owner-controlled platform role actions. */
+.platform-admin-toggle{
+  min-height:34px;
+  padding:7px 11px;
+  border:1px solid #888!important;
+  border-radius:9px;
+  background:transparent!important;
+  color:inherit!important;
+  box-shadow:none!important;
+  font-size:10px;
+  font-weight:850;
+  white-space:nowrap;
+}
+.platform-admin-toggle:hover{background:#333!important;color:#fff!important}
+.platform-admin-toggle:disabled{opacity:.55;cursor:wait}
