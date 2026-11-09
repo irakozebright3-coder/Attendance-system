@@ -35,3 +35,18 @@ The function verifies the caller's session and `public.is_platform_admin()` perm
 3. Confirm the current owner and other platform admins show as protected.
 4. Delete only a test non-admin account that doesn't own a team; confirm it disappears after refresh.
 5. Test a team owner account and confirm it is blocked without deleting the account.
+
+
+## Granting and revoking Super Admin access
+
+The primary platform owner can give an existing registered account its own Super Admin access from **Super Admin → Admin Management**. The invited person must first create their own AttendanceFlow account and confirm/sign in with their own email. Do not share the owner's password.
+
+Before the Admin Management panel becomes available, run this migration once in the SQL Editor of the same Supabase project:
+
+`supabase/MANAGE_PLATFORM_ADMINS.sql`
+
+Open the file in GitHub, copy its complete contents, paste into a new Supabase SQL Editor query, and run it. It is safe to run again. The migration identifies the earliest existing row in `public.platform_admins` as the original primary platform owner. That account alone can grant or revoke Super Admin access. It prevents removing the primary owner or the final remaining Super Admin.
+
+After the migration succeeds, refresh AttendanceFlow, open **Super Admin → Admin Management**, and find the registered user's email. Choose **Grant Super Admin**. The user then signs in with their own account and receives platform-wide admin access. To remove their platform access later, choose **Revoke Super Admin**; this leaves their login account and team data intact.
+
+This is separate from deleting an account. Grant/revoke changes only platform-admin permissions; it does not create a login or change a password.
