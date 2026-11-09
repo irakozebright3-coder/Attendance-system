@@ -41,11 +41,18 @@ The function verifies the caller's session and `public.is_platform_admin()` perm
 
 The primary platform owner can give an existing registered account its own Super Admin access from **Super Admin → Admin Management**. The invited person must first create their own AttendanceFlow account and confirm/sign in with their own email. Do not share the owner's password.
 
-Before the Admin Management panel becomes available, run this migration once in the SQL Editor of the same Supabase project:
+Before the Admin Management panel becomes available, first verify which existing account is the earliest platform-admin record. Run this read-only query in the Supabase SQL Editor:
 
-`supabase/MANAGE_PLATFORM_ADMINS.sql`
+```sql
+select u.email, pa.created_at
+from public.platform_admins pa
+join auth.users u on u.id = pa.user_id
+order by pa.created_at asc, pa.user_id asc;
+```
 
-Open the file in GitHub, copy its complete contents, paste into a new Supabase SQL Editor query, and run it. It is safe to run again. The migration identifies the earliest existing row in `public.platform_admins` as the original primary platform owner. That account alone can grant or revoke Super Admin access. It prevents removing the primary owner or the final remaining Super Admin.
+The first email in the results must be your own primary-owner account. The migration below uses that earliest existing record as the primary platform owner. Do not continue if the first email is not yours; correct the owner designation before applying the migration.
+
+Then run `supabase/MANAGE_PLATFORM_ADMINS.sql` once in the same project's SQL Editor. Open the file in GitHub, copy its complete contents, paste into a new Supabase SQL Editor query, and run it. It is safe to run again. That primary-owner account alone can grant or revoke Super Admin access. The function prevents removing the primary owner or the final remaining Super Admin.
 
 After the migration succeeds, refresh AttendanceFlow, open **Super Admin → Admin Management**, and find the registered user's email. Choose **Grant Super Admin**. The user then signs in with their own account and receives platform-wide admin access. To remove their platform access later, choose **Revoke Super Admin**; this leaves their login account and team data intact.
 
