@@ -10,7 +10,13 @@ import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, footerMarkup, bindFooter } fro
 export async function platformAdminPanel(ctx) {
   const { S, toast } = ctx;
   if (!S.isPlatformAdmin) throw new Error("Platform-owner access is required to open this panel.");
-  const canManagePlatformAdmins = await api.isPrimaryPlatformOwner().catch(() => false);
+  let canManagePlatformAdmins = false;
+  let adminManagementSetupError = false;
+  try {
+    canManagePlatformAdmins = await api.isPrimaryPlatformOwner();
+  } catch {
+    adminManagementSetupError = true;
+  }
   const app = document.getElementById("app");
 
   app.innerHTML =
@@ -75,7 +81,9 @@ export async function platformAdminPanel(ctx) {
           ? '<section class="af-glass platform-card platform-wide"><div class="platform-card-head"><div><div class="register-kicker">ACCESS CONTROL</div><h2>Admin Management</h2><p>Give a registered user their own Super Admin access, or revoke it later. The other person must have their own AttendanceFlow account. Your primary-owner account is protected.</p></div></div>' +
             '<div class="overflow-x-auto admin-table"><table><thead><tr><th>Email</th><th>Current access</th><th>Admin action</th></tr></thead><tbody id="platformAdminsTable"></tbody></table></div>' +
           '</section>'
-          : '') +
+          : adminManagementSetupError
+            ? '<section class="af-glass platform-card platform-wide"><div class="platform-card-head"><div><div class="register-kicker">ACCESS CONTROL</div><h2>Admin Management setup required</h2><p>Run <b>supabase/MANAGE_PLATFORM_ADMINS.sql</b> in this Supabase project&apos;s SQL Editor, then refresh this page to enable granting and revoking Super Admin access.</p></div></div></section>'
+            : '') +
 
         '<section class="platform-stack-panel"><div><div class="eyebrow">PLATFORM STACK</div><h2>AttendanceFlow infrastructure</h2></div><div class="footer-stack large"><span>GitHub</span><span>Vercel</span><span>Supabase</span><span>PostgreSQL</span><span>Vite</span><span>JavaScript</span><span>Tailwind CSS</span><span>HTML5 Canvas</span><span>CSS3</span><span>WebGL-ready</span></div></section>' +
       '</div>' +
