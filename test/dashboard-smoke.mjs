@@ -213,6 +213,22 @@ try {
   check("per-person percentage shown", pctOf(aliceRow) === "100%" && pctOf(bobRow) === "50%", pctOf(aliceRow) + " / " + pctOf(bobRow));
   const totalsText = $("attendanceHistoryTotals")?.textContent || "";
   check("totals row has overall percentage", totalsText.includes("TOTAL") && totalsText.includes("75%"), totalsText.trim());
+
+  // single-day mode gets the compact status layout
+  $("historyDateMode").value = "day";
+  $("historyDayInput").value = TODAY;
+  $("applyHistoryFilter") && $("applyHistoryFilter").click();
+  await sleep(200);
+  const dayHead = [...document.querySelectorAll(".history-table thead th")].map((th) => th.textContent.trim());
+  check("single day uses status columns", dayHead.join("|") === "Person|Status|%", dayHead.join("|"));
+  const dayStatuses = [...document.querySelectorAll("#attendanceHistoryRows .history-status")].map((x) => x.textContent.trim());
+  check("single day shows tick and cross statuses",
+    dayStatuses.includes("✓ Present") && dayStatuses.includes("✗ Absent"), dayStatuses.join(" / "));
+  check("single day totals show present/absent",
+    ($("attendanceHistoryTotals")?.textContent || "").includes("1 present · 1 absent"), $("attendanceHistoryTotals")?.textContent.trim());
+  $("historyDateMode").value = "all";
+  $("applyHistoryFilter") && $("applyHistoryFilter").click();
+  await sleep(150);
   $("closeAttendanceHistory") && $("closeAttendanceHistory").click();
   await sleep(80);
 

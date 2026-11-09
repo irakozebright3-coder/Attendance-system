@@ -117,7 +117,7 @@ export function dashboard(ctx) {
         '<div class="history-export-actions"><span class="history-export-label">Export filtered records</span><button id="historyExportPdf" type="button" class="history-export-button history-export-pdf">↓ PDF</button><button id="historyExportCsv" type="button" class="history-export-button">↓ CSV</button><button id="historyExportTsv" type="button" class="history-export-button">↓ TSV</button><button id="historyExportJson" type="button" class="history-export-button">↓ JSON</button></div>' +
       '</section>' +
       '<p id="attendanceHistorySummary" class="history-summary">Loading saved attendance history…</p>' +
-      '<div class="overflow-x-auto history-table-wrap"><table class="history-table"><thead><tr><th>Person</th><th>Attendance dates</th><th>Present</th><th>Absent</th><th>%</th></tr></thead><tbody id="attendanceHistoryRows"></tbody><tfoot id="attendanceHistoryTotals"></tfoot></table></div>' +
+      '<div class="overflow-x-auto history-table-wrap"><table class="history-table"><thead id="attendanceHistoryHead"><tr><th>Person</th><th>Attendance dates</th><th>Present</th><th>Absent</th><th>%</th></tr></thead><tbody id="attendanceHistoryRows"></tbody><tfoot id="attendanceHistoryTotals"></tfoot></table></div>' +
       '</section></div>' +
     '<div id="teamGroupsModal" class="saved-people-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="teamGroupsTitle">' +
       '<section class="saved-people-panel team-groups-panel"><header class="saved-people-header"><div><span class="register-kicker">PEOPLE ORGANIZATION</span><h2 id="teamGroupsTitle">Groups & committees</h2><p>Create work groups and assign saved people. Group memberships are stored in the team database.</p></div>' +
@@ -504,9 +504,17 @@ function historySummary() {
 
   const people = new Map();
   for (const entry of newest.values()) {
-    if (!people.has(entry.personKey)) people.set(entry.personKey, { name: entry.name, dates: new Map() });
+    if (!people.has(entry.personKey)) {
+      people.set(entry.personKey, { name: entry.name, nameStamp: "", dates: new Map() });
+    }
+    const person = people.get(entry.personKey);
+    // Use the most recent name so a renamed person stays one row.
+    if (entry.stamp >= person.nameStamp) {
+      person.name = entry.name;
+      person.nameStamp = entry.stamp;
+    }
     if (entry.action === "cleared" || !["present", "absent"].includes(String(entry.status))) continue;
-    people.get(entry.personKey).dates.set(entry.date, entry.status);
+    person.dates.set(entry.date, entry.status);
   }
 
   const rows = [];
@@ -535,6 +543,10 @@ function historySummary() {
   };
 }
 
+function historyIsSingleDay() {
+  return (document.getElementById("historyDateMode")?.value || "all") === "day";
+}
+
 function historyStatusMark(status) {
   return status === "present" ? "✓" : "✗";
 }
@@ -547,13 +559,38 @@ function renderAttendanceHistory(ctx) {
 
   const report = historySummary();
   const filterLabel = historyDateFilterLabel().replaceAll("_", " ");
-  summary.textContent = report.people.length + " " + (report.people.length === 1 ? "person" : "people") +
-    " · " + report.totals.total + " attendance " + (report.totals.total === 1 ? "record" : "records") +
-    " · " + filterLabel + ". Each person appears once with every date in the period.";
+  const singleDay = historyIsSingleDay();
+  const head = document.getElementById("attendanceHistoryHead");
+  if (head) {
+    head.innerHTML = singleDay
+      ? "<tr><th>Person</th><th>Status</th><th>%</th></tr>"
+      : "<tr><th>Person</th><th>Attendance dates</th><th>Present</th><th>Absent</th><th>%</th></tr>";
+  }
+  summary.textContent = singleDay
+    ? report.people.length + " " + (report.people.length === 1 ? "person" : "people") + " · " + filterLabel +
+      ". Each person appears once with their status for that day."
+    : report.people.length + " " + (report.people.length === 1 ? "person" : "people") +
+      " · " + report.totals.total + " attendance " + (report.totals.total === 1 ? "record" : "records") +
+      " · " + filterLabel + ". Each person appears once with every date in the period.";
 
   if (!report.people.length) {
-    body.innerHTML = '<tr><td colspan="5" class="history-empty-cell">No attendance records match this period.</td></tr>';
+    body.innerHTML = '<tr><td colspan="' + (singleDay ? 3 : 5) + '" class="history-empty-cell">No attendance records match this period.</td></tr>';
     if (totalsRow) totalsRow.innerHTML = "";
+  } else if (singleDay) {
+    body.innerHTML = report.people.map((person) => {
+      const status = person.present ? "present" : "absent";
+      const label = person.present ? "✓ Present" : "✗ Absent";
+      return "<tr>" +
+        "<td><strong>" + esc(person.name) + "</strong></td>" +
+        "<td><span class=\"history-status history-" + status + "\">" + label + "</span></td>" +
+        "<td><strong>" + formatPercent(person.percent) + "</strong></td></tr>";
+    }).join("");
+    if (totalsRow) {
+      totalsRow.innerHTML = "<tr class=\"history-totals-row\">" +
+        "<td><strong>TOTAL</strong></td>" +
+        "<td><strong>" + report.totals.present + "</strong> present · <strong>" + report.totals.absent + "</strong> absent</td>" +
+        "<td><strong>" + formatPercent(report.totals.percent) + "</strong></td></tr>";
+    }
   } else {
     body.innerHTML = report.people.map((person) => {
       const chips = person.entries.map(([date, status]) =>
@@ -613,6 +650,13 @@ function downloadHistoryFile(filename, contents, mimeType) {
 
 function historyExportRows() {
   const report = historySummary();
+  if (historyIsSingleDay()) {
+    return report.people.map((person) => ({
+      person_name: person.name,
+      status: person.present ? "✓ Present" : "✗ Absent",
+      percent: formatPercent(person.percent)
+    }));
+  }
   return report.people.map((person) => ({
     person_name: person.name,
     attendance_dates: person.entries.map(([date, status]) => date + " " + historyStatusMark(status)).join("; "),
@@ -624,6 +668,13 @@ function historyExportRows() {
 
 function historyExportTotals() {
   const { totals } = historySummary();
+  if (historyIsSingleDay()) {
+    return {
+      person_name: "TOTAL",
+      status: totals.present + " present · " + totals.absent + " absent",
+      percent: formatPercent(totals.percent)
+    };
+  }
   return {
     person_name: "TOTAL",
     attendance_dates: totals.total + " records",
@@ -648,12 +699,16 @@ function exportAttendanceHistory(ctx, format) {
   const filename = "attendance-history-" + historyDateFilterLabel().replaceAll(/[^a-zA-Z0-9_-]/g, "_");
   try {
     if (format === "csv") {
-      const columns = ["person_name","attendance_dates","present","absent","percent"];
+      const columns = historyIsSingleDay()
+        ? ["person_name","status","percent"]
+        : ["person_name","attendance_dates","present","absent","percent"];
       const totals = historyExportTotals();
       const csv = [columns.map(csvSafeValue).join(","), ...rows.map((row) => columns.map((column) => csvSafeValue(row[column])).join(",")), columns.map((column) => csvSafeValue(totals[column])).join(",")].join("\r\n");
       downloadHistoryFile(filename + ".csv", "\uFEFF" + csv, "text/csv;charset=utf-8");
     } else if (format === "tsv") {
-      const columns = ["person_name","attendance_dates","present","absent","percent"];
+      const columns = historyIsSingleDay()
+        ? ["person_name","status","percent"]
+        : ["person_name","attendance_dates","present","absent","percent"];
       const tsvCell = (value) => String(value ?? "").replace(/[\t\r\n]+/g, " ").replace(/^[\t\r ]*[=+\-@]/, "'$&");
       const totals = historyExportTotals();
       const tsv = [columns.join("\t"), ...rows.map((row) => columns.map((column) => tsvCell(row[column])).join("\t")), columns.map((column) => tsvCell(totals[column])).join("\t")].join("\r\n");
@@ -696,29 +751,34 @@ function printAttendanceHistory(ctx) {
   }
 
   const report = historySummary();
+  const singleDay = historyIsSingleDay();
   const title = "AttendanceFlow — Attendance Report";
   const filterLabel = historyDateFilterLabel().replaceAll("_", " ");
-  const columns = [
-    ["person_name", "Person"],
-    ["attendance_dates", "Attendance dates"],
-    ["present", "Present"],
-    ["absent", "Absent"],
-    ["percent", "%"]
-  ];
-  const tableHead = columns.map(([, label]) => "<th>" + esc(label) + "</th>").join("");
-  const tableRows = report.people.map((person) => {
-    const dates = person.entries
-      .map(([date, status]) => esc(dateLabel(date, ctx.S.teamSettings)) + " " + historyStatusMark(status))
-      .join("  ·  ");
-    return "<tr><td><strong>" + esc(person.name) + "</strong></td><td class=\"dates\">" + dates + "</td>" +
-      "<td class=\"num\">" + person.present + "</td><td class=\"num\">" + person.absent + "</td>" +
-      "<td class=\"num\"><strong>" + formatPercent(person.percent) + "</strong></td></tr>";
-  }).join("");
-  const totals = historyExportTotals();
-  const totalsRow = "<tr class=\"totals\"><td><strong>TOTAL</strong></td><td class=\"dates\">" +
-    report.people.length + " " + (report.people.length === 1 ? "person" : "people") + " · " + report.totals.total + " records</td>" +
-    "<td class=\"num\">" + report.totals.present + "</td><td class=\"num\">" + report.totals.absent + "</td>" +
-    "<td class=\"num\">" + formatPercent(report.totals.percent) + "</td></tr>";
+  const tableHead = singleDay
+    ? "<th>Person</th><th>Status</th><th>%</th>"
+    : "<th>Person</th><th>Attendance dates</th><th>Present</th><th>Absent</th><th>%</th>";
+  const tableRows = singleDay
+    ? report.people.map((person) =>
+        "<tr><td><strong>" + esc(person.name) + "</strong></td><td>" +
+        (person.present ? "✓ Present" : "✗ Absent") + "</td>" +
+        "<td class=\"num\"><strong>" + formatPercent(person.percent) + "</strong></td></tr>"
+      ).join("")
+    : report.people.map((person) => {
+        const dates = person.entries
+          .map(([date, status]) => esc(dateLabel(date, ctx.S.teamSettings)) + " " + historyStatusMark(status))
+          .join("  ·  ");
+        return "<tr><td><strong>" + esc(person.name) + "</strong></td><td class=\"dates\">" + dates + "</td>" +
+          "<td class=\"num\">" + person.present + "</td><td class=\"num\">" + person.absent + "</td>" +
+          "<td class=\"num\"><strong>" + formatPercent(person.percent) + "</strong></td></tr>";
+      }).join("");
+  const totalsRow = singleDay
+    ? "<tr class=\"totals\"><td><strong>TOTAL</strong></td><td>" + report.totals.present +
+      " present · " + report.totals.absent + " absent</td><td class=\"num\">" +
+      formatPercent(report.totals.percent) + "</td></tr>"
+    : "<tr class=\"totals\"><td><strong>TOTAL</strong></td><td class=\"dates\">" +
+      report.people.length + " " + (report.people.length === 1 ? "person" : "people") + " · " + report.totals.total + " records</td>" +
+      "<td class=\"num\">" + report.totals.present + "</td><td class=\"num\">" + report.totals.absent + "</td>" +
+      "<td class=\"num\">" + formatPercent(report.totals.percent) + "</td></tr>";
 
   try {
     printWindow.document.open();
