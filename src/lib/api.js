@@ -118,6 +118,22 @@ export async function isPlatformAdmin() {
   return Boolean(data);
 }
 
+export async function isPrimaryPlatformOwner() {
+  const { data, error } = await db.rpc("is_primary_platform_owner");
+  if (error) fail(error);
+  return Boolean(data);
+}
+
+export async function setPlatformAdmin(userId, makeAdmin) {
+  if (!userId) throw new Error("Select a registered user first.");
+  const { data, error } = await db.rpc("platform_set_admin", {
+    p_user_id: userId,
+    p_make_admin: Boolean(makeAdmin)
+  });
+  if (error) fail(error);
+  return Boolean(data);
+}
+
 export async function loadPlatformSettings() {
   const { data, error } = await db
     .from("platform_settings")
