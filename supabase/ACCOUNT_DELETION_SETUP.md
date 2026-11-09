@@ -6,9 +6,11 @@ The frontend imports `src/lib/panel-search.js` and attaches a searchable control
 
 ## Securely deleting a login account
 
-Account deletion must run server-side because Supabase Auth admin deletion requires a secret server key. Never put a Supabase service-role/secret key into a `VITE_*` variable or browser code.
+Account deletion runs server-side. Never put a Supabase service-role/secret key into a `VITE_*` variable or browser code.
 
-The frontend calls the Edge Function named `platform-delete-user`. The source is:
+**Primary path (works with just the SQL):** the app calls the database function `public.platform_delete_user`. It performs all the same checks inside PostgreSQL — platform-owner only, no self-delete, platform administrators and team owners/creators protected — deletes the account from `auth.users` (which cascades to memberships, sessions and identities), and writes an audit entry. It is created by `supabase/schema.sql` / `supabase/FINAL_SETUP.sql`, so if you have run the setup SQL, account deletion works immediately with no separate deployment.
+
+**Optional fallback:** if the SQL is older and the database function is missing, the app falls back to the Edge Function named `platform-delete-user`. The source is:
 
 `supabase/functions/platform-delete-user/index.ts`
 
@@ -22,7 +24,7 @@ npx supabase functions deploy platform-delete-user
 
 Alternatively, use the Supabase Dashboard for the same project: open **Edge Functions**, create a function named `platform-delete-user`, paste the complete contents of `supabase/functions/platform-delete-user/index.ts` into the function editor, and deploy it. Keep the platform's normal JWT verification enabled.
 
-**Deploying the frontend on Vercel does not deploy this Supabase function.** Account deletion will return a configuration/function error until the Edge Function has also been deployed to Supabase.
+**Deploying the frontend on Vercel does not deploy this Supabase function.** With the current SQL applied, deletion no longer depends on it. Re-run `supabase/schema.sql` (or `FINAL_SETUP.sql`) after pulling the latest changes to enable the database path.
 
 The function expects the standard server-side Supabase environment values `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. It also supports `SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY` where those newer key names are used. Supabase supplies its standard project environment values to Edge Functions; if your project doesn't, configure them as **Edge Function secrets** in the Supabase dashboard. The secret/service-role key stays in Supabase only.
 

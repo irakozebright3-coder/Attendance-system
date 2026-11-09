@@ -5,7 +5,30 @@
 -- ============================================================
 
 create schema if not exists auth;
-create table if not exists auth.users(id uuid primary key, email text unique);
+create table if not exists auth.users(
+  id uuid primary key,
+  email text unique,
+  encrypted_password text,
+  email_confirmed_at timestamptz,
+  last_sign_in_at timestamptz,
+  raw_user_meta_data jsonb default '{}'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table if not exists auth.identities(
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  provider text default 'email',
+  provider_id text,
+  created_at timestamptz default now()
+);
+
+create table if not exists auth.sessions(
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  created_at timestamptz default now()
+);
 
 create or replace function auth.uid()
 returns uuid

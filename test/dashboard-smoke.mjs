@@ -10,6 +10,14 @@ const check = (name, ok, note = "") => {
 };
 
 const indexHtml = readFileSync("index.html", "utf8");
+
+const iso = (offsetDays) => {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+};
+const TODAY = iso(0);
+const TOMORROW = iso(1);
 const bundle = readFileSync("/tmp/app.db.test.js", "utf8");
 
 const dom = new JSDOM(indexHtml, {
@@ -42,7 +50,7 @@ try {
   check("no runtime errors on boot", window.__errors.length === 0, window.__errors.join("; "));
   check("dashboard rendered", !!document.querySelector(".app-shell"));
   check("team name shown in header", $("teamLabel").textContent === "Test Team");
-  check("role badge OWNER", $("roleLabel").textContent === "OWNER");
+  check("role badge shows ADMIN", $("roleLabel").textContent === "ADMIN");
   check("backend status realtime", ($("backendStatus").textContent || "").includes("realtime"), $("backendStatus")?.textContent);
   check("stats: 2 active people", $("peopleCount").textContent === "2", $("peopleCount")?.textContent);
   check("empty state: dates exist but register renders", document.querySelectorAll("[data-person-cell]").length >= 2);
@@ -74,13 +82,13 @@ try {
   // --- add date modal (admin)
   $("newDate").click();
   check("date modal opens", !$("modal").classList.contains("hidden"));
-  $("dateValue").value = "2026-10-06";
+  $("dateValue").value = TOMORROW;
   $("saveDate").click();
   await sleep(200);
-  check("date added to header", !!document.querySelector("[data-date-remove='2026-10-06']"));
+  check("date added to header", !!document.querySelector(`[data-date-remove="${TOMORROW}"]`));
   // duplicate date → friendly error
   $("newDate").click();
-  $("dateValue").value = "2026-10-06";
+  $("dateValue").value = TOMORROW;
   $("saveDate").click();
   await sleep(150);
   const lastErr = () => [...document.querySelectorAll(".toast.error")].at(-1)?.textContent || "";
@@ -88,7 +96,7 @@ try {
     lastErr().includes("already in the register"), lastErr());
 
   // --- add person with duplicate identifier (p2 has EMP-002)
-  $("newPerson").click();
+  $("registeredAddPerson").click();
   $("personName").value = "Dan";
   $("personId").value = "EMP-002";
   $("savePerson").click();
@@ -97,30 +105,44 @@ try {
     lastErr().includes("already used"), lastErr());
 
   // --- add person OK (no photo)
-  $("newPerson").click();
+  $("registeredAddPerson").click();
   $("personName").value = "Dan";
   $("personId").value = "EMP-003";
   $("savePerson").click();
-  await sleep(250);
-  check("person added to register", [...document.querySelectorAll("[data-person-edit]")].some((b) => b.textContent === "Dan"));
+  await sleep(300);
+  const rowNames = () => [...document.querySelectorAll("#tbody tr td:first-child span.font-bold")].map((n) => n.textContent);
+  check("person added to register", rowNames().includes("Dan"), rowNames().join(","));
 
-  // --- edit person modal shows current values + history
-  const danBtn = [...document.querySelectorAll("[data-person-edit]")].find((b) => b.textContent === "Dan");
-  danBtn.click();
+  // --- person management lives in the Registered People drawer
+  const cardFor = (name) => [...document.querySelectorAll(".saved-person-card")]
+    .find((c) => c.querySelector(".saved-person-name")?.textContent === name);
+  const openDirectory = async () => {
+    if (!document.querySelector(".saved-person-card")) {
+      $("savedPeopleBtn").click();
+      await sleep(250);
+    }
+  };
+  await openDirectory();
+  check("directory lists saved people", !!cardFor("Dan"));
+
+  cardFor("Dan").querySelector("[data-directory-edit]").click();
   await sleep(250);
   check("edit modal shows name", $("personName").value === "Dan");
   check("edit modal shows identifier", $("personId").value === "EMP-003");
   $("personName").value = "Daniel";
   $("savePerson").click();
-  await sleep(250);
-  check("person renamed in register", [...document.querySelectorAll("[data-person-edit]")].some((b) => b.textContent === "Daniel"));
+  await sleep(350);
+  check("person renamed in register", rowNames().includes("Daniel"), rowNames().join(","));
 
-  // --- filters: inactive only shows Carol with restore button
+  // --- filters: inactive only shows Carol with restore control
   $("activeFilter").value = "inactive";
   $("activeFilter").dispatchEvent(new window.Event("change"));
   await sleep(80);
-  check("inactive filter shows Carol", !!document.querySelector("[data-restore='p3']"));
-  check("inactive row locked cells", !!document.querySelector(".att-locked"));
+  check("inactive filter shows Carol", rowNames().includes("Carol"), rowNames().join(","));
+  check("inactive row locked cells", (() => {
+    const rows = [...document.querySelectorAll("#tbody tr.row-inactive")];
+    return rows.length > 0 && rows.every((r) => r.querySelectorAll("[data-person-cell]").length === 0);
+  })());
 
   // --- search filter
   $("activeFilter").value = "all";
@@ -128,33 +150,36 @@ try {
   $("searchInput").value = "alice";
   $("searchInput").dispatchEvent(new window.Event("input"));
   await sleep(400);
-  const names = [...document.querySelectorAll("[data-person-edit]")].map((b) => b.textContent);
-  check("search narrows to Alice", names.length === 1 && names[0] === "Alice", names.join(","));
+  const searched = rowNames();
+  check("search narrows to Alice", searched.length === 1 && searched[0] === "Alice", searched.join(","));
   $("searchInput").value = "";
   $("searchInput").dispatchEvent(new window.Event("input"));
   await sleep(400);
 
-  // --- deactivate via row button + custom confirm
-  const removeBtn = document.querySelector("[data-person-remove='p2']");
-  removeBtn.click();
-  await sleep(100);
+  // --- deactivate from the drawer + custom confirm
+  await openDirectory();
+  cardFor("Bob").querySelector("[data-directory-deactivate]").click();
+  await sleep(150);
   $("confirmYes").click();
-  await sleep(250);
-  check("Bob marked inactive in his row", !!document.querySelector("[data-restore='p2']"));
+  await sleep(350);
+  await openDirectory();
+  check("Bob marked inactive with restore", !!cardFor("Bob")?.querySelector("[data-directory-restore]"));
   $("activeFilter").value = "active";
   $("activeFilter").dispatchEvent(new window.Event("change"));
   await sleep(80);
-  check("Bob deactivated (gone from active list)", ![...document.querySelectorAll("[data-person-edit]")].some((b) => b.textContent === "Bob"));
+  check("Bob deactivated (gone from active list)", !rowNames().includes("Bob"), rowNames().join(","));
 
-  // restore Bob via inactive filter
+  // restore Bob from the drawer
   $("activeFilter").value = "inactive";
   $("activeFilter").dispatchEvent(new window.Event("change"));
   await sleep(80);
-  const restoreBob = document.querySelector("[data-restore='p2']");
-  check("Bob listed as inactive with restore", !!restoreBob);
-  restoreBob?.click();
-  await sleep(250);
-  check("Bob restored", ![...document.querySelectorAll("[data-restore='p2']")].length === true || !document.querySelector("[data-restore='p2']"));
+  await openDirectory();
+  const restoreBtn = cardFor("Bob")?.querySelector("[data-directory-restore]");
+  check("Bob listed as inactive with restore", !!restoreBtn);
+  restoreBtn?.click();
+  await sleep(350);
+  await openDirectory();
+  check("Bob restored", !cardFor("Bob")?.querySelector("[data-directory-restore]"));
 
   // --- reports modal
   $("activeFilter").value = "all";
@@ -184,12 +209,12 @@ try {
   // --- delete date cleans attendance marks (handler + DB double)
   $("newDate").click();
   $("closeDate").click();
-  const delBtn = document.querySelector("[data-date-remove='2026-10-05']");
+  const delBtn = document.querySelector(`[data-date-remove="${TODAY}"]`);
   delBtn.click();
   await sleep(100);
   $("confirmYes").click();
   await sleep(300);
-  check("date removed from register", !document.querySelector("[data-date-remove='2026-10-05']"));
+  check("date removed from register", !document.querySelector(`[data-date-remove="${TODAY}"]`));
   check("marks for deleted date gone from stats", $("presentCount").textContent === "0", $("presentCount")?.textContent);
 
   // --- sign out returns to landing

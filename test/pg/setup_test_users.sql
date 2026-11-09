@@ -6,7 +6,10 @@
 insert into auth.users(id,email) values
   ('11111111-1111-1111-1111-111111111111','owner-a@test.dev'),
   ('22222222-2222-2222-2222-222222222222','member-b@test.dev'),
-  ('33333333-3333-3333-3333-333333333333','owner-c@test.dev')
+  ('33333333-3333-3333-3333-333333333333','owner-c@test.dev'),
+  ('99999999-9999-4999-8999-999999999999','platform-admin@test.dev'),
+  ('55555555-5555-4555-8555-555555555555','other-admin@test.dev'),
+  ('44444444-4444-4444-8444-444444444444','delete-me@test.dev')
 on conflict (id) do nothing;
 
 grant usage on schema storage to authenticated, anon;
@@ -50,3 +53,27 @@ exception when others then
   return sqlerrm;
 end $$;
 grant execute on function public.expect_error(text) to authenticated;
+
+-- Platform administrators used by platform_delete_tests.sql.
+do $$
+begin
+  insert into public.platform_admins(user_id) values
+    ('99999999-9999-4999-8999-999999999999'),
+    ('55555555-5555-4555-8555-555555555555')
+  on conflict (user_id) do nothing;
+exception when undefined_table then
+  null;
+end $$;
+
+-- TEST-ONLY: lets the authenticated test session verify auth.users deletions
+-- without granting real users any access to the auth schema.
+create or replace function public.test_user_exists(p_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public, auth
+as $$
+  select exists(select 1 from auth.users where id = p_id);
+$$;
+grant execute on function public.test_user_exists(uuid) to authenticated;

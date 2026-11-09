@@ -675,6 +675,69 @@ as $$
   order by tm.joined_at;
 $$;
 
+create or replace function public.platform_delete_user(p_user_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, auth
+as $af_delete_user$
+declare
+  v_email text;
+  v_exists boolean;
+begin
+  if not public.is_platform_admin() then
+    raise exception 'Only the platform owner can delete web accounts.' using errcode = '42501';
+  end if;
+
+  if p_user_id is null then
+    raise exception 'A valid user account ID is required.';
+  end if;
+
+  if p_user_id = auth.uid() then
+    raise exception 'You cannot delete the account you are currently using.';
+  end if;
+
+  select exists(select 1 from auth.users where id = p_user_id) into v_exists;
+  if not v_exists then
+    raise exception 'That user account was not found. Refresh the user list and try again.';
+  end if;
+
+  select coalesce(email, '') into v_email from auth.users where id = p_user_id;
+
+  if exists(select 1 from public.platform_admins where user_id = p_user_id) then
+    raise exception 'Platform administrator accounts are protected from this delete action.';
+  end if;
+
+  if exists(select 1 from public.team_members where user_id = p_user_id and role = 'owner')
+     or exists(select 1 from public.teams where created_by = p_user_id) then
+    raise exception 'This account owns or created a team workspace. Transfer ownership or remove that workspace first; no account or team data was deleted.';
+  end if;
+
+  delete from auth.users where id = p_user_id;
+
+  -- Audit is best-effort: an audit-write problem must not report a false failure.
+  begin
+    insert into public.audit_events(team_id, actor_user_id, action, entity, entity_id, details)
+    values (
+      null,
+      auth.uid(),
+      'platform_user_deleted',
+      'auth_user',
+      p_user_id,
+      jsonb_build_object('target_email', v_email, 'operation', 'permanent_auth_delete')
+    );
+  exception when others then
+    null;
+  end;
+
+  return jsonb_build_object('ok', true, 'deletedUserId', p_user_id, 'email', v_email);
+end;
+$af_delete_user$;
+
+revoke all on function public.platform_delete_user(uuid) from public;
+revoke all on function public.platform_delete_user(uuid) from anon;
+grant execute on function public.platform_delete_user(uuid) to authenticated;
+
 -- ------------------------------------------------------------
 -- SIMPLE SERVER-SIDE VALIDATION
 -- ------------------------------------------------------------
@@ -741,11 +804,6 @@ for select
 to authenticated
 using (public.is_team_member(id));
 
-create policy teams_insert
-on public.teams
-for insert
-to authenticated
-with check (created_by = auth.uid());
 
 create policy teams_update
 on public.teams
@@ -893,7 +951,7 @@ create policy audit_read
 on public.audit_events
 for select
 to authenticated
-using (public.is_team_admin(team_id));
+using (public.is_team_admin(team_id) or public.is_platform_admin());
 
 drop policy if exists platform_admin_self_read on public.platform_admins;
 
@@ -964,6 +1022,107 @@ create trigger date_cleanup
 after delete on public.attendance_dates
 for each row
 execute function public.cleanup_date_attendance();
+
+-- ------------------------------------------------------------
+-- AUDIT TRAIL AND TIMESTAMPS
+-- ------------------------------------------------------------
+
+create or replace function public.audit_row_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_team uuid;
+  v_entity uuid;
+  v_details jsonb;
+begin
+  v_team := coalesce(new.team_id, old.team_id);
+
+  if TG_TABLE_NAME = 'team_members' then
+    v_entity := coalesce(new.user_id, old.user_id);
+    v_details := jsonb_build_object(
+      'user_id', coalesce(new.user_id, old.user_id),
+      'role', coalesce(new.role, old.role)
+    );
+  elsif TG_TABLE_NAME = 'people' then
+    v_entity := coalesce(new.id, old.id);
+    v_details := jsonb_build_object(
+      'name', coalesce(new.name, old.name),
+      'identifier', coalesce(new.identifier, old.identifier),
+      'active', coalesce(new.active, old.active)
+    );
+  elsif TG_TABLE_NAME = 'attendance' then
+    v_entity := coalesce(new.id, old.id);
+    v_details := jsonb_build_object(
+      'person_id', coalesce(new.person_id, old.person_id),
+      'date', coalesce(new.date, old.date),
+      'status', coalesce(new.status, old.status)
+    );
+  elsif TG_TABLE_NAME = 'attendance_dates' then
+    v_entity := coalesce(new.id, old.id);
+    v_details := jsonb_build_object('date', coalesce(new.date, old.date));
+  else
+    v_entity := coalesce(new.id, old.id);
+    v_details := '{}'::jsonb;
+  end if;
+
+  insert into public.audit_events(team_id, actor_user_id, action, entity, entity_id, details)
+  values (v_team, auth.uid(), TG_OP, TG_TABLE_NAME, v_entity, v_details);
+
+  if TG_OP = 'DELETE' then
+    return old;
+  end if;
+  return new;
+exception when others then
+  -- auditing must never block a legitimate write
+  if TG_OP = 'DELETE' then
+    return old;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists audit_people on public.people;
+create trigger audit_people
+after insert or update or delete on public.people
+for each row
+execute function public.audit_row_change();
+
+drop trigger if exists audit_dates on public.attendance_dates;
+create trigger audit_dates
+after insert or update or delete on public.attendance_dates
+for each row
+execute function public.audit_row_change();
+
+drop trigger if exists audit_attendance on public.attendance;
+create trigger audit_attendance
+after insert or update or delete on public.attendance
+for each row
+execute function public.audit_row_change();
+
+drop trigger if exists audit_membership on public.team_members;
+create trigger audit_membership
+after insert or update or delete on public.team_members
+for each row
+execute function public.audit_row_change();
+
+create or replace function public.touch_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists people_touch_updated_at on public.people;
+create trigger people_touch_updated_at
+before update on public.people
+for each row
+execute function public.touch_updated_at();
 
 -- ------------------------------------------------------------
 -- STORAGE

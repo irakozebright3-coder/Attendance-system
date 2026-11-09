@@ -165,6 +165,21 @@ export async function loadPlatformUsers() {
 export async function deletePlatformUser(userId) {
   if (!userId) throw new Error("A user account must be selected.");
 
+  // Preferred path: the database function. It enforces the same safety rules
+  // as the Edge Function (owner only, no self-delete, admins and team owners
+  // protected) and works as soon as the setup SQL is applied, with no
+  // separate deployment step.
+  const rpc = await db.rpc("platform_delete_user", { p_user_id: userId });
+  if (!rpc.error) {
+    if (!rpc.data?.ok) throw new Error(rpc.data?.error || "The server did not confirm account deletion.");
+    return rpc.data;
+  }
+
+  const missingRpc = rpc.error.code === "PGRST202"
+    || /could not find the function|platform_delete_user.*does not exist/i.test(rpc.error.message || "");
+  if (!missingRpc) throw new Error(friendlyError(rpc.error));
+
+  // Fallback for projects where only the Edge Function is deployed.
   const { data, error } = await db.functions.invoke("platform-delete-user", {
     body: { userId }
   });
@@ -178,6 +193,9 @@ export async function deletePlatformUser(userId) {
       if (details?.error) message = details.error;
     } catch {
       // Keep the invocation error message when the response is not readable JSON.
+    }
+    if (error.name === "FunctionsFetchError" || /Failed to send a request to the Edge Function/i.test(message)) {
+      message = "Account deletion could not reach the server. Apply the latest supabase/schema.sql (or FINAL_SETUP.sql) in Supabase, or deploy the platform-delete-user Edge Function.";
     }
     throw new Error(message);
   }

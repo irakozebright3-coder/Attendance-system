@@ -13,7 +13,7 @@ const db = {
     { id: "p2", team_id: "team-1", name: "Bob", identifier: "EMP-002", photo_path: null, active: true, created_at: "2026-10-02T10:00:00Z" },
     { id: "p3", team_id: "team-1", name: "Carol", identifier: null, photo_path: null, active: false, created_at: "2026-10-03T10:00:00Z" }
   ],
-  attendance_dates: [{ id: "d1", team_id: "team-1", date: "2026-10-05", created_at: "2026-10-05T08:00:00Z" }],
+  attendance_dates: [{ id: "d1", team_id: "team-1", date: new Date().toISOString().slice(0, 10), created_at: new Date().toISOString() }],
   attendance: [],
   audit_events: [
     { id: 1, team_id: "team-1", actor_user_id: "u1", action: "INSERT", entity: "people", entity_id: "p1", details: { name: "Alice" }, created_at: "2026-10-05T09:00:00Z" }
@@ -131,6 +131,14 @@ const authState = { session: { user: { id: "u1", email: "owner@test.dev", user_m
 
 let authListener = null;
 
+// Knobs used by test/platform-delete.test.mjs to simulate deployment states.
+export const platformDeleteControl = {
+  rpcAvailable: true,
+  deleted: [],
+  functionCalls: 0,
+  functionOutcome: "ok" // "ok" | "fetchError" | "httpError"
+};
+
 export function createClient(url, key) {
   return {
     auth: {
@@ -158,7 +166,45 @@ export function createClient(url, key) {
         if (!t) return Promise.resolve({ data: null, error: { message: "Invite code not recognized" } });
         return Promise.resolve({ data: t, error: null });
       }
+      if (name === "is_platform_admin") {
+        return Promise.resolve({ data: false, error: null });
+      }
+      if (name === "ensure_team_settings") {
+        const existing = (db.team_settings || []).find((t) => t.team_id === args.p_team_id);
+        if (existing) return Promise.resolve({ data: existing, error: null });
+        const row = {
+          team_id: args.p_team_id,
+          timezone: "Africa/Kigali",
+          date_format: "YYYY-MM-DD",
+          week_starts_on: 1,
+          allow_member_attendance: true,
+          require_photo: false,
+          require_identifier: false
+        };
+        db.team_settings = db.team_settings || [];
+        db.team_settings.push(row);
+        return Promise.resolve({ data: row, error: null });
+      }
+      if (name === "platform_delete_user") {
+        if (!platformDeleteControl.rpcAvailable) {
+          return Promise.resolve({ data: null, error: { code: "PGRST202", message: "Could not find the function public.platform_delete_user(p_user_id) in the schema cache" } });
+        }
+        platformDeleteControl.deleted.push(args.p_user_id);
+        return Promise.resolve({ data: { ok: true, deletedUserId: args.p_user_id }, error: null });
+      }
       return Promise.resolve({ data: null, error: { message: "unknown rpc" } });
+    },
+    functions: {
+      invoke() {
+        platformDeleteControl.functionCalls += 1;
+        if (platformDeleteControl.functionOutcome === "fetchError") {
+          const err = new Error("Failed to send a request to the Edge Function");
+          err.name = "FunctionsFetchError";
+          return Promise.resolve({ data: null, error: err });
+        }
+        platformDeleteControl.deleted.push("via-function");
+        return Promise.resolve({ data: { ok: true }, error: null });
+      }
     },
     from,
     storage: {
