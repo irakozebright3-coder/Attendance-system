@@ -15,6 +15,18 @@ const db = {
   ],
   attendance_dates: [{ id: "d1", team_id: "team-1", date: new Date().toISOString().slice(0, 10), created_at: new Date().toISOString() }],
   attendance: [],
+  attendance_history: (() => {
+    const day = (offset) => { const d = new Date(); d.setUTCDate(d.getUTCDate() + offset); return d.toISOString().slice(0, 10); };
+    const at = (offset) => new Date(Date.now() + offset * 60000).toISOString();
+    return [
+      { id: 6, team_id: "team-1", person_id: "p1", person_name: "Alice", attendance_date: day(0), status: "present", action: "marked", marked_by: "u1", recorded_at: at(0) },
+      { id: 5, team_id: "team-1", person_id: "p2", person_name: "Bob", attendance_date: day(0), status: "absent", action: "marked", marked_by: "u1", recorded_at: at(-1) },
+      { id: 4, team_id: "team-1", person_id: "p1", person_name: "Alice", attendance_date: day(-1), status: "present", action: "marked", marked_by: "u1", recorded_at: at(-2) },
+      { id: 3, team_id: "team-1", person_id: "p2", person_name: "Bob", attendance_date: day(-1), status: "present", action: "marked", marked_by: "u1", recorded_at: at(-3) },
+      { id: 2, team_id: "team-1", person_id: "p1", person_name: "Alice", attendance_date: day(-1), status: "absent", action: "marked", marked_by: "u1", recorded_at: at(-10) },
+      { id: 1, team_id: "team-1", person_id: "p1", person_name: "Alice", attendance_date: day(-2), status: "absent", action: "cleared", marked_by: "u1", recorded_at: at(-20) }
+    ];
+  })(),
   audit_events: [
     { id: 1, team_id: "team-1", actor_user_id: "u1", action: "INSERT", entity: "people", entity_id: "p1", details: { name: "Alice" }, created_at: "2026-10-05T09:00:00Z" }
   ]
@@ -49,6 +61,7 @@ function from(table) {
       eq(k, v) { state.conds.push([k, v]); return builder(); },
       order(k, opts = {}) { state.sortKey = k; state.sortAsc = !opts.ascending; return builder(); },
       limit(n) { state.limitN = n; return builder(); },
+      range(from, to) { state.rangeFrom = from; state.rangeTo = to; return builder(); },
       maybeSingle() { return run().then((x) => ({ ...x, data: x.data ? x.data[0] ?? null : null })); },
       single() { return run().then((x) => ({ ...x, data: x.data ? x.data[0] ?? null : null })); },
       then(resolve) { return run().then(resolve); }
@@ -85,6 +98,7 @@ function from(table) {
           : String(b[state.sortKey]).localeCompare(String(a[state.sortKey]))
       );
     }
+    if (typeof state.rangeFrom === "number") rows = rows.slice(state.rangeFrom, state.rangeTo + 1);
     if (state.limitN) rows = rows.slice(0, state.limitN);
     return { data: rows, error: null };
   }

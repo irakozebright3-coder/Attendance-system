@@ -103,7 +103,7 @@ export function dashboard(ctx) {
         '<button id="closeSavedPeople" class="liquid dashboard-action" aria-label="Return to dashboard">← Back to dashboard</button></div></header>' +
       '<div id="savedPeopleGrid" class="saved-people-grid"></div></section></div>' +
     '<div id="attendanceHistoryModal" class="saved-people-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="attendanceHistoryTitle">' +
-      '<section class="saved-people-panel attendance-history-panel"><header class="saved-people-header"><div><span class="register-kicker">SAVED RECORDS</span><h2 id="attendanceHistoryTitle">Attendance History</h2><p>Every recorded attendance change with its attendance date and time saved.</p></div>' +
+      '<section class="saved-people-panel attendance-history-panel"><header class="saved-people-header"><div><span class="register-kicker">SAVED RECORDS</span><h2 id="attendanceHistoryTitle">Attendance Report</h2><p>One row per person: every date they were present or absent in the chosen period, with their percentage. Totals appear at the bottom.</p></div>' +
       '<div class="saved-people-header-actions"><button id="refreshAttendanceHistory" class="liquid dashboard-action">↻ Refresh</button><button id="closeAttendanceHistory" class="liquid dashboard-action">← Back</button></div></header>' +
       '<section class="history-export-toolbar" aria-label="Filter and export attendance history">' +
         '<div class="history-date-filters">' +
@@ -117,7 +117,7 @@ export function dashboard(ctx) {
         '<div class="history-export-actions"><span class="history-export-label">Export filtered records</span><button id="historyExportPdf" type="button" class="history-export-button history-export-pdf">↓ PDF</button><button id="historyExportCsv" type="button" class="history-export-button">↓ CSV</button><button id="historyExportTsv" type="button" class="history-export-button">↓ TSV</button><button id="historyExportJson" type="button" class="history-export-button">↓ JSON</button></div>' +
       '</section>' +
       '<p id="attendanceHistorySummary" class="history-summary">Loading saved attendance history…</p>' +
-      '<div class="overflow-x-auto history-table-wrap"><table class="history-table"><thead><tr><th>Attendance date</th><th>Person</th><th>Status</th><th>Event</th><th>Recorded at</th><th>Marked by</th></tr></thead><tbody id="attendanceHistoryRows"></tbody></table></div>' +
+      '<div class="overflow-x-auto history-table-wrap"><table class="history-table"><thead><tr><th>Person</th><th>Attendance dates</th><th>Present</th><th>Absent</th><th>%</th></tr></thead><tbody id="attendanceHistoryRows"></tbody><tfoot id="attendanceHistoryTotals"></tfoot></table></div>' +
       '</section></div>' +
     '<div id="teamGroupsModal" class="saved-people-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="teamGroupsTitle">' +
       '<section class="saved-people-panel team-groups-panel"><header class="saved-people-header"><div><span class="register-kicker">PEOPLE ORGANIZATION</span><h2 id="teamGroupsTitle">Groups & committees</h2><p>Create work groups and assign saved people. Group memberships are stored in the team database.</p></div>' +
@@ -430,13 +430,6 @@ function closeAttendanceHistory() {
 
 let attendanceHistoryCache = [];
 let filteredAttendanceHistory = [];
-const attendanceHistoryActionLabels = {
-  baseline: "Existing record",
-  marked: "Marked",
-  changed: "Changed",
-  cleared: "Cleared from register"
-};
-
 function syncHistoryDateControls() {
   const mode = document.getElementById("historyDateMode")?.value || "all";
   const toggle = (id, visible) => document.getElementById(id)?.classList.toggle("hidden", !visible);
@@ -485,39 +478,111 @@ function filterAttendanceHistory() {
   });
 }
 
+function formatPercent(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
+  const rounded = Math.round(Number(value) * 10) / 10;
+  return (Number.isInteger(rounded) ? rounded : rounded.toFixed(1)) + "%";
+}
+
+// Collapse history events into one row per person: each date appears once with
+// its final status (the newest event wins), so names never repeat.
+function historySummary() {
+  // Collapse events to the newest state per person and date, independent of
+  // the order the rows arrived in.
+  const newest = new Map();
+  for (const row of filteredAttendanceHistory) {
+    const name = row.person_name || "Unknown person";
+    const date = String(row.attendance_date || "");
+    if (!date) continue;
+    const key = String(row.person_id || name) + "|" + date;
+    const stamp = String(row.recorded_at || "") + "|" + String(row.id ?? "").padStart(14, "0");
+    const previous = newest.get(key);
+    if (!previous || stamp > previous.stamp) {
+      newest.set(key, { name, personKey: String(row.person_id || name), date, status: row.status, action: row.action, stamp });
+    }
+  }
+
+  const people = new Map();
+  for (const entry of newest.values()) {
+    if (!people.has(entry.personKey)) people.set(entry.personKey, { name: entry.name, dates: new Map() });
+    if (entry.action === "cleared" || !["present", "absent"].includes(String(entry.status))) continue;
+    people.get(entry.personKey).dates.set(entry.date, entry.status);
+  }
+
+  const rows = [];
+  for (const person of people.values()) {
+    const entries = [...person.dates.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    const total = entries.length;
+    if (!total) continue;
+    const present = entries.filter(([, status]) => status === "present").length;
+    rows.push({
+      name: person.name,
+      entries,
+      present,
+      absent: total - present,
+      total,
+      percent: Math.round((present / total) * 1000) / 10
+    });
+  }
+  rows.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+
+  const present = rows.reduce((sum, person) => sum + person.present, 0);
+  const absent = rows.reduce((sum, person) => sum + person.absent, 0);
+  const total = present + absent;
+  return {
+    people: rows,
+    totals: { present, absent, total, percent: total ? Math.round((present / total) * 1000) / 10 : null }
+  };
+}
+
+function historyStatusMark(status) {
+  return status === "present" ? "✓" : "✗";
+}
+
 function renderAttendanceHistory(ctx) {
   const body = document.getElementById("attendanceHistoryRows");
   const summary = document.getElementById("attendanceHistorySummary");
+  const totalsRow = document.getElementById("attendanceHistoryTotals");
   if (!body || !summary) return;
-  const rows = filteredAttendanceHistory;
-  const total = attendanceHistoryCache.length;
+
+  const report = historySummary();
   const filterLabel = historyDateFilterLabel().replaceAll("_", " ");
-  summary.textContent = rows.length + " of " + total + " saved event" + (total === 1 ? "" : "s") +
-    " match " + filterLabel + ". Dates are the attendance dates; events are sorted newest recorded first.";
-  if (!rows.length) {
-    body.innerHTML = '<tr><td colspan="6" class="history-empty-cell">No saved attendance records match this date filter.</td></tr>';
+  summary.textContent = report.people.length + " " + (report.people.length === 1 ? "person" : "people") +
+    " · " + report.totals.total + " attendance " + (report.totals.total === 1 ? "record" : "records") +
+    " · " + filterLabel + ". Each person appears once with every date in the period.";
+
+  if (!report.people.length) {
+    body.innerHTML = '<tr><td colspan="5" class="history-empty-cell">No attendance records match this period.</td></tr>';
+    if (totalsRow) totalsRow.innerHTML = "";
   } else {
-    body.innerHTML = rows.map((row) => {
-      const status = row.status === "present" ? "Present" : "Absent";
-      const recorded = row.recorded_at && !Number.isNaN(new Date(row.recorded_at).getTime())
-        ? new Date(row.recorded_at).toLocaleString()
-        : "—";
-      const marker = row.marked_by ? String(row.marked_by).slice(0, 8) : "Unknown";
-      const statusClass = row.status === "present" ? "history-present" : "history-absent";
+    body.innerHTML = report.people.map((person) => {
+      const chips = person.entries.map(([date, status]) =>
+        '<span class="history-mark ' + (status === "present" ? "history-mark-present" : "history-mark-absent") + '">' +
+          esc(dateLabel(date, ctx.S.teamSettings)) + " " + historyStatusMark(status) + "</span>"
+      ).join("");
       return "<tr>" +
-        "<td>" + esc(dateLabel(row.attendance_date, ctx.S.teamSettings)) + "</td>" +
-        "<td><strong>" + esc(row.person_name || "Unknown person") + "</strong></td>" +
-        "<td><span class=\"history-status " + statusClass + "\">" + status + "</span></td>" +
-        "<td>" + esc(attendanceHistoryActionLabels[row.action] || row.action || "Recorded") + (row.action === "cleared" ? " (previous value)" : "") + "</td>" +
-        "<td>" + esc(recorded) + "</td>" +
-        "<td>" + esc(marker) + "</td></tr>";
+        "<td><strong>" + esc(person.name) + "</strong></td>" +
+        "<td><div class=\"history-dates\">" + chips + "</div></td>" +
+        "<td>" + person.present + "</td>" +
+        "<td>" + person.absent + "</td>" +
+        "<td><strong>" + formatPercent(person.percent) + "</strong></td></tr>";
     }).join("");
+
+    if (totalsRow) {
+      totalsRow.innerHTML = "<tr class=\"history-totals-row\">" +
+        "<td><strong>TOTAL</strong></td>" +
+        "<td>" + report.people.length + " " + (report.people.length === 1 ? "person" : "people") + " · " + report.totals.total + " records</td>" +
+        "<td><strong>" + report.totals.present + "</strong></td>" +
+        "<td><strong>" + report.totals.absent + "</strong></td>" +
+        "<td><strong>" + formatPercent(report.totals.percent) + "</strong></td></tr>";
+    }
   }
+
   ["historyExportCsv","historyExportTsv","historyExportJson","historyExportPdf"].forEach((id) => {
     const button = document.getElementById(id);
     if (button) {
-      button.disabled = rows.length === 0;
-      button.title = rows.length === 0 ? "There are no records to export for these dates." : "";
+      button.disabled = report.people.length === 0;
+      button.title = report.people.length === 0 ? "There are no records to export for these dates." : "";
     }
   });
 }
@@ -547,14 +612,25 @@ function downloadHistoryFile(filename, contents, mimeType) {
 }
 
 function historyExportRows() {
-  return filteredAttendanceHistory.map((row) => ({
-    attendance_date: row.attendance_date || "",
-    person_name: row.person_name || "Unknown person",
-    status: row.status || "",
-    action: attendanceHistoryActionLabels[row.action] || row.action || "Recorded",
-    recorded_at: row.recorded_at || "",
-    marked_by: row.marked_by || ""
+  const report = historySummary();
+  return report.people.map((person) => ({
+    person_name: person.name,
+    attendance_dates: person.entries.map(([date, status]) => date + " " + historyStatusMark(status)).join("; "),
+    present: person.present,
+    absent: person.absent,
+    percent: formatPercent(person.percent)
   }));
+}
+
+function historyExportTotals() {
+  const { totals } = historySummary();
+  return {
+    person_name: "TOTAL",
+    attendance_dates: totals.total + " records",
+    present: totals.present,
+    absent: totals.absent,
+    percent: formatPercent(totals.percent)
+  };
 }
 
 function csvSafeValue(value) {
@@ -572,23 +648,26 @@ function exportAttendanceHistory(ctx, format) {
   const filename = "attendance-history-" + historyDateFilterLabel().replaceAll(/[^a-zA-Z0-9_-]/g, "_");
   try {
     if (format === "csv") {
-      const columns = ["attendance_date","person_name","status","action","recorded_at","marked_by"];
-      const csv = [columns.map(csvSafeValue).join(","), ...rows.map((row) => columns.map((column) => csvSafeValue(row[column])).join(","))].join("\r\n");
+      const columns = ["person_name","attendance_dates","present","absent","percent"];
+      const totals = historyExportTotals();
+      const csv = [columns.map(csvSafeValue).join(","), ...rows.map((row) => columns.map((column) => csvSafeValue(row[column])).join(",")), columns.map((column) => csvSafeValue(totals[column])).join(",")].join("\r\n");
       downloadHistoryFile(filename + ".csv", "\uFEFF" + csv, "text/csv;charset=utf-8");
     } else if (format === "tsv") {
-      const columns = ["attendance_date","person_name","status","action","recorded_at","marked_by"];
+      const columns = ["person_name","attendance_dates","present","absent","percent"];
       const tsvCell = (value) => String(value ?? "").replace(/[\t\r\n]+/g, " ").replace(/^[\t\r ]*[=+\-@]/, "'$&");
-      const tsv = [columns.join("\t"), ...rows.map((row) => columns.map((column) => tsvCell(row[column])).join("\t"))].join("\r\n");
+      const totals = historyExportTotals();
+      const tsv = [columns.join("\t"), ...rows.map((row) => columns.map((column) => tsvCell(row[column])).join("\t")), columns.map((column) => tsvCell(totals[column])).join("\t")].join("\r\n");
       downloadHistoryFile(filename + ".tsv", "\uFEFF" + tsv, "text/tab-separated-values;charset=utf-8");
     } else if (format === "json") {
       downloadHistoryFile(filename + ".json", JSON.stringify({
         exported_at: new Date().toISOString(),
         date_filter: historyDateFilterLabel(),
-        record_count: rows.length,
-        records: rows
+        person_count: rows.length,
+        totals: historyExportTotals(),
+        people: rows
       }, null, 2), "application/json;charset=utf-8");
     }
-    ctx.toast("Exported " + rows.length + " history record" + (rows.length === 1 ? "" : "s") + " as " + format.toUpperCase() + ".", "success");
+    ctx.toast("Exported " + rows.length + " " + (rows.length === 1 ? "person" : "people") + " as " + format.toUpperCase() + ".", "success");
   } catch (err) {
     ctx.toast("Export failed: " + (err.message || "browser download error"), "error");
   }
@@ -597,7 +676,7 @@ function exportAttendanceHistory(ctx, format) {
 function printAttendanceHistory(ctx) {
   const rows = historyExportRows();
   if (!rows.length) {
-    ctx.toast("No attendance history records match the selected dates.", "error");
+    ctx.toast("No attendance records match the selected dates.", "error");
     return;
   }
 
@@ -616,23 +695,30 @@ function printAttendanceHistory(ctx) {
     button.textContent = "Preparing…";
   }
 
-  const title = "AttendanceFlow — Attendance History";
-  const filterLabel = historyDateFilterLabel();
+  const report = historySummary();
+  const title = "AttendanceFlow — Attendance Report";
+  const filterLabel = historyDateFilterLabel().replaceAll("_", " ");
   const columns = [
-    ["attendance_date", "Attendance date"],
     ["person_name", "Person"],
-    ["status", "Status"],
-    ["action", "Event"],
-    ["recorded_at", "Recorded at"],
-    ["marked_by", "Marked by"]
+    ["attendance_dates", "Attendance dates"],
+    ["present", "Present"],
+    ["absent", "Absent"],
+    ["percent", "%"]
   ];
   const tableHead = columns.map(([, label]) => "<th>" + esc(label) + "</th>").join("");
-  const tableRows = rows.map((row) => "<tr>" + columns.map(([key]) => {
-    const value = key === "status"
-      ? (row[key] === "present" ? "Present" : row[key] === "absent" ? "Absent" : row[key])
-      : row[key];
-    return "<td>" + esc(value || "—") + "</td>";
-  }).join("") + "</tr>").join("");
+  const tableRows = report.people.map((person) => {
+    const dates = person.entries
+      .map(([date, status]) => esc(dateLabel(date, ctx.S.teamSettings)) + " " + historyStatusMark(status))
+      .join("  ·  ");
+    return "<tr><td><strong>" + esc(person.name) + "</strong></td><td class=\"dates\">" + dates + "</td>" +
+      "<td class=\"num\">" + person.present + "</td><td class=\"num\">" + person.absent + "</td>" +
+      "<td class=\"num\"><strong>" + formatPercent(person.percent) + "</strong></td></tr>";
+  }).join("");
+  const totals = historyExportTotals();
+  const totalsRow = "<tr class=\"totals\"><td><strong>TOTAL</strong></td><td class=\"dates\">" +
+    report.people.length + " " + (report.people.length === 1 ? "person" : "people") + " · " + report.totals.total + " records</td>" +
+    "<td class=\"num\">" + report.totals.present + "</td><td class=\"num\">" + report.totals.absent + "</td>" +
+    "<td class=\"num\">" + formatPercent(report.totals.percent) + "</td></tr>";
 
   try {
     printWindow.document.open();
@@ -640,13 +726,14 @@ function printAttendanceHistory(ctx) {
       esc(title + " " + filterLabel) + "</title><style>" +
       "@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font:12px/1.45 Arial,sans-serif;color:#172033;margin:0}" +
       "h1{font-size:22px;margin:0 0 6px}p{margin:0 0 16px;color:#4b5563}.meta{font-size:11px}" +
-      "table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #d1d5db;padding:7px;text-align:left;vertical-align:top;overflow-wrap:anywhere}" +
-      "th{background:#eef2f7;font-weight:700}tr{break-inside:avoid}thead{display:table-header-group}" +
+      "table{width:100%;border-collapse:collapse;table-layout:auto}th,td{border:1px solid #d1d5db;padding:7px;text-align:left;vertical-align:top;overflow-wrap:anywhere}" +
+      "th{background:#eef2f7;font-weight:700}td.num{text-align:center;white-space:nowrap;width:70px}td.dates{font-size:11px;line-height:1.7}" +
+      "tr{break-inside:avoid}thead{display:table-header-group}tr.totals td{background:#f3f4f6;font-weight:700;border-top:2px solid #9ca3af}" +
       ".count{margin:0 0 12px;font-weight:700;color:#111827}@media screen{body{padding:24px;max-width:1400px;margin:auto} .hint{display:block;margin-top:18px;color:#6b7280}}" +
       "@media print{.hint{display:none}}</style></head><body><h1>" + esc(title) +
-      "</h1><p class=\"meta\">Date filter: " + esc(filterLabel) + "</p><p class=\"count\">" +
-      rows.length + " record" + (rows.length === 1 ? "" : "s") + "</p><table><thead><tr>" +
-      tableHead + "</tr></thead><tbody>" + tableRows +
+      "</h1><p class=\"meta\">Period: " + esc(filterLabel) + "</p><p class=\"count\">" +
+      report.people.length + " " + (report.people.length === 1 ? "person" : "people") + " · " + report.totals.total + " attendance records</p><table><thead><tr>" +
+      tableHead + "</tr></thead><tbody>" + tableRows + totalsRow +
       "</tbody></table><p class=\"hint\">Choose “Save as PDF” in the print destination to save this report.</p></body></html>");
     printWindow.document.close();
 
@@ -669,7 +756,7 @@ function printAttendanceHistory(ctx) {
     printWindow.onload = () => setTimeout(startPrint, 50);
     // Some browsers fire load before the handler is assigned for about:blank.
     if (printWindow.document.readyState === "complete") setTimeout(startPrint, 50);
-    ctx.toast("PDF preview prepared with " + rows.length + " filtered records.", "success");
+    ctx.toast("PDF preview prepared for " + report.people.length + " people.", "success");
   } catch (err) {
     printWindow.close();
     if (button) {
@@ -688,7 +775,7 @@ async function openAttendanceHistory(ctx) {
   modal.classList.remove("hidden");
   document.body.classList.add("registered-people-open");
   summary.textContent = "Loading saved attendance history…";
-  body.innerHTML = "<tr><td colspan=\"6\" class=\"history-empty-cell\">Loading records…</td></tr>";
+  body.innerHTML = "<tr><td colspan=\"5\" class=\"history-empty-cell\">Loading records…</td></tr>";
   try {
     attendanceHistoryCache = await ctx.handlers.loadAttendanceHistory();
     if (!Array.isArray(attendanceHistoryCache)) attendanceHistoryCache = [];
@@ -697,7 +784,7 @@ async function openAttendanceHistory(ctx) {
     attendanceHistoryCache = [];
     filteredAttendanceHistory = [];
     summary.textContent = "Attendance history could not be loaded.";
-    body.innerHTML = "<tr><td colspan=\"6\" class=\"history-empty-cell\">" + esc(err.message || "Database error") + "</td></tr>";
+    body.innerHTML = "<tr><td colspan=\"5\" class=\"history-empty-cell\">" + esc(err.message || "Database error") + "</td></tr>";
     ["historyExportCsv","historyExportTsv","historyExportJson","historyExportPdf"].forEach((id) => {
       const button = document.getElementById(id);
       if (button) {

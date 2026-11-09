@@ -191,6 +191,31 @@ try {
   const summary = $("reportBody").textContent;
   check("report totals computed", /Rate/.test(summary));
 
+  // --- attendance report: one row per person, dates with tick/cross, per-person %
+  $("closeReports") && $("closeReports").click();
+  await sleep(80);
+  $("attendanceHistoryBtn").click();
+  await sleep(300);
+  const historyHead = [...document.querySelectorAll(".history-table thead th")].map((th) => th.textContent.trim());
+  check("history columns trimmed to the report set", historyHead.join("|") === "Person|Attendance dates|Present|Absent|%", historyHead.join("|"));
+  check("history drops event/recorded/marked columns",
+    !historyHead.some((h) => /Event|Recorded|Marked/i.test(h)), historyHead.join("|"));
+  const historyRows = [...document.querySelectorAll("#attendanceHistoryRows tr")];
+  const historyNames = historyRows.map((r) => r.querySelector("strong")?.textContent);
+  check("each person appears once", new Set(historyNames).size === historyNames.length && historyNames.length === 2, historyNames.join(","));
+  const aliceRow = historyRows.find((r) => r.querySelector("strong")?.textContent === "Alice");
+  const bobRow = historyRows.find((r) => r.querySelector("strong")?.textContent === "Bob");
+  const chips = (row) => [...(row?.querySelectorAll(".history-mark") || [])].map((c) => c.textContent.trim());
+  check("dates use tick and cross symbols",
+    chips(aliceRow).some((c) => c.includes("✓")) && chips(bobRow).some((c) => c.includes("✗")),
+    chips(aliceRow).join(" / ") + " || " + chips(bobRow).join(" / "));
+  const pctOf = (row) => [...(row?.querySelectorAll("td") || [])].at(-1)?.textContent.trim();
+  check("per-person percentage shown", pctOf(aliceRow) === "100%" && pctOf(bobRow) === "50%", pctOf(aliceRow) + " / " + pctOf(bobRow));
+  const totalsText = $("attendanceHistoryTotals")?.textContent || "";
+  check("totals row has overall percentage", totalsText.includes("TOTAL") && totalsText.includes("75%"), totalsText.trim());
+  $("closeAttendanceHistory") && $("closeAttendanceHistory").click();
+  await sleep(80);
+
   // --- audit modal
   $("closeReports") && $("closeReports").click();
   await sleep(80);

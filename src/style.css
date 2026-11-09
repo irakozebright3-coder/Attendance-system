@@ -1600,6 +1600,11 @@ body:has(#authModal:not(.hidden)){
 .history-table td{padding:12px;border-top:1px solid rgba(148,163,184,.10);color:#dbe4f0;vertical-align:middle}
 .history-table tbody tr:hover{background:rgba(139,92,246,.07)}
 .history-empty-cell{text-align:center!important;padding:34px 16px!important;color:#9ca3af!important;white-space:normal}
+.history-dates{display:flex;flex-wrap:wrap;gap:6px}
+.history-mark{display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:3px 7px;font-size:10px;font-weight:750;border:1px solid rgba(148,163,184,.18);background:rgba(148,163,184,.07);color:#e2e8f0}
+.history-mark-present{color:#bbf7d0;border-color:rgba(16,185,129,.25);background:rgba(16,185,129,.10)}
+.history-mark-absent{color:#fecdd3;border-color:rgba(244,63,94,.22);background:rgba(244,63,94,.10)}
+.history-totals-row td{border-top:2px solid rgba(148,163,184,.28)!important;background:rgba(148,163,184,.06);font-weight:800}
 .history-status{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900}
 .history-present{color:#6ee7b7;background:rgba(16,185,129,.13)}
 .history-absent{color:#fda4af;background:rgba(244,63,94,.13)}
