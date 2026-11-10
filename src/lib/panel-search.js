@@ -51,15 +51,17 @@ function applyFilter(panel, input, emptyMessage) {
 
   items.forEach((item) => {
     const matches = !term || searchableText(item).includes(term);
-    item.hidden = !matches;
+    // Only write when the value changes: every write is a DOM mutation, and
+    // needless rewrites re-trigger the observer and stall the page.
+    if (item.hidden === matches) item.hidden = !matches;
     if (matches) visibleCount += 1;
   });
 
   // Do not show "no matches" when a panel has no filterable data yet.
-  emptyMessage.hidden = !term || !items.length || visibleCount > 0;
-  emptyMessage.textContent = term
-    ? 'No results in this panel for "' + input.value.trim() + '".'
-    : "";
+  const message = term ? 'No results in this panel for "' + input.value.trim() + '".' : "";
+  const hideMessage = !term || !items.length || visibleCount > 0;
+  if (emptyMessage.textContent !== message) emptyMessage.textContent = message;
+  if (emptyMessage.hidden !== hideMessage) emptyMessage.hidden = hideMessage;
 }
 
 function attachPanelSearch(panel) {
@@ -127,11 +129,35 @@ export function observePanelSearch(root) {
   if (!root || root.dataset.panelSearchObserver === "true") return;
   root.dataset.panelSearchObserver = "true";
 
+  const isSearchWidget = (node) =>
+    node && node.nodeType === 1 &&
+    (node.classList.contains("panel-search-control") || node.classList.contains("panel-search-no-results"));
+
   const scan = () => {
     root.querySelectorAll(PANEL_SELECTOR).forEach(attachPanelSearch);
   };
 
+  let timer = null;
+  const scheduleScan = () => {
+    if (timer) return;
+    timer = setTimeout(() => {
+      timer = null;
+      scan();
+    }, 40);
+  };
+
   scan();
-  const observer = new MutationObserver(scan);
+
+  const observer = new MutationObserver((records) => {
+    const touchesPanels = records.some((record) => {
+      const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+      if (target && target.closest(".panel-search-control, .panel-search-no-results")) return false;
+      const nodes = [...record.addedNodes, ...record.removedNodes];
+      if (!nodes.length) return true;
+      // Ignore the search bar and message nodes this module inserts itself.
+      return nodes.some((node) => !isSearchWidget(node));
+    });
+    if (touchesPanels) scheduleScan();
+  });
   observer.observe(root, { childList: true, subtree: true });
 }

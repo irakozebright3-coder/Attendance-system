@@ -125,6 +125,23 @@ try {
   await openDirectory();
   check("directory lists saved people", !!cardFor("Dan"));
 
+  // panel search must filter live without breaking the page
+  const dirSearch = document.querySelector("#savedPeopleModal .panel-search-input");
+  check("directory has a working search bar", !!dirSearch);
+  if (dirSearch) {
+    dirSearch.value = "bob";
+    dirSearch.dispatchEvent(new window.Event("input"));
+    await sleep(150);
+    const visibleAfterSearch = [...document.querySelectorAll(".saved-person-card")].filter((c) => !c.hidden)
+      .map((c) => c.querySelector(".saved-person-name")?.textContent);
+    check("panel search filters to Bob", visibleAfterSearch.join(",") === "Bob", visibleAfterSearch.join(","));
+    dirSearch.value = "";
+    dirSearch.dispatchEvent(new window.Event("input"));
+    await sleep(150);
+    check("clearing panel search restores the list",
+      [...document.querySelectorAll(".saved-person-card")].filter((c) => !c.hidden).length >= 3);
+  }
+
   cardFor("Dan").querySelector("[data-directory-edit]").click();
   await sleep(250);
   check("edit modal shows name", $("personName").value === "Dan");
