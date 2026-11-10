@@ -222,10 +222,14 @@ try {
   check("each person appears once", new Set(historyNames).size === historyNames.length && historyNames.length === 2, historyNames.join(","));
   const aliceRow = historyRows.find((r) => r.querySelector("strong")?.textContent === "Alice");
   const bobRow = historyRows.find((r) => r.querySelector("strong")?.textContent === "Bob");
-  const chips = (row) => [...(row?.querySelectorAll(".history-mark") || [])].map((c) => c.textContent.trim());
-  check("dates use tick and cross symbols",
-    chips(aliceRow).some((c) => c.includes("✓")) && chips(bobRow).some((c) => c.includes("✗")),
-    chips(aliceRow).join(" / ") + " || " + chips(bobRow).join(" / "));
+  const datesCell = (row) => row?.querySelector("td:nth-child(2)")?.textContent.trim() || "";
+  const presentCell = (row) => row?.querySelector("td:nth-child(3)")?.textContent.trim() || "";
+  const absentCell = (row) => row?.querySelector("td:nth-child(4)")?.textContent.trim() || "";
+  check("dates are listed without marks", /^\d{4}-\d{2}-\d{2}( · \d{4}-\d{2}-\d{2})*$/.test(datesCell(aliceRow)), datesCell(aliceRow));
+  check("tick sits in the Present column", presentCell(aliceRow).startsWith("✓ 2") && presentCell(bobRow).startsWith("✓ 1"),
+    presentCell(aliceRow) + " / " + presentCell(bobRow));
+  check("cross sits in the Absent column", absentCell(aliceRow).startsWith("✗ 0") && absentCell(bobRow).startsWith("✗ 1"),
+    absentCell(aliceRow) + " / " + absentCell(bobRow));
   const pctOf = (row) => [...(row?.querySelectorAll("td") || [])].at(-1)?.textContent.trim();
   check("per-person percentage shown", pctOf(aliceRow) === "100%" && pctOf(bobRow) === "50%", pctOf(aliceRow) + " / " + pctOf(bobRow));
   const totalsText = $("attendanceHistoryTotals")?.textContent || "";
@@ -237,12 +241,15 @@ try {
   $("applyHistoryFilter") && $("applyHistoryFilter").click();
   await sleep(200);
   const dayHead = [...document.querySelectorAll(".history-table thead th")].map((th) => th.textContent.trim());
-  check("single day uses status columns", dayHead.join("|") === "Person|Status|%", dayHead.join("|"));
-  const dayStatuses = [...document.querySelectorAll("#attendanceHistoryRows .history-status")].map((x) => x.textContent.trim());
-  check("single day shows tick and cross statuses",
-    dayStatuses.includes("✓ Present") && dayStatuses.includes("✗ Absent"), dayStatuses.join(" / "));
-  check("single day totals show present/absent",
-    ($("attendanceHistoryTotals")?.textContent || "").includes("1 present · 1 absent"), $("attendanceHistoryTotals")?.textContent.trim());
+  check("single day uses present/absent columns", dayHead.join("|") === "Person|Present|Absent|%", dayHead.join("|"));
+  const dayCells = [...document.querySelectorAll("#attendanceHistoryRows tr")].map((row) =>
+    [...row.querySelectorAll("td")].slice(1, 3).map((td) => td.textContent.trim()));
+  check("single day ticks in Present and crosses in Absent",
+    dayCells.some(([p, a]) => p === "✓" && a === "—") && dayCells.some(([p, a]) => p === "—" && a === "✗"),
+    JSON.stringify(dayCells));
+  check("single day totals show tick and cross counts",
+    ($("attendanceHistoryTotals")?.textContent || "").includes("✓ 1") && ($("attendanceHistoryTotals")?.textContent || "").includes("✗ 1"),
+    $("attendanceHistoryTotals")?.textContent.trim());
   $("historyDateMode").value = "all";
   $("applyHistoryFilter") && $("applyHistoryFilter").click();
   await sleep(150);
