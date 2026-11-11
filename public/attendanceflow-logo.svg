@@ -1,15 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
   <title id="title">AttendanceFlow logo</title>
-  <desc id="desc">A rounded badge with a roll-call grid of dots and a bold check mark.</desc>
+  <desc id="desc">A rounded violet and cyan badge with a bold letter A.</desc>
   <defs>
     <linearGradient id="bg" x1="24" y1="16" x2="232" y2="240" gradientUnits="userSpaceOnUse">
       <stop stop-color="#8b5cf6"/>
       <stop offset=".55" stop-color="#6d28d9"/>
       <stop offset="1" stop-color="#0891b2"/>
-    </linearGradient>
-    <linearGradient id="tick" x1="70" y1="120" x2="196" y2="196" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#a5f3fc"/>
     </linearGradient>
     <linearGradient id="shine" x1="128" y1="16" x2="128" y2="130" gradientUnits="userSpaceOnUse">
       <stop stop-color="#fff" stop-opacity=".30"/>
@@ -19,16 +15,7 @@
   <rect x="16" y="16" width="224" height="224" rx="60" fill="url(#bg)"/>
   <rect x="16" y="16" width="224" height="224" rx="60" fill="url(#shine)"/>
   <rect x="17.5" y="17.5" width="221" height="221" rx="58.5" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="3"/>
-  <!-- roll-call grid: two rows of attendees, the last one still to be marked -->
-  <g fill="#fff">
-    <circle cx="76" cy="76" r="11" fill-opacity=".95"/>
-    <circle cx="128" cy="76" r="11" fill-opacity=".95"/>
-    <circle cx="180" cy="76" r="11" fill-opacity=".95"/>
-    <circle cx="76" cy="128" r="11" fill-opacity=".55"/>
-    <circle cx="128" cy="128" r="11" fill-opacity=".55"/>
-  </g>
-  <circle cx="180" cy="128" r="11" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="5"/>
-  <!-- the check that completes the roll call -->
-  <path d="M66 182 104 218 190 150" fill="none" stroke="#0b1020" stroke-opacity=".28" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 5)"/>
-  <path d="M66 182 104 218 190 150" fill="none" stroke="url(#tick)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- the letter A: soft shadow, then the white glyph -->
+  <path d="M66 198 109 70c4-12 10-18 19-18s15 6 19 18l43 128h-34l-9-30h-38l-9 30H66Zm51-62h22l-11-37-11 37Z" fill="#0b1020" fill-opacity=".28" transform="translate(0 6)"/>
+  <path d="M66 198 109 70c4-12 10-18 19-18s15 6 19 18l43 128h-34l-9-30h-38l-9 30H66Zm51-62h22l-11-37-11 37Z" fill="#ffffff"/>
 </svg>
