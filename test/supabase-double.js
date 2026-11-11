@@ -15,6 +15,7 @@ const db = {
   ],
   attendance_dates: [{ id: "d1", team_id: "team-1", date: new Date().toISOString().slice(0, 10), created_at: new Date().toISOString() }],
   attendance: [],
+  saved_reports: [],
   attendance_history: (() => {
     const day = (offset) => { const d = new Date(); d.setUTCDate(d.getUTCDate() + offset); return d.toISOString().slice(0, 10); };
     const at = (offset) => new Date(Date.now() + offset * 60000).toISOString();
@@ -112,7 +113,7 @@ function from(table) {
         return insertResult(null, { message: 'duplicate key value violates unique constraint "attendance_dates_team_id_date_key"' });
       }
       // mirror PostgreSQL column defaults the app relies on
-      const defaults = table === "people" ? { active: true } : {};
+      const defaults = table === "people" ? { active: true } : table === "saved_reports" ? { saved_at: new Date().toISOString() } : {};
       const row = { id: uuid(), created_at: new Date().toISOString(), ...defaults, ...p };
       db[table].push(row);
       if (table === "attendance") {
@@ -154,6 +155,8 @@ export const platformDeleteControl = {
 };
 
 export function createClient(url, key) {
+  // test-only: let the smoke test assert on what actually reached the database
+  if (typeof window !== "undefined") window.__afDb = db;
   return {
     auth: {
       getSession: () => Promise.resolve({ data: { session: authState.session }, error: null }),

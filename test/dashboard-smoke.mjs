@@ -199,19 +199,87 @@ try {
   await openDirectory();
   check("Bob restored", !cardFor("Bob")?.querySelector("[data-directory-restore]"));
 
-  // --- reports modal
+  // --- Save report / Saved reports (replaces the old Reports popup)
   $("activeFilter").value = "all";
   $("activeFilter").dispatchEvent(new window.Event("change"));
   await sleep(80);
+  check("header button renamed to Saved reports", $("reportsBtn").textContent.trim() === "Saved reports", $("reportsBtn").textContent);
+  check("Save report button sits in the attendance workspace", !!document.querySelector("#toolbar #saveReportBtn"));
+
   $("reportsBtn").click();
+  await sleep(250);
+  check("saved reports starts empty", ($("savedReportsBody")?.textContent || "").includes("No saved reports yet"), $("savedReportsBody")?.textContent);
+  $("closeSavedReports").click();
+  await sleep(80);
+
+  $("saveReportBtn").click();
+  await sleep(200);
+  check("save report dialog opens", !!$("confirmSaveReport"));
+  $("saveReportMode").value = "range";
+  $("saveReportMode").dispatchEvent(new window.Event("change"));
+  await sleep(50);
+  // a period with no dates at all must never be saveable
+  $("srStart").value = "2000-01-01";
+  $("srEnd").value = "2000-01-31";
+  $("srEnd").dispatchEvent(new window.Event("input"));
+  await sleep(80);
+  check("save dialog previews the period", /\d+ (person|people)/.test($("saveReportPreview")?.textContent || ""), $("saveReportPreview")?.textContent);
+  check("save with no attendance in the period is blocked", $("confirmSaveReport").disabled === true, $("saveReportPreview")?.textContent);
+  $("closeSaveReport").click();
+  await sleep(60);
+
+  // mark Alice present today so there is something to save
+  const markCell = document.querySelector("[data-person-cell='p1'][data-date='" + TODAY + "']");
+  markCell?.click();
+  await sleep(250);
+  $("saveReportBtn").click();
+  await sleep(200);
+  $("saveReportMode").value = "range";
+  $("saveReportMode").dispatchEvent(new window.Event("change"));
+  await sleep(50);
+  $("srStart").value = TODAY;
+  $("srEnd").value = TODAY;
+  $("srEnd").dispatchEvent(new window.Event("input"));
+  await sleep(80);
+  check("save enabled once attendance exists", $("confirmSaveReport").disabled === false, $("saveReportPreview")?.textContent);
+  $("confirmSaveReport").click();
+  await sleep(400);
+  check("saving closes the dialog", !$("confirmSaveReport"));
+
+  $("reportsBtn").click();
+  await sleep(300);
+  const cards = [...document.querySelectorAll(".saved-report-card")];
+  check("saved report is listed with organization and period",
+    cards.length === 1 && cards[0].textContent.includes("Test Team") && cards[0].textContent.includes(TODAY), cards.map((c) => c.textContent).join("|"));
+  check("saved report offers PDF, CSV, JSON and Delete",
+    ["pdf", "csv", "json"].every((f) => cards[0]?.querySelector('[data-dl="' + f + '"]')) && !!cards[0]?.querySelector("[data-del]"));
+  check("saving did not delete attendance data", document.querySelectorAll("[data-person-cell]").length > 0);
+
+  // downloads work while the report exists
+  let downloaded = "";
+  const origCreate = window.URL.createObjectURL;
+  window.URL.createObjectURL = (blob) => { downloaded = blob.type; return "blob:test"; };
+  window.URL.revokeObjectURL = () => {};
+  cards[0].querySelector('[data-dl="csv"]').click();
+  await sleep(80);
+  check("saved report downloads as CSV", downloaded.startsWith("text/csv"), downloaded);
+  window.URL.createObjectURL = origCreate;
+
+  // the report stays until an admin deletes it
+  $("closeSavedReports").click();
+  await sleep(60);
+  $("reportsBtn").click();
+  await sleep(250);
+  check("saved report is still there next time", document.querySelectorAll(".saved-report-card").length === 1);
+  document.querySelector(".saved-report-card [data-del]").click();
   await sleep(150);
-  check("reports modal renders summary", $("reportBody")?.textContent.includes("Person"));
-  const summary = $("reportBody").textContent;
-  check("report totals computed", /Rate/.test(summary));
+  $("confirmYes").click();
+  await sleep(400);
+  check("admin delete removes the saved report", ($("savedReportsBody")?.textContent || "").includes("No saved reports yet"), $("savedReportsBody")?.textContent);
+  $("closeSavedReports").click();
+  await sleep(60);
 
   // --- attendance report: one row per person, dates with tick/cross, per-person %
-  $("closeReports") && $("closeReports").click();
-  await sleep(80);
   $("attendanceHistoryBtn").click();
   await sleep(300);
   check("report heading shows the organization name",
@@ -309,15 +377,40 @@ try {
   check("invite modal shows code", ($("inviteCodeText")?.textContent || "") === "abc123");
   $("closeInvite").click();
 
-  // --- delete date cleans attendance marks (handler + DB double)
+  // --- remove-date button: visible, cancellable, and it really removes the date
   $("newDate").click();
   $("closeDate").click();
   const delBtn = document.querySelector(`[data-date-remove="${TODAY}"]`);
+  check("remove-date button is visible and labelled",
+    !!delBtn && /Remove/.test(delBtn.textContent) && /Remove date/.test(delBtn.getAttribute("aria-label") || ""),
+    delBtn?.outerHTML.slice(0, 120));
+
+  // cancelling keeps the date and its marks
+  const marksBefore = document.querySelectorAll("[data-person-cell].present, [data-person-cell].absent").length;
   delBtn.click();
   await sleep(100);
+  $("confirmNo").click();
+  await sleep(200);
+  check("cancelling remove keeps the date", !!document.querySelector(`[data-date-remove="${TODAY}"]`));
+  check("cancelling remove keeps the marks",
+    document.querySelectorAll("[data-person-cell].present, [data-person-cell].absent").length === marksBefore);
+
+  // mark someone so we can prove the marks go with the date
+  const cellToday = document.querySelector(`[data-person-cell='p2'][data-date='${TODAY}']`);
+  if (cellToday && !cellToday.classList.contains("present")) { cellToday.click(); await sleep(250); }
+
+  document.querySelector(`[data-date-remove="${TODAY}"]`).click();
+  await sleep(100);
   $("confirmYes").click();
-  await sleep(300);
+  await sleep(400);
   check("date removed from register", !document.querySelector(`[data-date-remove="${TODAY}"]`));
+  check("removed date's marks are gone",
+    document.querySelectorAll(`[data-person-cell][data-date='${TODAY}']`).length === 0);
+  check("database double is reachable for assertions", Array.isArray(window.__afDb?.attendance));
+  check("removed date's attendance rows are deleted from the database",
+    !window.__afDb.attendance.some((r) => r.date === TODAY), JSON.stringify(window.__afDb.attendance.filter((r) => r.date === TODAY)));
+  check("removed date is gone from the dates table",
+    !window.__afDb.attendance_dates.some((r) => r.date === TODAY));
   check("marks for deleted date gone from stats", $("presentCount").textContent === "0", $("presentCount")?.textContent);
 
   // --- sign out returns to landing

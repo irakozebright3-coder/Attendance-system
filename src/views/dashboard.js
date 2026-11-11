@@ -31,7 +31,7 @@ export function dashboard(ctx) {
             '<span id="roleLabel" class="role-badge"></span>' +
           '<label class="theme-picker"><span class="theme-picker-icon" aria-hidden="true">◐</span><span class="theme-picker-label">Appearance</span><select data-theme-select aria-label="Appearance mode"><option value="system">System default</option><option value="white">White mode</option><option value="black">Black mode</option></select></label>' +
             '<button id="settingsBtn" class="liquid dashboard-action">Settings</button>' +
-            '<button id="reportsBtn" class="liquid dashboard-action">Reports</button>' +
+            '<button id="reportsBtn" class="liquid dashboard-action">Saved reports</button>' +
             (manager
               ? '<button id="inviteBtn" class="liquid dashboard-action">Invite</button>' +
                 '<button id="auditBtn" class="liquid dashboard-action">Audit log</button>'
@@ -84,7 +84,7 @@ export function dashboard(ctx) {
               '<select id="statusFilter" class="toolbar-select" aria-label="Filter by latest-date status">' +
                 '<option value="any" selected>Any status</option><option value="present">Present (latest date)</option><option value="absent">Absent (latest date)</option><option value="unmarked">Unmarked (latest date)</option>' +
               '</select>' +
-
+              (manager ? '<button id="saveReportBtn" type="button" class="toolbar-action toolbar-save-report">Save report</button>' : '') +
             '</div>' +
           '</div>' +
           '<div class="register-stage"><div class="register-glow"></div><div class="overflow-x-auto register-scroll"><table class="w-full text-sm"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>' +
@@ -146,6 +146,8 @@ export function dashboard(ctx) {
   document.getElementById("reload").onclick = () => ctx.handlers.refresh();
   document.getElementById("settingsBtn").onclick = () => ctx.handlers.openSettings();
   document.getElementById("reportsBtn").onclick = () => ctx.handlers.openReports();
+  const saveReportBtn = document.getElementById("saveReportBtn");
+  if (saveReportBtn) saveReportBtn.onclick = () => ctx.handlers.openSaveReport();
   if (S.isPlatformAdmin) {
     document.getElementById("platformAdminBtn").onclick = () => ctx.handlers.openPlatformAdmin();
   }
@@ -325,7 +327,7 @@ export function renderRegister(ctx) {
     "<tr><th scope='col' class='sticky left-0 bg-slate-950/95 text-left px-5 py-4 min-w-[260px] sticky-head'>Person</th>" +
     dates.map((d) =>
       "<th scope='col' class='px-3 py-4 min-w-[110px] align-top'>" + esc(dateLabel(d.date, S.teamSettings)) +
-      (manager ? "<br><button data-date-remove='" + esc(d.date) + "' class='text-[10px] text-slate-500 hover:text-red-300 mt-1'>remove</button>" : "") +
+      (manager ? "<br><button type='button' data-date-remove='" + esc(d.date) + "' class='date-remove-btn' aria-label='Remove date " + esc(d.date) + " and its marks' title='Remove this date and its marks'>× Remove</button>" : "") +
       "</th>"
     ).join("") + "</tr>";
 

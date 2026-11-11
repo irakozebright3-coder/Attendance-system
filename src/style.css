@@ -1992,3 +1992,21 @@ body:has(#authModal:not(.hidden)){
 }
 .platform-admin-toggle:hover{background:#333!important;color:#fff!important}
 .platform-admin-toggle:disabled{opacity:.55;cursor:wait}
+
+/* ---- Save report / saved reports / date removal ---- */
+.toolbar-save-report{background:linear-gradient(135deg,#7c3aed,#6366f1)!important;color:#fff!important;border-color:transparent!important;font-weight:800}
+.date-remove-btn{margin-top:6px;border:1px solid rgba(244,63,94,.28);background:rgba(244,63,94,.08);color:#fda4af;border-radius:999px;padding:3px 9px;font-size:10px;font-weight:800;cursor:pointer;line-height:1.3}
+.date-remove-btn:hover,.date-remove-btn:focus-visible{background:rgba(244,63,94,.22);color:#fff;outline:none}
+.saved-reports-list{display:grid;gap:10px;max-height:60vh;overflow:auto}
+.saved-reports-empty{padding:26px 12px;text-align:center;color:#94a3b8;border:1px dashed rgba(148,163,184,.25);border-radius:14px}
+.saved-reports-empty p{margin:4px 0}
+.saved-report-card{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border:1px solid rgba(148,163,184,.16);border-radius:14px;background:rgba(255,255,255,.03)}
+.saved-report-info{display:grid;gap:3px;min-width:0}
+.saved-report-info strong{overflow-wrap:anywhere}
+.saved-report-meta{font-size:11px;color:#94a3b8}
+.saved-report-actions{display:flex;flex-wrap:wrap;gap:6px}
+.saved-report-btn{border:1px solid rgba(167,139,250,.28);background:rgba(139,92,246,.12);color:#ddd6fe;border-radius:9px;padding:6px 11px;font-size:11px;font-weight:800;cursor:pointer}
+.saved-report-btn:hover{background:rgba(139,92,246,.26)}
+.saved-report-delete{border-color:rgba(244,63,94,.3);background:rgba(244,63,94,.1);color:#fda4af}
+.saved-report-delete:hover{background:rgba(244,63,94,.25)}
+.saved-report-btn:disabled{opacity:.5;cursor:progress}

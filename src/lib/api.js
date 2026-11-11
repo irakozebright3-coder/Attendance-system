@@ -364,6 +364,41 @@ export async function loadAttendanceHistory(teamId) {
   return allRows;
 }
 
+// ---------- saved reports ----------
+
+export async function loadSavedReports(teamId) {
+  const { data, error } = await db
+    .from("saved_reports")
+    .select("id,team_id,organization,period_label,period_start,period_end,summary,saved_by,saved_at")
+    .eq("team_id", teamId)
+    .order("saved_at", { ascending: false });
+  if (error) fail(error);
+  return data || [];
+}
+
+export async function saveReport(teamId, userId, report) {
+  const { data, error } = await db
+    .from("saved_reports")
+    .insert({
+      team_id: teamId,
+      organization: report.organization || "",
+      period_label: report.periodLabel,
+      period_start: report.periodStart || null,
+      period_end: report.periodEnd || null,
+      summary: report.summary,
+      saved_by: userId
+    })
+    .select()
+    .single();
+  if (error) fail(error);
+  return data;
+}
+
+export async function deleteSavedReport(reportId) {
+  const { error } = await db.from("saved_reports").delete().eq("id", reportId);
+  if (error) fail(error);
+}
+
 /** Read groups and their people links for the current team. */
 export async function loadTeamGroups(teamId) {
   const [groupsRes, membersRes] = await Promise.all([

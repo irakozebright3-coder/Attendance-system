@@ -2,6 +2,7 @@ import "./style.css";
 import "./design-system.css";
 import "./theme.css";
 import { db, hasBackend } from "./lib/supabase.js";
+import { saveReportModal, savedReportsModal } from "./views/saved-reports.js";
 import * as api from "./lib/api.js";
 import { friendlyError, debounce } from "./lib/util.js";
 import { observePanelSearch } from "./lib/panel-search.js";
@@ -12,7 +13,7 @@ import {
   dashboard, renderRegister, updateCell, cellPending, setBackendStatus
 } from "./views/dashboard.js";
 import {
-  personModal, dateModal, confirmDialog, showInviteDialog, reportsModal, auditModal, teamSettingsModal, closeModal
+  personModal, dateModal, confirmDialog, showInviteDialog, auditModal, teamSettingsModal, closeModal
 } from "./views/modals.js";
 
 const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -177,7 +178,18 @@ const ctx = {
     addPerson: () => { if (canManage()) personModal(ctx, null); else toast("Only owners and admins can add people.", "error"); },
     openPerson: (id) => personModal(ctx, S.people.find((p) => p.id === id) || null),
     showInvite: () => showInviteDialog(S.team),
-    openReports: () => reportsModal(ctx),
+    openReports: () => savedReportsModal(ctx),
+    openSaveReport: () => { if (canManage()) saveReportModal(ctx); else toast("Only owners and admins can save reports.", "error"); },
+    loadSavedReports: () => api.loadSavedReports(S.team.id),
+    saveReport: async (report) => {
+      if (!canManage()) { toast("Only owners and admins can save reports.", "error"); return null; }
+      return api.saveReport(S.team.id, S.currentUserId, report);
+    },
+    deleteSavedReport: async (id) => {
+      if (!canManage()) { toast("Only owners and admins can delete saved reports.", "error"); return false; }
+      await api.deleteSavedReport(id);
+      return true;
+    },
     openAudit: () => auditModal(ctx),
     openSettings: () => teamSettingsModal(ctx),
     openPlatformAdmin: () => {
