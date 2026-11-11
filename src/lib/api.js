@@ -416,6 +416,16 @@ export async function addDate(teamId, date) {
 
 export async function deleteDate(teamId, date) {
   if (!isValidDate(date)) throw new Error("Enter a valid date.");
+
+  // Preferred: one server-side call that removes the date, its marks and its
+  // history rows together, so a deleted date cannot linger in the report.
+  const rpc = await db.rpc("delete_attendance_date", { p_team_id: teamId, p_date: date });
+  if (!rpc.error) return;
+
+  const missingRpc = rpc.error.code === "PGRST202"
+    || /could not find the function|delete_attendance_date.*does not exist/i.test(rpc.error.message || "");
+  if (!missingRpc) fail(rpc.error);
+
   const { error } = await db.from("attendance_dates").delete().eq("team_id", teamId).eq("date", date);
   if (error) fail(error);
 }

@@ -199,6 +199,12 @@ export function createClient(url, key) {
         db.team_settings.push(row);
         return Promise.resolve({ data: row, error: null });
       }
+      if (name === "delete_attendance_date") {
+        db.attendance = (db.attendance || []).filter((r) => !(r.team_id === args.p_team_id && String(r.date) === String(args.p_date)));
+        db.attendance_dates = (db.attendance_dates || []).filter((r) => !(r.team_id === args.p_team_id && String(r.date) === String(args.p_date)));
+        db.attendance_history = (db.attendance_history || []).filter((r) => !(r.team_id === args.p_team_id && String(r.attendance_date) === String(args.p_date)));
+        return Promise.resolve({ data: { ok: true, date: args.p_date }, error: null });
+      }
       if (name === "platform_delete_user") {
         if (!platformDeleteControl.rpcAvailable) {
           return Promise.resolve({ data: null, error: { code: "PGRST202", message: "Could not find the function public.platform_delete_user(p_user_id) in the schema cache" } });

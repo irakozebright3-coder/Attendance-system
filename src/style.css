@@ -1605,6 +1605,13 @@ body:has(#authModal:not(.hidden)){
 .history-mark-present{color:#bbf7d0;border-color:rgba(16,185,129,.25);background:rgba(16,185,129,.10)}
 .history-mark-absent{color:#fecdd3;border-color:rgba(244,63,94,.22);background:rgba(244,63,94,.10)}
 .history-dash{color:#94a3b8}
+.history-date-admin{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:0 0 14px}
+.history-date-admin-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;font-weight:800}
+.history-date-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(148,163,184,.2);background:rgba(148,163,184,.07);border-radius:999px;padding:4px 9px;font-size:10px;font-weight:750;color:#e2e8f0}
+.history-date-remove{border:0;background:rgba(244,63,94,.16);color:#fecdd3;width:17px;height:17px;border-radius:999px;font-weight:900;line-height:1;cursor:pointer;font-size:12px}
+.history-date-remove:disabled{opacity:.5;cursor:progress}
+.history-unmarked-row td{opacity:.85}
+.history-unmarked-tag{margin-left:6px;padding:2px 6px;border-radius:999px;border:1px solid rgba(148,163,184,.25);background:rgba(148,163,184,.1);font-size:9px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8}
 .history-totals-row td{border-top:2px solid rgba(148,163,184,.28)!important;background:rgba(148,163,184,.06);font-weight:800}
 .history-status{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900}
 .history-present{color:#6ee7b7;background:rgba(16,185,129,.13)}

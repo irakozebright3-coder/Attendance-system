@@ -17,6 +17,7 @@ const iso = (offsetDays) => {
   return d.toISOString().slice(0, 10);
 };
 const TODAY = iso(0);
+const YESTERDAY = iso(-1);
 const TOMORROW = iso(1);
 const bundle = readFileSync("/tmp/app.db.test.js", "utf8");
 
@@ -219,17 +220,28 @@ try {
     !historyHead.some((h) => /Event|Recorded|Marked/i.test(h)), historyHead.join("|"));
   const historyRows = [...document.querySelectorAll("#attendanceHistoryRows tr")];
   const historyNames = historyRows.map((r) => r.querySelector("strong")?.textContent);
-  check("each person appears once", new Set(historyNames).size === historyNames.length && historyNames.length === 2, historyNames.join(","));
+  check("each person appears once", new Set(historyNames).size === historyNames.length && historyNames.length >= 2, historyNames.join(","));
+  const unmarkedRow = historyRows.find((r) => r.querySelector(".history-unmarked-tag"));
+  check("unmarked people are listed", Boolean(unmarkedRow), historyNames.join(","));
+  check("unmarked people show dashes, not fake marks",
+    !!unmarkedRow && [...unmarkedRow.querySelectorAll("td")].slice(2, 4).every((td) => td.textContent.trim() === "—"),
+    unmarkedRow?.textContent.replace(/\s+/g, " ").slice(0, 80));
   const aliceRow = historyRows.find((r) => r.querySelector("strong")?.textContent === "Alice");
   const bobRow = historyRows.find((r) => r.querySelector("strong")?.textContent === "Bob");
   const datesCell = (row) => row?.querySelector("td:nth-child(2)")?.textContent.trim() || "";
   const presentCell = (row) => row?.querySelector("td:nth-child(3)")?.textContent.trim() || "";
   const absentCell = (row) => row?.querySelector("td:nth-child(4)")?.textContent.trim() || "";
   check("dates are listed without marks", /^\d{4}-\d{2}-\d{2}( · \d{4}-\d{2}-\d{2})*$/.test(datesCell(aliceRow)), datesCell(aliceRow));
-  check("tick sits in the Present column", presentCell(aliceRow).startsWith("✓ 2") && presentCell(bobRow).startsWith("✓ 1"),
+  check("tick sits in the Present column without counts", presentCell(aliceRow) === "✓" && presentCell(bobRow) === "✓",
     presentCell(aliceRow) + " / " + presentCell(bobRow));
-  check("cross sits in the Absent column", absentCell(aliceRow).startsWith("✗ 0") && absentCell(bobRow).startsWith("✗ 1"),
+  check("cross sits in the Absent column without counts", absentCell(aliceRow) === "—" && absentCell(bobRow) === "✗",
     absentCell(aliceRow) + " / " + absentCell(bobRow));
+  const markCells = [...document.querySelectorAll("#attendanceHistoryRows tr")]
+    .flatMap((row) => [...row.querySelectorAll("td")].slice(2, 4).map((td) => td.textContent.trim()))
+    .filter((text) => text !== "—" && text !== "");
+  check("mark cells hold only ticks/crosses, no counts",
+    markCells.every((text) => text === "✓" || text === "✗"),
+    markCells.join(","));
   const pctOf = (row) => [...(row?.querySelectorAll("td") || [])].at(-1)?.textContent.trim();
   check("per-person percentage shown", pctOf(aliceRow) === "100%" && pctOf(bobRow) === "50%", pctOf(aliceRow) + " / " + pctOf(bobRow));
   const totalsText = $("attendanceHistoryTotals")?.textContent || "";
@@ -247,9 +259,32 @@ try {
   check("single day ticks in Present and crosses in Absent",
     dayCells.some(([p, a]) => p === "✓" && a === "—") && dayCells.some(([p, a]) => p === "—" && a === "✗"),
     JSON.stringify(dayCells));
-  check("single day totals show tick and cross counts",
-    ($("attendanceHistoryTotals")?.textContent || "").includes("✓ 1") && ($("attendanceHistoryTotals")?.textContent || "").includes("✗ 1"),
+  check("single day totals keep marks without counts",
+    ($("attendanceHistoryTotals")?.textContent || "").includes("1 present · 1 absent") &&
+      !/✓\s*\d/.test($("attendanceHistoryTotals")?.textContent || ""),
     $("attendanceHistoryTotals")?.textContent.trim());
+
+  // --- delete a date straight from the history report
+  $("historyDateMode").value = "range";
+  $("historyDateMode").dispatchEvent(new window.Event("change"));
+  $("historyRangeStart").value = YESTERDAY;
+  $("historyRangeEnd").value = TODAY;
+  $("applyHistoryFilter") && $("applyHistoryFilter").click();
+  await sleep(200);
+  const removeChip = document.querySelector('[data-history-date-remove="' + YESTERDAY + '"]');
+  check("history lists dates with a delete control", Boolean(removeChip));
+  removeChip?.click();
+  await sleep(150);
+  $("confirmYes")?.click();
+  await sleep(600);
+  check("deleted date disappears from history",
+    !document.querySelector('[data-history-date-remove="' + YESTERDAY + '"]') &&
+      !(document.getElementById("attendanceHistoryRows").textContent || "").includes(YESTERDAY),
+    [...document.querySelectorAll("[data-history-date-remove]")].map((b) => b.dataset.historyDateRemove).join(","));
+  $("historyDateMode").value = "all";
+  $("historyDateMode").dispatchEvent(new window.Event("change"));
+  $("applyHistoryFilter") && $("applyHistoryFilter").click();
+  await sleep(150);
   $("historyDateMode").value = "all";
   $("applyHistoryFilter") && $("applyHistoryFilter").click();
   await sleep(150);
