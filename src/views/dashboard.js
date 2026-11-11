@@ -478,6 +478,11 @@ function filterAttendanceHistory() {
   });
 }
 
+function reportOrganizationName(ctx) {
+  const name = String(ctx?.S?.team?.name || "").trim();
+  return name || "";
+}
+
 function formatPercent(value) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return "—";
   const rounded = Math.round(Number(value) * 10) / 10;
@@ -571,6 +576,8 @@ function renderAttendanceHistory(ctx) {
   if (!body || !summary) return;
 
   const report = withUnmarkedPeople(historySummary(), ctx);
+  const titleEl = document.getElementById("attendanceHistoryTitle");
+  if (titleEl) titleEl.textContent = reportOrganizationName(ctx) || "Attendance Report";
   const filterLabel = historyDateFilterLabel().replaceAll("_", " ");
   const singleDay = historyIsSingleDay();
   const unmarkedNote = report.unmarked.length
@@ -767,7 +774,8 @@ function exportAttendanceHistory(ctx, format) {
     ctx.toast("No attendance history records match the selected dates.", "error");
     return;
   }
-  const filename = "attendance-history-" + historyDateFilterLabel().replaceAll(/[^a-zA-Z0-9_-]/g, "_");
+  const orgSlug = reportOrganizationName(ctx).replaceAll(/[^a-zA-Z0-9]+/g, "-").replaceAll(/^-+|-+$/g, "").slice(0, 40);
+  const filename = (orgSlug ? orgSlug + "-" : "") + "attendance-" + historyDateFilterLabel().replaceAll(/[^a-zA-Z0-9_-]/g, "_");
   try {
     if (format === "csv") {
       const columns = historyIsSingleDay()
@@ -786,6 +794,7 @@ function exportAttendanceHistory(ctx, format) {
       downloadHistoryFile(filename + ".tsv", "\uFEFF" + tsv, "text/tab-separated-values;charset=utf-8");
     } else if (format === "json") {
       downloadHistoryFile(filename + ".json", JSON.stringify({
+        organization: reportOrganizationName(ctx),
         exported_at: new Date().toISOString(),
         date_filter: historyDateFilterLabel(),
         person_count: rows.length,
@@ -823,7 +832,8 @@ function printAttendanceHistory(ctx) {
 
   const report = withUnmarkedPeople(historySummary(), ctx);
   const singleDay = historyIsSingleDay();
-  const title = "AttendanceFlow — Attendance Report";
+  const orgName = reportOrganizationName(ctx);
+  const title = orgName || "Attendance Report";
   const filterLabel = historyDateFilterLabel().replaceAll("_", " ");
   const tableHead = singleDay
     ? "<th>Person</th><th>Present</th><th>Absent</th><th>%</th>"

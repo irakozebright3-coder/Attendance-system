@@ -214,6 +214,9 @@ try {
   await sleep(80);
   $("attendanceHistoryBtn").click();
   await sleep(300);
+  check("report heading shows the organization name",
+    document.getElementById("attendanceHistoryTitle")?.textContent === "Test Team",
+    document.getElementById("attendanceHistoryTitle")?.textContent);
   const historyHead = [...document.querySelectorAll(".history-table thead th")].map((th) => th.textContent.trim());
   check("history columns trimmed to the report set", historyHead.join("|") === "Person|Attendance dates|Present|Absent|%", historyHead.join("|"));
   check("history drops event/recorded/marked columns",
