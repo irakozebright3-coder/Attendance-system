@@ -1147,6 +1147,15 @@ create table if not exists public.attendance_history (
   recorded_at timestamptz not null default now()
 );
 
+-- Older installs created these columns NOT NULL with a present/absent check.
+-- A 'cleared' history row (an unmarked cell or a deleted date) has no status,
+-- so those installs failed to remove dates that had marks. Reconcile them.
+alter table public.attendance_history alter column status drop not null;
+alter table public.attendance_history alter column person_name drop not null;
+alter table public.attendance_history drop constraint if exists attendance_history_status_check;
+alter table public.attendance_history add constraint attendance_history_status_check
+  check (status is null or status in ('present','absent'));
+
 create index if not exists attendance_history_team_date_idx
   on public.attendance_history(team_id, attendance_date);
 
