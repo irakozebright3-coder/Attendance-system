@@ -185,11 +185,11 @@ function printSavedReport(ctx, saved) {
 
   win.document.open();
   win.document.write("<!doctype html><html><head><meta charset=\"utf-8\"><title>" + esc(title + " " + saved.period_label) + "</title><style>" +
-    "@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font:12px/1.45 Arial,sans-serif;color:#172033;margin:0}" +
-    "h1{font-size:22px;margin:0 0 6px}p{margin:0 0 14px;color:#4b5563}table{width:100%;border-collapse:collapse}" +
-    "th,td{border:1px solid #d1d5db;padding:7px;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{background:#eef2f7}" +
+    "@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font:12px/1.45 Arial,sans-serif;color:#252525;margin:0}" +
+    "h1{font-size:22px;margin:0 0 6px}p{margin:0 0 14px;color:#575757}table{width:100%;border-collapse:collapse}" +
+    "th,td{border:1px solid #d6d6d6;padding:7px;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{background:#f2f2f2}" +
     "td.num{text-align:center;white-space:nowrap;width:70px}td.dates{font-size:11px;line-height:1.7}tr{break-inside:avoid}thead{display:table-header-group}" +
-    "tr.totals td{background:#f3f4f6;font-weight:700;border-top:2px solid #9ca3af}.tag{font-size:9px;text-transform:uppercase;color:#6b7280;border:1px solid #d1d5db;border-radius:999px;padding:1px 5px}" +
+    "tr.totals td{background:#f4f4f4;font-weight:700;border-top:2px solid #a6a6a6}.tag{font-size:9px;text-transform:uppercase;color:#767676;border:1px solid #d6d6d6;border-radius:999px;padding:1px 5px}" +
     "@media screen{body{padding:24px;max-width:1400px;margin:auto}}</style></head><body><h1>" + esc(title) + "</h1><p>Period: " +
     esc(saved.period_label) + " · Saved " + esc(new Date(saved.saved_at).toLocaleDateString()) + "</p><table><thead><tr>" +
     HEAD.map((h) => "<th>" + esc(h) + "</th>").join("") + "</tr></thead><tbody>" + body + "</tbody></table></body></html>");

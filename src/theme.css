@@ -5,8 +5,8 @@ html[data-theme="black"] {
   color-scheme: dark;
   --af-void: #050505;
   --af-card: #111111;
-  --af-purple: #eeeeee;
-  --af-blue: #cfcfcf;
+  --af-accent: #eeeeee;
+  --af-accent-2: #cfcfcf;
   --af-mint: #e5e5e5;
   --af-white: #ffffff;
   --af-text: #f5f5f5;
@@ -24,8 +24,8 @@ html[data-theme="white"] {
   color-scheme: light;
   --af-void: #ffffff;
   --af-card: #ffffff;
-  --af-purple: #222222;
-  --af-blue: #444444;
+  --af-accent: #222222;
+  --af-accent-2: #444444;
   --af-mint: #333333;
   --af-white: #111111;
   --af-text: #171717;
@@ -468,33 +468,32 @@ html[data-theme="white"] .history-table th {
 }
 html[data-theme="black"] tbody tr:hover { background: #191919 !important; }
 html[data-theme="white"] tbody tr:hover { background: #f2f2f2 !important; }
+/* Present = solid orange with black text. Absent = hollow, outlined.
+   Two states you can tell apart at a glance, with no green or red needed. */
 html[data-theme="black"] .present,
 html[data-theme="black"] .history-present,
-html[data-theme="black"] .att.present {
-  background: #303030 !important;
-  color: #ffffff !important;
-  border-color: #747474 !important;
+html[data-theme="black"] .att.present,
+html[data-theme="white"] .present,
+html[data-theme="white"] .history-present,
+html[data-theme="white"] .att.present {
+  background: #f97316 !important;
+  color: #0a0a0a !important;
+  border-color: #f97316 !important;
+  font-weight: 900 !important;
 }
 html[data-theme="black"] .absent,
 html[data-theme="black"] .history-absent,
 html[data-theme="black"] .att.absent {
-  background: #161616 !important;
-  color: #d0d0d0 !important;
-  border-color: #555555 !important;
-}
-html[data-theme="white"] .present,
-html[data-theme="white"] .history-present,
-html[data-theme="white"] .att.present {
-  background: #e7e7e7 !important;
-  color: #111111 !important;
-  border-color: #888888 !important;
+  background: transparent !important;
+  color: #bdbdbd !important;
+  border: 1.5px dashed #6b6b6b !important;
 }
 html[data-theme="white"] .absent,
 html[data-theme="white"] .history-absent,
 html[data-theme="white"] .att.absent {
-  background: #f8f8f8 !important;
-  color: #333333 !important;
-  border-color: #b6b6b6 !important;
+  background: transparent !important;
+  color: #404040 !important;
+  border: 1.5px dashed #9a9a9a !important;
 }
 
 /* History exports, group cards, footer, setup, auth, and admin dialogs. */
@@ -842,23 +841,23 @@ html[data-theme="white"] footer a:hover { color: #111111 !important; }
 
 /* ============================================================
    Yellow accent layer — the AttendanceFlow signature is now
-   White × Black × Yellow. Layout, text, and surfaces stay
-   strictly white/black; yellow is the single accent color for
+   White × Black × Orange. Layout, text, and surfaces stay
+   strictly white/black; orange is the single accent color for
    primary actions, highlights, and focus feedback.
    ============================================================ */
 html[data-theme="black"] {
-  --af-yellow: #ffd60a;        /* fills, buttons */
-  --af-yellow-hover: #e6c106;
-  --af-yellow-ink: #0a0a0a;    /* text on yellow fills */
-  --af-yellow-text: #facc15;   /* yellow text on dark surfaces */
-  --af-yellow-ring: rgba(255,214,10,.28);
+  --af-yellow: #f97316;        /* orange fills, buttons (name kept for the 50+ rules using it) */
+  --af-yellow-hover: #fb923c;
+  --af-yellow-ink: #0a0a0a;    /* black text on orange: 7.1:1 */
+  --af-yellow-text: #fb923c;   /* orange text on dark surfaces: 8.8:1 */
+  --af-yellow-ring: rgba(249,115,22,.34);
 }
 html[data-theme="white"] {
-  --af-yellow: #ffd60a;
-  --af-yellow-hover: #ebc400;
-  --af-yellow-ink: #111111;
-  --af-yellow-text: #ca8a04;   /* readable yellow on white surfaces */
-  --af-yellow-ring: rgba(202,138,4,.30);
+  --af-yellow: #f97316;
+  --af-yellow-hover: #f97316;
+  --af-yellow-ink: #0a0a0a;
+  --af-yellow-text: #c2410c;   /* readable orange on white surfaces: 5.2:1 */
+  --af-yellow-ring: rgba(194,65,12,.34);
 }
 
 /* Primary CTAs are the yellow moment on every screen. */
@@ -1047,3 +1046,38 @@ html[data-theme="white"] .platform-admin-toggle{
 html[data-theme="white"] .platform-admin-toggle:hover{
   background:#e6e6e6!important;color:#111!important;border-color:#888!important;
 }
+
+
+/* ============================================================
+   Readability guarantee: black text on every orange fill.
+   White on orange is only 2.8:1; black on #f97316 is 7.1:1.
+   Applies to all three appearance modes, so no button is ever
+   hard to read whatever theme the user picks.
+   ============================================================ */
+.primary-cta,
+.liquid.primary-cta,
+.bg-violet-600,
+.bg-cyan-600,
+.history-export-button.history-export-pdf,
+.toolbar-save-report,
+.tiny-avatar,
+.mock-avatar {
+  color: #0a0a0a !important;
+}
+.primary-cta,
+.liquid.primary-cta {
+  background: #f97316 !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 10px 30px rgba(249,115,22,.28) !important;
+}
+.primary-cta:hover,
+.liquid.primary-cta:hover,
+.primary-cta:focus-visible {
+  background: #fb923c !important;
+  border-color: #fb923c !important;
+}
+/* Tailwind orange fills (was violet): solid, with a darker hover */
+.bg-violet-600 { background-color: #f97316 !important; }
+.bg-violet-600:hover { background-color: #fb923c !important; }
+/* Destructive buttons stay red with white text */
+.bg-red-600 { color: #ffffff !important; }

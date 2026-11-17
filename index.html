@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta name="theme-color" content="#070b14">
+<meta name="theme-color" content="#0a0a0a">
 <meta name="description" content="AttendanceFlow — a real-time, database-backed attendance workspace for teams.">
 <meta name="application-name" content="AttendanceFlow">
 <meta property="og:title" content="AttendanceFlow — Team Attendance">
@@ -11,7 +11,19 @@
 <link rel="icon" type="image/svg+xml" href="/attendanceflow-logo.svg">
 <title>AttendanceFlow — Real-Time Team Attendance</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={theme:{extend:{boxShadow:{glow:"0 0 40px rgba(99,102,241,.18)"}}}}</script>
+<script>tailwind.config={theme:{extend:{
+  boxShadow:{glow:"0 0 40px rgba(249,115,22,.18)"},
+  colors:{
+    /* Black, white and orange only: the old violet/indigo/cyan/blue scales become orange,
+       and the blue-tinted slate greys become true neutral greys. */
+    violet:{50:"#fff7ed",100:"#ffedd5",200:"#fed7aa",300:"#fdba74",400:"#fb923c",500:"#f97316",600:"#f97316",700:"#ea580c",800:"#c2410c",900:"#9a3412",950:"#431407"},
+    indigo:{300:"#fdba74",400:"#fb923c",500:"#f97316",600:"#f97316",700:"#ea580c"},
+    cyan:{300:"#fdba74",400:"#fb923c",500:"#f97316",600:"#f97316",700:"#ea580c"},
+    sky:{300:"#fdba74",400:"#fb923c",500:"#f97316",600:"#f97316"},
+    blue:{300:"#fdba74",400:"#fb923c",500:"#f97316",600:"#f97316"},
+    slate:{50:"#fafafa",100:"#f5f5f5",200:"#e5e5e5",300:"#d4d4d4",400:"#a3a3a3",500:"#8a8a8a",600:"#525252",700:"#404040",800:"#262626",900:"#171717",950:"#0a0a0a"}
+  }
+}}}</script>
   <!-- AttendanceFlow deployment refresh: 2026-10-10 -->
 </head>
 <body>

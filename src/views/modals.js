@@ -649,7 +649,7 @@ function printReport(ctx, range) {
     "<style>body{font-family:system-ui,Arial,sans-serif;color:#111;margin:32px}" +
     "h1{margin:0 0 4px}h2{margin-top:28px;border-bottom:1px solid #ccc;padding-bottom:4px}" +
     "table{border-collapse:collapse;width:100%;font-size:12px}td,th{border:1px solid #ccc;padding:6px 8px;text-align:left}" +
-    "th{background:#f3f4f6}.muted{color:#666;font-size:12px}</style></head><body>" +
+    "th{background:#f4f4f4}.muted{color:#666;font-size:12px}</style></head><body>" +
     "<h1>AttendanceFlow — " + esc(S.team.name) + "</h1>" +
     '<p class="muted">Range: ' + esc(range.from || "earliest") + " → " + esc(range.to || "latest") + " · Printed " + new Date().toLocaleString() + "</p>" +
     "<p>Total marked: " + r.totalMarked + " · Present: " + r.totalPresent + " · Absent: " + r.totalAbsent + " · Rate: " + pct(r.totalPresent, r.totalMarked) + "</p>" +

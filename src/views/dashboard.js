@@ -875,12 +875,12 @@ function printAttendanceHistory(ctx) {
     printWindow.document.open();
     printWindow.document.write("<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>" +
       esc(title + " " + filterLabel) + "</title><style>" +
-      "@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font:12px/1.45 Arial,sans-serif;color:#172033;margin:0}" +
-      "h1{font-size:22px;margin:0 0 6px}p{margin:0 0 16px;color:#4b5563}.meta{font-size:11px}" +
-      "table{width:100%;border-collapse:collapse;table-layout:auto}th,td{border:1px solid #d1d5db;padding:7px;text-align:left;vertical-align:top;overflow-wrap:anywhere}" +
-      "th{background:#eef2f7;font-weight:700}td.num{text-align:center;white-space:nowrap;width:70px}td.dates{font-size:11px;line-height:1.7}" +
-      "tr{break-inside:avoid}thead{display:table-header-group}tr.totals td{background:#f3f4f6;font-weight:700;border-top:2px solid #9ca3af}.unmarked-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;border:1px solid #d1d5db;border-radius:999px;padding:1px 5px;margin-left:4px}" +
-      ".count{margin:0 0 12px;font-weight:700;color:#111827}@media screen{body{padding:24px;max-width:1400px;margin:auto} .hint{display:block;margin-top:18px;color:#6b7280}}" +
+      "@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font:12px/1.45 Arial,sans-serif;color:#252525;margin:0}" +
+      "h1{font-size:22px;margin:0 0 6px}p{margin:0 0 16px;color:#575757}.meta{font-size:11px}" +
+      "table{width:100%;border-collapse:collapse;table-layout:auto}th,td{border:1px solid #d6d6d6;padding:7px;text-align:left;vertical-align:top;overflow-wrap:anywhere}" +
+      "th{background:#f2f2f2;font-weight:700}td.num{text-align:center;white-space:nowrap;width:70px}td.dates{font-size:11px;line-height:1.7}" +
+      "tr{break-inside:avoid}thead{display:table-header-group}tr.totals td{background:#f4f4f4;font-weight:700;border-top:2px solid #a6a6a6}.unmarked-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#767676;border:1px solid #d6d6d6;border-radius:999px;padding:1px 5px;margin-left:4px}" +
+      ".count{margin:0 0 12px;font-weight:700;color:#1c1c1c}@media screen{body{padding:24px;max-width:1400px;margin:auto} .hint{display:block;margin-top:18px;color:#767676}}" +
       "@media print{.hint{display:none}}</style></head><body><h1>" + esc(title) +
       "</h1><p class=\"meta\">Period: " + esc(filterLabel) + "</p><p class=\"count\">" +
       report.people.length + " " + (report.people.length === 1 ? "person" : "people") + " · " + report.totals.total + " attendance records</p><table><thead><tr>" +
