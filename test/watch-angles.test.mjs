@@ -1,0 +1,20 @@
+import { handAngles } from "../src/views/watch.js";
+let fail = 0;
+const near = (a, b) => Math.abs(a - b) < 0.01;
+const check = (name, ok, detail = "") => { console.log((ok ? "PASS" : "FAIL") + ": " + name + (ok ? "" : " — " + detail)); if (!ok) fail++; };
+const at = (h, m, s, ms = 0) => new Date(2026, 10, 17, h, m, s, ms);
+
+let a = handAngles(at(12, 0, 0));      check("12:00:00 all hands straight up", a.hour === 0 && a.minute === 0 && a.second === 0, JSON.stringify(a));
+a = handAngles(at(3, 0, 0));           check("3:00 hour hand points right (90deg)", near(a.hour, 90) && near(a.minute, 0), JSON.stringify(a));
+a = handAngles(at(6, 0, 0));           check("6:00 hour hand points down (180deg)", near(a.hour, 180), JSON.stringify(a));
+a = handAngles(at(9, 0, 0));           check("9:00 hour hand points left (270deg)", near(a.hour, 270), JSON.stringify(a));
+a = handAngles(at(15, 0, 0));          check("15:00 uses a 12-hour dial (same as 3:00)", near(a.hour, 90), JSON.stringify(a));
+a = handAngles(at(0, 0, 0));           check("00:00 midnight reads as 12", near(a.hour, 0), JSON.stringify(a));
+a = handAngles(at(12, 15, 0));         check("quarter past: minute hand right (90deg)", near(a.minute, 90), JSON.stringify(a));
+a = handAngles(at(12, 30, 0));         check("half past: minute 180deg and hour creeps to 15deg", near(a.minute, 180) && near(a.hour, 15), JSON.stringify(a));
+a = handAngles(at(12, 0, 30));         check("30 seconds: second hand straight down (180deg)", near(a.second, 180), JSON.stringify(a));
+a = handAngles(at(12, 0, 0, 500));     check("second hand sweeps smoothly through milliseconds", near(a.second, 3), JSON.stringify(a));
+a = handAngles(at(10, 10, 0));         check("10:10 classic: hour ~305deg, minute 60deg", near(a.hour, 305) && near(a.minute, 60), JSON.stringify(a));
+a = handAngles(at(11, 59, 59, 999));   check("never exceeds one full turn", a.hour < 360 && a.minute < 360 && a.second < 360, JSON.stringify(a));
+console.log(fail ? "WATCH ANGLE TEST: FAILURES (" + fail + ")" : "WATCH ANGLE TEST: ALL PASSED");
+process.exit(fail ? 1 : 0);

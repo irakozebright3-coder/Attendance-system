@@ -39,17 +39,6 @@ a{text-decoration:none;color:inherit}
 .trust-row span:last-child{border:0}.trust-row b{color:#acacac;margin-right:5px}
 .hero-stage{height:540px;position:relative;display:grid;place-items:center;perspective:1100px}
 .hero-stage:before{content:"";position:absolute;width:390px;height:390px;border-radius:50%;background:radial-gradient(circle,rgba(251,146,60,.28),rgba(249,115,22,.08) 42%,transparent 70%);filter:blur(12px)}
-.hero-orb{width:285px;height:285px;position:relative;transform-style:preserve-3d;animation:float 6s ease-in-out infinite}
-.orb-face{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.2);box-shadow:inset -30px -30px 80px rgba(0,0,0,.4),inset 15px 15px 50px rgba(255,255,255,.13),0 40px 100px rgba(194,65,12,.4)}
-.orb-front{background:radial-gradient(circle at 32% 20%,rgba(255,255,255,.25),transparent 17%),radial-gradient(circle at 50% 40%,#c2410c,#1f1f1f 58%,#0e0e0e 100%);transform:translateZ(18px)}
-.orb-back{transform:rotateY(180deg) translateZ(18px);background:radial-gradient(circle at 32% 20%,rgba(255,255,255,.2),transparent 17%),radial-gradient(circle at 50% 40%,#7c2d12,#282828 58%,#0e0e0e)}
-.hero-orb{transform:rotateX(7deg) rotateY(-15deg);animation:orbFloat 7s ease-in-out infinite}
-.orb-face strong{font-size:72px;letter-spacing:-.08em;line-height:1;margin:9px 0}
-.orb-face small{color:#bcbcbc;font-size:11px}.orb-face span{font-size:9px;letter-spacing:.22em;font-weight:900;color:#fdba74}
-.orb-bars{display:flex;gap:5px;margin-top:18px;align-items:end;height:24px}.orb-bars i{width:4px;border-radius:5px;background:linear-gradient(#fdba74,#fb923c)}.orb-bars i:nth-child(1){height:9px}.orb-bars i:nth-child(2){height:15px}.orb-bars i:nth-child(3){height:21px}.orb-bars i:nth-child(4){height:12px}
-.orbital-ring{position:absolute;border:1px solid rgba(253,186,116,.18);border-radius:50%;transform-style:preserve-3d}
-.ring-one{width:430px;height:150px;transform:rotateX(66deg) rotateZ(-18deg);animation:spin 14s linear infinite}
-.ring-two{width:520px;height:200px;transform:rotateY(68deg) rotateZ(8deg);animation:spinReverse 19s linear infinite}
 .float-card{position:absolute;z-index:5;background:rgba(16,16,16,.76);border:1px solid rgba(255,255,255,.13);box-shadow:0 18px 50px rgba(0,0,0,.4);backdrop-filter:blur(18px);border-radius:18px;padding:13px 15px;display:flex;align-items:center;gap:10px;min-width:165px;animation:floatCard 5s ease-in-out infinite}
 .float-card b{font-size:12px;display:block}.float-card small{display:block;color:#808080;font-size:9px;margin-top:3px}.card-top{top:90px;right:18px}.card-bottom{bottom:78px;left:18px;animation-delay:-2s}
 .status-live{width:8px;height:8px;border-radius:50%;background:#4ade80;box-shadow:0 0 14px #4ade80}.tiny-avatar,.mock-avatar{display:grid;place-items:center;border-radius:50%;background:linear-gradient(135deg,#fb923c,#c2410c);color:#fff;font-weight:900}.tiny-avatar{width:31px;height:31px;font-size:10px}.check{margin-left:auto;color:#4ade80;font-weight:900}
@@ -71,7 +60,6 @@ a{text-decoration:none;color:inherit}
 input{outline:none}
 @keyframes pulse{50%{opacity:.35;transform:scale(.7)}}
 @keyframes float{50%{transform:translateY(-12px)}}
-@keyframes orbFloat{0%,100%{transform:rotateX(7deg) rotateY(-15deg) translateY(0)}50%{transform:rotateX(10deg) rotateY(15deg) translateY(-15px)}}
 @keyframes spin{to{transform:rotateX(66deg) rotateZ(342deg)}}@keyframes spinReverse{to{transform:rotateY(68deg) rotateZ(-352deg)}}
 @keyframes floatCard{50%{transform:translateY(-10px)}}@keyframes marquee{to{transform:translateX(-50%)}}
 @keyframes signal{50%{transform:scaleY(.55);opacity:.5}}@keyframes scan{from{top:-10%}to{top:110%}}@keyframes panelIn{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:none}}
@@ -2010,3 +1998,155 @@ body:has(#authModal:not(.hidden)){
 .saved-report-delete{border-color:rgba(244,63,94,.3);background:rgba(244,63,94,.1);color:#fda4af}
 .saved-report-delete:hover{background:rgba(244,63,94,.25)}
 .saved-report-btn:disabled{opacity:.5;cursor:progress}
+
+/* ============================================================
+   3D needle watch (landing hero). Layered CSS 3D: every layer sits at its
+   own depth so the case has real thickness when it tilts. Black dial, white
+   markers, one orange second hand. Size scales from --w.
+   ============================================================ */
+.af-watch-scene{
+  --w:300px;
+  --tilt-x:0deg; --tilt-y:0deg;
+  position:relative;width:var(--w);height:calc(var(--w) * 1.62);
+  display:grid;place-items:center;
+  perspective:1100px;
+}
+.af-watch{
+  position:relative;width:var(--w);height:var(--w);
+  transform-style:preserve-3d;
+  transform:rotateX(calc(10deg + var(--tilt-x))) rotateY(calc(-16deg + var(--tilt-y)));
+  transition:transform .35s cubic-bezier(.22,1,.36,1);
+  animation:afWatchFloat 7s ease-in-out infinite;
+}
+@keyframes afWatchFloat{0%,100%{translate:0 0}50%{translate:0 -10px}}
+
+/* soft contact shadow on the "floor" below the watch */
+.af-watch-shadow{
+  position:absolute;left:50%;bottom:2%;width:62%;height:34px;border-radius:50%;
+  transform:translateX(-50%);background:radial-gradient(ellipse,rgba(0,0,0,.55),transparent 70%);
+  filter:blur(10px);
+}
+
+/* strap: leather bands behind the case */
+.af-watch-strap{
+  position:absolute;left:50%;width:46%;height:58%;transform:translateX(-50%) translateZ(-22px);
+  background:linear-gradient(90deg,#161616,#2a2a2a 45%,#161616);
+  border:1px solid #333;
+  background-image:
+    repeating-linear-gradient(0deg,transparent 0 11px,rgba(255,255,255,.05) 11px 12px),
+    linear-gradient(90deg,#141414,#2b2b2b 45%,#141414);
+}
+.af-watch-strap.is-top{bottom:78%;border-radius:20px 20px 4px 4px / 36px 36px 4px 4px}
+.af-watch-strap.is-bottom{top:78%;border-radius:4px 4px 20px 20px / 4px 4px 36px 36px}
+.af-watch-strap.is-bottom:after{
+  content:"";position:absolute;left:50%;top:34%;width:9px;height:9px;border-radius:50%;
+  transform:translateX(-50%);background:#0a0a0a;box-shadow:0 26px 0 #0a0a0a,0 52px 0 #0a0a0a,inset 0 1px 1px #555;
+}
+.af-watch-lug{
+  position:absolute;width:11%;height:15%;background:linear-gradient(135deg,#d8d8d8,#6b6b6b);
+  transform:translateZ(-4px);border-radius:6px;
+}
+.af-watch-lug.lug-tl{left:25%;top:-4%}.af-watch-lug.lug-tr{right:25%;top:-4%}
+.af-watch-lug.lug-bl{left:25%;bottom:-4%}.af-watch-lug.lug-br{right:25%;bottom:-4%}
+
+/* crown on the right edge */
+.af-watch-crown{
+  position:absolute;right:-5.5%;top:44%;width:7%;height:12%;border-radius:4px;
+  background:repeating-linear-gradient(0deg,#f97316 0 3px,#c2410c 3px 5px);
+  transform:translateZ(-2px);box-shadow:0 0 0 1px rgba(0,0,0,.4);
+}
+
+/* stacked case layers: thickness from depth */
+.af-watch-layer{
+  position:absolute;inset:0;border-radius:50%;
+  background:linear-gradient(145deg,#e6e6e6,#8a8a8a 38%,#3a3a3a 70%,#9a9a9a);
+  border:1px solid rgba(0,0,0,.45);
+}
+.af-watch-layer.l1{transform:translateZ(-18px);filter:brightness(.55)}
+.af-watch-layer.l2{transform:translateZ(-11px);filter:brightness(.72)}
+.af-watch-layer.l3{transform:translateZ(-5px);filter:brightness(.88)}
+.af-watch-layer.l4{transform:translateZ(0)}
+
+/* bezel + dial sit on top of the case */
+.af-watch-bezel{
+  position:absolute;inset:5%;border-radius:50%;transform:translateZ(8px);
+  background:linear-gradient(145deg,#2a2a2a,#050505);
+  box-shadow:inset 0 0 0 2px #0a0a0a,inset 0 0 0 5px #3d3d3d,inset 0 2px 8px rgba(255,255,255,.18);
+  padding:5.2%;
+}
+.af-watch-dial{
+  position:relative;width:100%;height:100%;border-radius:50%;
+  background:radial-gradient(circle at 50% 38%,#1c1c1c,#050505 72%);
+  box-shadow:inset 0 0 28px rgba(0,0,0,.9),inset 0 0 0 1px #262626;
+}
+/* hand angles are set by JS on .af-watch and flow down to the needles */
+.af-watch{--hour:0deg;--minute:0deg;--second:0deg}
+.af-watch-tick{
+  position:absolute;left:50%;top:0;width:1px;height:50%;transform-origin:50% 100%;
+  transform:translateX(-50%) rotate(var(--a));
+  background:linear-gradient(to bottom,#7a7a7a 0 3.4%,transparent 3.4%);
+}
+.af-watch-tick.is-hour{width:2px;background:linear-gradient(to bottom,#fff 0 7%,transparent 7%)}
+.af-watch-tick.is-quarter{width:3px;background:linear-gradient(to bottom,#f97316 0 10%,transparent 10%)}
+.af-watch-num{
+  position:absolute;left:50%;top:50%;font:800 clamp(11px,calc(var(--w) * .062),20px)/1 Inter,system-ui,sans-serif;
+  color:#f5f5f5;letter-spacing:-.02em;
+  transform:translate(-50%,-50%) rotate(var(--a)) translateY(calc(var(--w) * -.318)) rotate(calc(var(--a) * -1));
+}
+.af-watch-brand{
+  position:absolute;left:50%;top:27%;transform:translateX(-50%);
+  font:800 calc(var(--w) * .026)/1 Inter,system-ui,sans-serif;letter-spacing:.2em;color:#d9d9d9;white-space:nowrap;
+}
+.af-watch-sub{
+  position:absolute;left:50%;top:64%;transform:translateX(-50%);
+  font:700 calc(var(--w) * .022)/1 Inter,system-ui,sans-serif;letter-spacing:.18em;color:#f97316;white-space:nowrap;
+}
+
+/* the needles: each pivots from the dial centre */
+.af-watch-needle{
+  position:absolute;left:50%;top:50%;transform-origin:50% 100%;
+  translate:-50% -100%;border-radius:3px;
+}
+.af-watch-needle.is-hour{
+  width:calc(var(--w) * .026);height:28%;
+  background:linear-gradient(to top,#bdbdbd,#fff);
+  transform:rotate(var(--hour));
+  box-shadow:0 3px 6px rgba(0,0,0,.65);
+  clip-path:polygon(50% 0,100% 18%,100% 100%,0 100%,0 18%);
+}
+.af-watch-needle.is-minute{
+  width:calc(var(--w) * .018);height:39%;
+  background:linear-gradient(to top,#bdbdbd,#fff);
+  transform:rotate(var(--minute));
+  box-shadow:0 3px 6px rgba(0,0,0,.65);
+  clip-path:polygon(50% 0,100% 12%,100% 100%,0 100%,0 12%);
+}
+.af-watch-needle.is-second{
+  width:calc(var(--w) * .008);height:44%;background:#f97316;
+  transform:rotate(var(--second));
+  box-shadow:0 4px 8px rgba(0,0,0,.6);
+}
+/* counterweight tail of the second hand */
+.af-watch-needle.is-second u{
+  position:absolute;left:50%;bottom:-16%;width:300%;height:18%;transform:translateX(-50%);
+  background:#f97316;border-radius:2px;
+}
+.af-watch-pin{
+  position:absolute;left:50%;top:50%;width:calc(var(--w) * .045);height:calc(var(--w) * .045);
+  transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff,#f97316 55%,#7c2d12);
+  box-shadow:0 2px 5px rgba(0,0,0,.7);
+}
+
+/* domed sapphire glass: highlight on top, fades with tilt */
+.af-watch-glass{
+  position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 28% 18%,rgba(255,255,255,.34),transparent 38%),
+    linear-gradient(160deg,rgba(255,255,255,.12),transparent 42%,rgba(255,255,255,.04));
+  transform:translateZ(6px);
+}
+
+@media(max-width:900px){.af-watch-scene{--w:250px}}
+@media(max-width:620px){.af-watch-scene{--w:210px}}
+@media(prefers-reduced-motion:reduce){.af-watch{animation:none}}

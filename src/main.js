@@ -8,6 +8,7 @@ import { friendlyError, debounce } from "./lib/util.js";
 import { observePanelSearch } from "./lib/panel-search.js";
 import { authScreen, setMessage, workspaceSetupScreen, bindParallax } from "./views/landing.js";
 import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, normalizePlatformSettings } from "./views/public-info.js";
+import { loadSettingsFast, writeCachedSettings, readCachedSettings, mergeSettings } from "./lib/platform-cache.js";
 import { platformAdminPanel } from "./views/platform-admin.js";
 import {
   dashboard, renderRegister, updateCell, cellPending, setBackendStatus
@@ -124,10 +125,11 @@ const ctx = {
     try {
       const [settings, faqs] = await Promise.all([
         api.loadPublicPlatformSettings(),
-        api.loadPublicFaqs()
+        api.loadPublicFaqs().catch(() => [])
       ]);
-      S.platformSettings = normalizePlatformSettings(settings);
-      S.faqs = faqs.length ? faqs : [...DEFAULT_FAQS];
+      if (settings) writeCachedSettings(settings);
+      S.platformSettings = normalizePlatformSettings(mergeSettings(DEFAULT_PLATFORM_SETTINGS, readCachedSettings(), settings));
+      S.faqs = faqs.length ? faqs : S.faqs;
     } catch {
       // Keep the current public settings if content cannot be refreshed.
     }
@@ -599,18 +601,22 @@ async function boot() {
   // Public site content is intentionally fail-soft: if platform content has
   // not been configured yet, the app uses safe local defaults instead of
   // blocking authentication.
-  try {
-    const [platformSettings, faqs] = await Promise.all([
-      api.loadPublicPlatformSettings(),
-      api.loadPublicFaqs()
-    ]);
-    S.platformSettings = normalizePlatformSettings(platformSettings);
-    S.faqs = faqs.length ? faqs : [...DEFAULT_FAQS];
-  } catch (err) {
-    console.warn("Public platform content is not configured yet:", err);
-    S.platformSettings = normalizePlatformSettings(DEFAULT_PLATFORM_SETTINGS);
-    S.faqs = [...DEFAULT_FAQS];
-  }
+  // Contact information is global and permanent: show the last saved values
+  // from this device immediately, then refresh from the database. A slow or
+  // failed request keeps the last real values instead of the blank defaults.
+  // FAQs load on their own so they can never delay the contact details.
+  const [settingsResult, faqs] = await Promise.all([
+    loadSettingsFast({
+      defaults: DEFAULT_PLATFORM_SETTINGS,
+      fetchFresh: () => api.loadPublicPlatformSettings()
+    }),
+    api.loadPublicFaqs().catch((err) => {
+      console.warn("Public FAQs are not configured yet:", err);
+      return [];
+    })
+  ]);
+  S.platformSettings = normalizePlatformSettings(settingsResult.settings);
+  S.faqs = faqs.length ? faqs : [...DEFAULT_FAQS];
 
   const session = await api.getSession();
   S.session = session;

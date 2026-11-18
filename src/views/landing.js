@@ -1,5 +1,6 @@
 // Public landing page + auth modal + first-run workspace setup screen.
 import { esc } from "../lib/util.js";
+import { watchMarkup, bindWatch } from "./watch.js";
 import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, normalizePlatformSettings, footerMarkup, bindFooter, openPublicInfo } from "./public-info.js";
 
 // Keeps a single scroll listener alive across landing re-renders.
@@ -80,15 +81,7 @@ export function authScreen(message = "", platformSettings = DEFAULT_PLATFORM_SET
             '</div>' +
           '</div>' +
           '<div class="hero-stage" aria-hidden="true">' +
-            '<div class="orbital-ring ring-one"></div>' +
-            '<div class="orbital-ring ring-two"></div>' +
-            '<div class="hero-orb">' +
-              '<div class="orb-face orb-front">' +
-                '<span class="mini-label">LIVE MODE</span><strong>SYNC</strong><small>Team database</small>' +
-                '<div class="orb-bars"><i></i><i></i><i></i><i></i></div>' +
-              '</div>' +
-              '<div class="orb-face orb-back"><span>LIVE</span><strong>✓</strong><small>Attendance stream</small></div>' +
-            '</div>' +
+            watchMarkup() +
             '<div class="float-card card-top"><span class="status-live"></span><b>Backend online</b><small>PostgreSQL + Auth</small></div>' +
             '<div class="float-card card-bottom"><div class="tiny-avatar">T</div><div><b>Team member</b><small>Attendance · synced</small></div><span class="check">✓</span></div>' +
           '</div>' +
@@ -147,6 +140,7 @@ export function authScreen(message = "", platformSettings = DEFAULT_PLATFORM_SET
   const closeAuth = () => $("authModal").classList.add("hidden");
 
   bindParallax();
+  bindWatch();
   bindFooter(settings, faqList);
 
   const topBtn = $("scrollTopBtn");

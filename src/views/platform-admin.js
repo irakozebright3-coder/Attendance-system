@@ -6,6 +6,7 @@
 import { esc, timeLabel } from "../lib/util.js";
 import * as api from "../lib/api.js";
 import { DEFAULT_PLATFORM_SETTINGS, DEFAULT_FAQS, footerMarkup, bindFooter } from "./public-info.js";
+import { writeCachedSettings } from "../lib/platform-cache.js";
 
 export async function platformAdminPanel(ctx) {
   const { S, toast } = ctx;
@@ -38,6 +39,7 @@ export async function platformAdminPanel(ctx) {
         '<section class="platform-grid">' +
           '<div class="af-glass platform-card"><div class="platform-card-head"><div><div class="register-kicker">GLOBAL WEBSITE</div><h2>Site & contact settings</h2><p>Edit the public website content shown in the footer, help center and landing page.</p></div><span class="admin-lock">SUPER ADMIN ONLY</span></div>' +
             '<form id="platformSettingsForm" class="settings-form">' +
+              '<div id="founderNotice" class="founder-notice" role="status"></div>' +
               '<div class="settings-grid">' +
                 '<label>Site name<input name="site_name" maxlength="120"></label>' +
                 '<label>Tagline<input name="tagline" maxlength="240"></label>' +
@@ -98,6 +100,7 @@ export async function platformAdminPanel(ctx) {
 
   const settings = await api.loadPlatformSettings().catch(() => DEFAULT_PLATFORM_SETTINGS);
   fillSettingsForm(settings);
+  applyFounderState();
   const faqRows = await api.loadPublicFaqs().catch(() => DEFAULT_FAQS);
   renderFaqs(faqRows);
   await loadAdminData();
@@ -115,10 +118,11 @@ export async function platformAdminPanel(ctx) {
       payload.copyright_start_year = Number(payload.copyright_start_year);
       payload.registration_enabled = document.getElementById("registrationEnabled").checked;
       const saved = await api.savePlatformSettings(payload);
+      writeCachedSettings(saved);
       S.platformSettings = saved;
       const footerOwner = document.getElementById("footerOwnerName");
       if (footerOwner) footerOwner.textContent = (saved.owner_name ? "Owner: " + saved.owner_name + " · " : "") + (saved.site_name || "AttendanceFlow") + " · Secure team attendance";
-      msg.textContent = "Saved globally.";
+      msg.textContent = "Saved for everyone. It stays until you change or remove it.";
       toast("Website settings saved.", "success");
     } catch (err) {
       msg.textContent = err.message || "Could not save settings.";
@@ -261,6 +265,27 @@ export async function platformAdminPanel(ctx) {
     } catch (err) {
       toast(err.message || "Could not load platform data.", "error");
     }
+  }
+
+
+  // Contact and connection details are global and permanent. Only the founder
+  // admin can change or remove them; other admins can read but not edit.
+  function applyFounderState() {
+    const form = document.getElementById("platformSettingsForm");
+    const notice = document.getElementById("founderNotice");
+    if (!form || !notice) return;
+    const founder = canManagePlatformAdmins;
+    const unknown = adminManagementSetupError;
+    notice.className = "founder-notice " + (founder ? "is-founder" : "is-locked");
+    notice.textContent = founder
+      ? "You are the founder admin. Changes here are saved for everyone straight away and stay until you change or remove them."
+      : unknown
+        ? "Could not confirm founder access. Run the latest supabase/schema.sql so contact details can be edited."
+        : "Only the founder admin can change these details. You can view them here.";
+    const canEdit = founder;
+    form.querySelectorAll("input, textarea, select, button[type=submit]").forEach((el) => {
+      el.disabled = !canEdit;
+    });
   }
 
   function fillSettingsForm(s) {

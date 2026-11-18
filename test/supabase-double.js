@@ -16,6 +16,13 @@ const db = {
   attendance_dates: [{ id: "d1", team_id: "team-1", date: new Date().toISOString().slice(0, 10), created_at: new Date().toISOString() }],
   attendance: [],
   saved_reports: [],
+  platform_settings: [{
+    id: 1, site_name: "AttendanceFlow", tagline: "Real-time team attendance.",
+    contact_email: "founder@db.example", contact_phone: "0793158326", contact_address: "Kigali, Rwanda",
+    owner_name: "IRAKOZE Bright", owner_title: "Owner Room", owner_email: "owner@db.example", owner_phone: "0793158326",
+    support_hours: "Full-time", footer_note: "", copyright_start_year: 2026, registration_enabled: true
+  }],
+  platform_faqs: [],
   attendance_history: (() => {
     const day = (offset) => { const d = new Date(); d.setUTCDate(d.getUTCDate() + offset); return d.toISOString().slice(0, 10); };
     const at = (offset) => new Date(Date.now() + offset * 60000).toISOString();
@@ -69,6 +76,10 @@ function from(table) {
     };
   }
   async function run() {
+    // test-only: window.__afFailSettings = true simulates a dropped connection for settings
+    if (table === "platform_settings" && typeof window !== "undefined" && window.__afFailSettings) {
+      return { data: null, error: { message: "network down" } };
+    }
     let rows = db[table] ? db[table].map((r) => ({ ...r })) : [];
     for (const [k, v] of state.conds) rows = rowEq(rows, k, v);
     if (state.op === "update") {
@@ -143,6 +154,8 @@ function from(table) {
 }
 
 const authState = { session: { user: { id: "u1", email: "owner@test.dev", user_metadata: { team_name: "Test Team" } } } };
+// test-only: a test can set window.__afSignedOut = true BEFORE boot to see the public landing page
+if (typeof window !== "undefined" && window.__afSignedOut) authState.session = null;
 
 let authListener = null;
 

@@ -359,26 +359,6 @@ h1,h2,h3,strong,b{
   text-shadow:0 0 16px rgba(251,146,60,.55);
 }
 
-/* High-depth hero orb */
-.hero-orb{
-  filter:drop-shadow(-24px 24px 70px rgba(0,0,0,.48));
-}
-
-.orb-face{
-  box-shadow:
-    inset 16px 14px 48px rgba(255,255,255,.08),
-    inset -34px -34px 80px rgba(0,0,0,.44),
-    0 36px 100px rgba(0,0,0,.42),
-    0 0 46px rgba(251,146,60,.12);
-  border-top-color:rgba(255,255,255,.32)!important;
-  border-left-color:rgba(255,255,255,.18)!important;
-}
-
-.orbital-ring{
-  border-color:rgba(251,146,60,.26)!important;
-  box-shadow:0 0 28px rgba(251,146,60,.10);
-}
-
 /* Desktop pointer language */
 #cursorOuter{
   border-color:rgba(255,255,255,.58)!important;

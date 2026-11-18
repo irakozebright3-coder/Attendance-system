@@ -179,42 +179,13 @@ html[data-theme="black"] .register-kicker,
 html[data-theme="black"] .stat-label { color: #bdbdbd !important; }
 html[data-theme="white"] .eyebrow,
 html[data-theme="white"] .register-kicker,
-html[data-theme="white"] .stat-label { color: #555555 !important; }
-
-html[data-theme="black"] .hero-orb,
-html[data-theme="black"] .orb-face,
-html[data-theme="black"] .orbital-ring,
-html[data-theme="black"] .float-card,
-html[data-theme="black"] .tiny-avatar,
-html[data-theme="black"] .feature-icon,
-html[data-theme="black"] .security-chip,
-html[data-theme="black"] .camera-preview,
-html[data-theme="black"] .signal,
-html[data-theme="black"] .mock-avatar,
-html[data-theme="black"] .stat-orb,
-html[data-theme="white"] .hero-orb,
-html[data-theme="white"] .orb-face,
-html[data-theme="white"] .orbital-ring,
-html[data-theme="white"] .float-card,
-html[data-theme="white"] .tiny-avatar,
-html[data-theme="white"] .feature-icon,
-html[data-theme="white"] .security-chip,
-html[data-theme="white"] .camera-preview,
-html[data-theme="white"] .signal,
-html[data-theme="white"] .mock-avatar,
-html[data-theme="white"] .stat-orb {
+html[data-theme="white"] .stat-label { color: #555555 !important; }html[data-theme="black"] .float-card,html[data-theme="black"] .tiny-avatar,html[data-theme="black"] .feature-icon,html[data-theme="black"] .security-chip,html[data-theme="black"] .camera-preview,html[data-theme="black"] .signal,html[data-theme="black"] .mock-avatar,html[data-theme="black"] .stat-orb,html[data-theme="white"] .float-card,html[data-theme="white"] .tiny-avatar,html[data-theme="white"] .feature-icon,html[data-theme="white"] .security-chip,html[data-theme="white"] .camera-preview,html[data-theme="white"] .signal,html[data-theme="white"] .mock-avatar,html[data-theme="white"] .stat-orb{
   filter: grayscale(1) !important;
   box-shadow: none !important;
-}
-html[data-theme="black"] .hero-orb,
-html[data-theme="black"] .orb-face,
-html[data-theme="black"] .float-card {
+}html[data-theme="black"] .float-card{
   background: #151515 !important;
   border-color: #444444 !important;
-}
-html[data-theme="white"] .hero-orb,
-html[data-theme="white"] .orb-face,
-html[data-theme="white"] .float-card {
+}html[data-theme="white"] .float-card{
   background: #f7f7f7 !important;
   color: #111111 !important;
   border-color: #d7d7d7 !important;
@@ -765,37 +736,11 @@ html[data-theme="black"] [class*="border-slate-"],
 html[data-theme="black"] [class*="border-gray-"],
 html[data-theme="white"] [class*="border-white/"],
 html[data-theme="white"] [class*="border-slate-"],
-html[data-theme="white"] [class*="border-gray-"] { border-color: var(--af-line) !important; }
-
-
-/* Remaining decorative feedback/status elements stay achromatic too. */
-html[data-theme="black"] .red,
-html[data-theme="black"] .green,
-html[data-theme="black"] .cyan,
-html[data-theme="black"] .violet,
-html[data-theme="black"] .check,
-html[data-theme="black"] .mini-label,
-html[data-theme="black"] .orb-back span,
-html[data-theme="black"] .orb-bars i,
-html[data-theme="black"] .mock-register strong,
-html[data-theme="black"] .feature-icon,
-html[data-theme="black"] .history-export-button,
-html[data-theme="black"] .badge-inactive {
+html[data-theme="white"] [class*="border-gray-"] { border-color: var(--af-line) !important; }/* Remaining decorative feedback/status elements stay achromatic too. */
+html[data-theme="black"] .red,html[data-theme="black"] .green,html[data-theme="black"] .cyan,html[data-theme="black"] .violet,html[data-theme="black"] .check,html[data-theme="black"] .mini-label,html[data-theme="black"] .mock-register strong,html[data-theme="black"] .feature-icon,html[data-theme="black"] .history-export-button,html[data-theme="black"] .badge-inactive{
   color: #eeeeee !important;
   border-color: #505050 !important;
-}
-html[data-theme="white"] .red,
-html[data-theme="white"] .green,
-html[data-theme="white"] .cyan,
-html[data-theme="white"] .violet,
-html[data-theme="white"] .check,
-html[data-theme="white"] .mini-label,
-html[data-theme="white"] .orb-back span,
-html[data-theme="white"] .orb-bars i,
-html[data-theme="white"] .mock-register strong,
-html[data-theme="white"] .feature-icon,
-html[data-theme="white"] .history-export-button,
-html[data-theme="white"] .badge-inactive {
+}html[data-theme="white"] .red,html[data-theme="white"] .green,html[data-theme="white"] .cyan,html[data-theme="white"] .violet,html[data-theme="white"] .check,html[data-theme="white"] .mini-label,html[data-theme="white"] .mock-register strong,html[data-theme="white"] .feature-icon,html[data-theme="white"] .history-export-button,html[data-theme="white"] .badge-inactive{
   color: #222222 !important;
   border-color: #cccccc !important;
 }
@@ -1081,3 +1026,12 @@ html[data-theme="white"] .platform-admin-toggle:hover{
 .bg-violet-600:hover { background-color: #fb923c !important; }
 /* Destructive buttons stay red with white text */
 .bg-red-600 { color: #ffffff !important; }
+
+
+/* Founder-owned contact details: say who can edit, plainly. */
+.founder-notice{border:1px solid var(--af-line);border-radius:12px;padding:10px 14px;margin:0 0 14px;font-size:13px;font-weight:600}
+.founder-notice.is-founder{border-color:#f97316;color:#fb923c}
+.founder-notice.is-locked{color:#a3a3a3;border-style:dashed}
+html[data-theme="white"] .founder-notice.is-founder{color:#c2410c}
+html[data-theme="white"] .founder-notice.is-locked{color:#525252}
+.settings-form input:disabled,.settings-form textarea:disabled{opacity:.62;cursor:not-allowed}
